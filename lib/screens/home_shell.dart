@@ -158,8 +158,14 @@ class _HomeShellState extends State<HomeShell> {
                 title: Text(controller.error!),
                 subtitle: Text(
                   controller.lastSync == null
-                      ? t('No offline calendar available yet.', 'لا توجد بيانات تقويم محفوظة بعد.')
-                      : t('Saved deadlines remain available offline.', 'تبقى المواعيد المحفوظة متاحة دون إنترنت.'),
+                      ? t(
+                          'No offline calendar available yet.',
+                          'لا توجد بيانات تقويم محفوظة بعد.',
+                        )
+                      : t(
+                          'Saved deadlines remain available offline.',
+                          'تبقى المواعيد المحفوظة متاحة دون إنترنت.',
+                        ),
                 ),
                 trailing: IconButton(
                   tooltip: t('Retry synchronization', 'إعادة محاولة المزامنة'),

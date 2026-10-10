@@ -112,10 +112,12 @@ class _HomeShellState extends State<HomeShell> {
   Widget _home() {
     final controller = widget.controller;
     final active = controller.activeDeadlines;
+    final courses = active.map((d) => d.course).where((c) => c.isNotEmpty).toSet();
+    final selectedCourse = courses.contains(_selectedCourse) ? _selectedCourse : null;
     final deadlines = filterDeadlines(
       active,
       query: _searchQuery,
-      course: _selectedCourse,
+      course: selectedCourse,
     );
     final overdue = deadlines.where((d) => d.isPast).toList();
     final upcoming = deadlines.where((d) => !d.isPast).toList();
@@ -164,7 +166,8 @@ class _HomeShellState extends State<HomeShell> {
           ),
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            initialValue: _selectedCourse ?? '',
+            key: ValueKey(selectedCourse),
+            initialValue: selectedCourse ?? '',
             decoration: InputDecoration(
               labelText: t('Filter by course', 'تصفية حسب المساق'),
             ),
@@ -173,9 +176,7 @@ class _HomeShellState extends State<HomeShell> {
                 value: '',
                 child: Text(t('All courses', 'كل المساقات')),
               ),
-              ...({
-                ...active.map((d) => d.course),
-              }.where((c) => c.isNotEmpty).toList()..sort()).map(
+              ...(courses.toList()..sort()).map(
                 (course) =>
                     DropdownMenuItem(value: course, child: Text(course)),
               ),

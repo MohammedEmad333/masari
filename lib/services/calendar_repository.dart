@@ -26,6 +26,7 @@ class CalendarRepository {
   static const _legacyCacheKey = 'deadline_cache';
   static const _lastSyncKey = 'last_sync_at';
   static const _reminderOffsetsKey = 'reminder_offsets_hours';
+  static const _taskOffsetsKey = 'task_reminder_offsets_v1';
   static const _completedIdsKey = 'completed_deadline_ids';
   static const _themeModeKey = 'theme_mode';
   static const _localeKey = 'locale';
@@ -82,7 +83,6 @@ class CalendarRepository {
       return decoded
           .whereType<Map>()
           .map((item) => Deadline.fromJson(Map<String, dynamic>.from(item)))
-          .where((deadline) => !deadline.isPast)
           .toList()
         ..sort((a, b) => a.due.compareTo(b.due));
     } catch (_) {
@@ -112,11 +112,8 @@ class CalendarRepository {
       );
     }
 
-    final upcoming =
-        IcsParser.parse(
-            response.body,
-          ).where((deadline) => !deadline.isPast).toList()
-          ..sort((a, b) => a.due.compareTo(b.due));
+    final upcoming = IcsParser.parse(response.body).toList()
+      ..sort((a, b) => a.due.compareTo(b.due));
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
@@ -134,6 +131,7 @@ class CalendarRepository {
     await prefs.remove(_cacheKey);
     await prefs.remove(_lastSyncKey);
     await prefs.remove(_completedIdsKey);
+    await prefs.remove(_taskOffsetsKey);
   }
 
   Future<DateTime?> loadLastSync() async {
@@ -167,6 +165,33 @@ class CalendarRepository {
       _reminderOffsetsKey,
       normalized.map((value) => value.toString()).toList(),
     );
+  }
+
+  Future<Map<String, List<int>>> loadTaskReminderOffsets() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = prefs.getString(_taskOffsetsKey);
+    if (encoded == null) return {};
+    try {
+      final decoded = jsonDecode(encoded);
+      if (decoded is! Map) return {};
+      final result = <String, List<int>>{};
+      for (final entry in decoded.entries) {
+        if (entry.key is! String || entry.value is! List) continue;
+        result[entry.key as String] = (entry.value as List)
+            .whereType<int>()
+            .where((value) => value > 0)
+            .toSet()
+            .toList();
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveTaskReminderOffsets(Map<String, List<int>> values) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_taskOffsetsKey, jsonEncode(values));
   }
 
   Future<Set<String>> loadCompletedIds() async {

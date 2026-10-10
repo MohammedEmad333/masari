@@ -12,6 +12,7 @@ class AppController extends ChangeNotifier {
   List<Deadline> deadlines = const [];
   Set<String> completedIds = {};
   List<int> reminderOffsets = const [24, 6, 1];
+  Map<String, List<int>> taskReminderOffsets = {};
   DateTime? lastSync;
   bool busy = false;
   bool initialized = false;
@@ -39,6 +40,7 @@ class AppController extends ChangeNotifier {
       _repository.loadLastSync(),
       _repository.loadThemeMode(),
       _repository.loadLocale(),
+      _repository.loadTaskReminderOffsets(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -48,6 +50,7 @@ class AppController extends ChangeNotifier {
     lastSync = results[4] as DateTime?;
     themeMode = _parseThemeMode(results[5] as String);
     locale = Locale((results[6] as String) == 'ar' ? 'ar' : 'en');
+    taskReminderOffsets = results[7] as Map<String, List<int>>;
     initialized = true;
     notifyListeners();
 
@@ -128,6 +131,21 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setTaskReminderOffsets(
+    Deadline deadline,
+    List<int>? offsets,
+  ) async {
+    final key = deadline.stableKey;
+    if (offsets == null) {
+      taskReminderOffsets.remove(key);
+    } else {
+      taskReminderOffsets[key] = offsets.where((h) => h > 0).toSet().toList();
+    }
+    await _repository.saveTaskReminderOffsets(taskReminderOffsets);
+    await _rescheduleNotifications();
+    notifyListeners();
+  }
+
   Future<void> setThemeMode(ThemeMode value) async {
     themeMode = value;
     await _repository.saveThemeMode(value.name);
@@ -147,6 +165,7 @@ class AppController extends ChangeNotifier {
     await _repository.clearCachedCalendarData();
     deadlines = const [];
     completedIds = {};
+    taskReminderOffsets = {};
     lastSync = null;
     calendarConnected = false;
     error = null;
@@ -162,6 +181,7 @@ class AppController extends ChangeNotifier {
       deadlines,
       reminderOffsetsHours: reminderOffsets,
       completedIds: completedIds,
+      taskReminderOffsets: taskReminderOffsets,
     );
   }
 

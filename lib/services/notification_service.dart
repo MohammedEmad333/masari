@@ -4,6 +4,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../models/deadline.dart';
 import 'ics_parser.dart';
+import 'reminder_policy.dart';
 
 class NotificationService {
   NotificationService._();
@@ -54,6 +55,7 @@ class NotificationService {
     List<Deadline> deadlines, {
     required List<int> reminderOffsetsHours,
     Set<String> completedIds = const {},
+    Map<String, List<int>> taskReminderOffsets = const {},
   }) async {
     await init(requestPermissions: false);
     await _plugin.cancelAll();
@@ -73,7 +75,11 @@ class NotificationService {
         continue;
       }
 
-      for (final hours in reminderOffsetsHours.toSet()) {
+      for (final hours in offsetsForDeadline(
+        deadline,
+        reminderOffsetsHours,
+        taskReminderOffsets,
+      )) {
         final fireAt = deadline.due.subtract(Duration(hours: hours));
         if (!fireAt.isAfter(now)) continue;
 

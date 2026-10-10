@@ -3,10 +3,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
+import '../services/deadline_filters.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -19,6 +21,8 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  String _searchQuery = '';
+  String? _selectedCourse;
   DateTime _selectedDate = DateTime.now();
 
   bool get _ar => widget.controller.locale.languageCode == 'ar';
@@ -107,10 +111,17 @@ class _HomeShellState extends State<HomeShell> {
 
   Widget _home() {
     final controller = widget.controller;
-    final deadlines = controller.activeDeadlines;
-    final next = deadlines.isEmpty ? null : deadlines.first;
+    final active = controller.activeDeadlines;
+    final deadlines = filterDeadlines(
+      active,
+      query: _searchQuery,
+      course: _selectedCourse,
+    );
+    final overdue = deadlines.where((d) => d.isPast).toList();
+    final upcoming = deadlines.where((d) => !d.isPast).toList();
+    final next = upcoming.isEmpty ? null : upcoming.first;
     final weekEnd = DateTime.now().add(const Duration(days: 7));
-    final weekCount = deadlines.where((d) => d.due.isBefore(weekEnd)).length;
+    final weekCount = upcoming.where((d) => d.due.isBefore(weekEnd)).length;
 
     return RefreshIndicator(
       onRefresh: () => controller.sync(),
@@ -143,13 +154,49 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          TextField(
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.search_rounded),
+              labelText: t('Search deadlines', 'ابحث عن المهام'),
+            ),
+            onChanged: (value) => setState(() => _searchQuery = value),
+          ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedCourse ?? '',
+            decoration: InputDecoration(
+              labelText: t('Filter by course', 'تصفية حسب المساق'),
+            ),
+            items: [
+              DropdownMenuItem(
+                value: '',
+                child: Text(t('All courses', 'كل المساقات')),
+              ),
+              ...({
+                ...active.map((d) => d.course),
+              }.where((c) => c.isNotEmpty).toList()..sort()).map(
+                (course) =>
+                    DropdownMenuItem(value: course, child: Text(course)),
+              ),
+            ],
+            onChanged: (value) => setState(() {
+              _selectedCourse = value == null || value.isEmpty ? null : value;
+            }),
+          ),
+          if (overdue.isNotEmpty) ...[
+            const SizedBox(height: 18),
+            _section(t('Overdue', 'مهام متأخرة'), '${overdue.length}'),
+            const SizedBox(height: 8),
+            ...overdue.take(15).map(_deadlineCard),
+          ],
           const SizedBox(height: 18),
           _section(
             t('Upcoming deadlines', 'المواعيد القادمة'),
-            '${deadlines.length}',
+            '${upcoming.length}',
           ),
           const SizedBox(height: 8),
-          if (deadlines.isEmpty)
+          if (upcoming.isEmpty)
             _empty(
               Icons.task_alt_rounded,
               t('You are all caught up', 'لا توجد مواعيد قادمة'),
@@ -159,7 +206,7 @@ class _HomeShellState extends State<HomeShell> {
               ),
             )
           else
-            ...deadlines.take(15).map(_deadlineCard),
+            ...upcoming.take(15).map(_deadlineCard),
           if (controller.completedDeadlines.isNotEmpty) ...[
             const SizedBox(height: 18),
             _section(
@@ -175,7 +222,9 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _calendar() {
-    final active = widget.controller.activeDeadlines;
+    final active = widget.controller.activeDeadlines
+        .where((d) => !d.isPast)
+        .toList();
     final items = active.where((deadline) {
       final d = deadline.due;
       return d.year == _selectedDate.year &&
@@ -513,7 +562,7 @@ class _HomeShellState extends State<HomeShell> {
 
   String _remainingText(Deadline deadline) {
     final difference = deadline.due.difference(DateTime.now());
-    if (difference.isNegative) return t('Past', 'منتهي');
+    if (difference.isNegative) return t('Overdue', 'متأخر');
 
     final minutes = difference.inMinutes;
     final days = minutes ~/ 1440;
@@ -573,7 +622,81 @@ class _HomeShellState extends State<HomeShell> {
                 const SizedBox(height: 12),
                 Text(deadline.description),
               ],
+              const SizedBox(height: 12),
+              Text(t('Task reminders', 'تذكيرات المهمة')),
+              Wrap(
+                spacing: 8,
+                children: [1, 6, 24, 48, 72].map((hours) {
+                  final specific =
+                      widget.controller.taskReminderOffsets[deadline.stableKey];
+                  final selected =
+                      (specific ?? widget.controller.reminderOffsets).contains(
+                        hours,
+                      );
+                  return FilterChip(
+                    label: Text(_offsetLabel(hours)),
+                    selected: selected,
+                    onSelected: (checked) async {
+                      final values = [
+                        ...(specific ?? widget.controller.reminderOffsets),
+                      ];
+                      if (checked) {
+                        values.add(hours);
+                      } else {
+                        values.remove(hours);
+                      }
+                      await widget.controller.setTaskReminderOffsets(
+                        deadline,
+                        values,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                      if (mounted) _showDeadline(deadline);
+                    },
+                  );
+                }).toList(),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await widget.controller.setTaskReminderOffsets(
+                    deadline,
+                    null,
+                  );
+                  if (context.mounted) Navigator.pop(context);
+                  if (mounted) _showDeadline(deadline);
+                },
+                child: Text(
+                  t('Use global reminders', 'استخدام التذكيرات العامة'),
+                ),
+              ),
               if (deadline.url.isNotEmpty) ...[
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final uri = Uri.tryParse(deadline.url);
+                    if (uri == null ||
+                        (uri.scheme != 'https' && uri.scheme != 'http') ||
+                        !uri.hasAuthority) {
+                      return;
+                    }
+                    final opened = await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (!opened && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            t(
+                              'Could not open Moodle link',
+                              'تعذر فتح رابط Moodle',
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: Text(t('Open in Moodle', 'افتح في Moodle')),
+                ),
                 const SizedBox(height: 10),
                 Directionality(
                   textDirection: ui.TextDirection.ltr,

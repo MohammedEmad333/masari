@@ -21,11 +21,13 @@ void callbackDispatcher() {
       final deadlines = await repository.sync();
       final offsets = await repository.loadReminderOffsets();
       final completed = await repository.loadCompletedIds();
+      final perTask = await repository.loadTaskReminderOffsets();
       await NotificationService.init(requestPermissions: false);
       await NotificationService.scheduleAll(
         deadlines,
         reminderOffsetsHours: offsets,
         completedIds: completed,
+        taskReminderOffsets: perTask,
       );
       return true;
     } catch (_) {

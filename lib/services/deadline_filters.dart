@@ -15,3 +15,10 @@ List<Deadline> filterDeadlines(
         deadline.description.toLowerCase().contains(needle);
   }).toList();
 }
+
+String? validCourseSelection(Iterable<Deadline> deadlines, String? selected) {
+  if (selected == null) return null;
+  return deadlines.any((deadline) => deadline.course == selected)
+      ? selected
+      : null;
+}

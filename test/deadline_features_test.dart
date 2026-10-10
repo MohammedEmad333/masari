@@ -28,6 +28,12 @@ void main() {
     );
   });
 
+  test('course filter gracefully resets when a course is removed', () {
+    expect(validCourseSelection([math, physics], 'Math'), 'Math');
+    expect(validCourseSelection([physics], 'Math'), isNull);
+    expect(validCourseSelection([physics], null), isNull);
+  });
+
   test('overdue deadlines can be identified without wall clock coupling', () {
     final old = Deadline(uid: 'old', title: 'Old', due: now);
     expect(old.due.isBefore(now.add(const Duration(minutes: 1))), isTrue);

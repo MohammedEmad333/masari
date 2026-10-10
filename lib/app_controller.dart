@@ -95,6 +95,7 @@ class AppController extends ChangeNotifier {
       return true;
     } catch (exception) {
       error = _message(exception);
+      notifyListeners();
       return false;
     } finally {
       _syncInProgress = false;

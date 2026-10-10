@@ -113,7 +113,7 @@ class _HomeShellState extends State<HomeShell> {
     final controller = widget.controller;
     final active = controller.activeDeadlines;
     final courses = active.map((d) => d.course).where((c) => c.isNotEmpty).toSet();
-    final selectedCourse = courses.contains(_selectedCourse) ? _selectedCourse : null;
+    final selectedCourse = validCourseSelection(active, _selectedCourse);
     final deadlines = filterDeadlines(
       active,
       query: _searchQuery,

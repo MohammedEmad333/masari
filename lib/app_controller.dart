@@ -15,6 +15,7 @@ class AppController extends ChangeNotifier {
   Map<String, List<int>> taskReminderOffsets = {};
   DateTime? lastSync;
   bool busy = false;
+  bool _syncInProgress = false;
   bool initialized = false;
   bool calendarConnected = false;
   String? error;
@@ -83,24 +84,22 @@ class AppController extends ChangeNotifier {
   }
 
   Future<bool> sync({bool silent = false}) async {
-    if (!calendarConnected || busy) return false;
-    if (!silent) {
-      busy = true;
-      error = null;
-      notifyListeners();
-    }
+    if (!calendarConnected || busy || _syncInProgress) return false;
+    _syncInProgress = true;
+    busy = true;
+    error = null;
+    notifyListeners();
 
     try {
       await _syncInternal();
       return true;
     } catch (exception) {
-      if (!silent) error = _message(exception);
+      error = _message(exception);
       return false;
     } finally {
-      if (!silent) {
-        busy = false;
-        notifyListeners();
-      }
+      _syncInProgress = false;
+      busy = false;
+      notifyListeners();
     }
   }
 

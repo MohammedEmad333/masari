@@ -155,22 +155,25 @@ void main() {
     client.close();
   });
 
-  test('manual tasks persist with priority without affecting Moodle cache', () async {
-    final repository = CalendarRepository();
-    final manual = Deadline(
-      uid: 'manual-1',
-      title: 'Study chemistry',
-      due: DateTime.utc(2030, 4, 1),
-      priority: 3,
-    );
-    await repository.saveManualDeadlines([manual]);
-    final restored = await CalendarRepository().loadManualDeadlines();
-    expect(restored.single.title, 'Study chemistry');
-    expect(restored.single.priority, 3);
-    expect(await repository.loadCachedDeadlines(), isEmpty);
-    await repository.clearCachedCalendarData();
-    expect((await repository.loadManualDeadlines()).single.uid, 'manual-1');
-  });
+  test(
+    'manual tasks persist with priority without affecting Moodle cache',
+    () async {
+      final repository = CalendarRepository();
+      final manual = Deadline(
+        uid: 'manual-1',
+        title: 'Study chemistry',
+        due: DateTime.utc(2030, 4, 1),
+        priority: 3,
+      );
+      await repository.saveManualDeadlines([manual]);
+      final restored = await CalendarRepository().loadManualDeadlines();
+      expect(restored.single.title, 'Study chemistry');
+      expect(restored.single.priority, 3);
+      expect(await repository.loadCachedDeadlines(), isEmpty);
+      await repository.clearCachedCalendarData();
+      expect((await repository.loadManualDeadlines()).single.uid, 'manual-1');
+    },
+  );
 
   test('invalid manual task storage is handled safely', () async {
     final prefs = await SharedPreferences.getInstance();

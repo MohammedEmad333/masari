@@ -156,6 +156,22 @@ class _HomeShellState extends State<HomeShell> {
               child: ListTile(
                 leading: const Icon(Icons.error_outline_rounded),
                 title: Text(controller.error!),
+                subtitle: Text(
+                  controller.lastSync == null
+                      ? t(
+                          'No offline calendar available yet.',
+                          'لا توجد بيانات تقويم محفوظة بعد.',
+                        )
+                      : t(
+                          'Saved deadlines remain available offline.',
+                          'تبقى المواعيد المحفوظة متاحة دون إنترنت.',
+                        ),
+                ),
+                trailing: IconButton(
+                  tooltip: t('Retry synchronization', 'إعادة محاولة المزامنة'),
+                  icon: const Icon(Icons.refresh_rounded),
+                  onPressed: controller.busy ? null : _sync,
+                ),
               ),
             ),
           ],

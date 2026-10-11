@@ -61,11 +61,14 @@ void main() {
     expect(await CalendarRepository().loadReminderOffsets(), isEmpty);
   });
 
-  test('invalid saved offsets do not silently re-enable early alerts', () async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('reminder_offsets_hours', ['invalid', '-2']);
-    expect(await CalendarRepository().loadReminderOffsets(), isEmpty);
-  });
+  test(
+    'invalid saved offsets do not silently re-enable early alerts',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('reminder_offsets_hours', ['invalid', '-2']);
+      expect(await CalendarRepository().loadReminderOffsets(), isEmpty);
+    },
+  );
 
   test('missing reminder preferences retain safe defaults', () async {
     expect(await CalendarRepository().loadReminderOffsets(), [24, 6, 1]);

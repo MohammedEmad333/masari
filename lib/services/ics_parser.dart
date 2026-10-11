@@ -63,10 +63,11 @@ class IcsParser {
 
     // A cancelled VEVENT is a tombstone. Apply revision selection first so
     // older active revisions never reappear after a newer cancellation.
-    final deadlines = byStableKey.values
-        .where((deadline) => deadline.status.toUpperCase() != 'CANCELLED')
-        .toList()
-      ..sort((a, b) => a.due.compareTo(b.due));
+    final deadlines =
+        byStableKey.values
+            .where((deadline) => deadline.status.toUpperCase() != 'CANCELLED')
+            .toList()
+          ..sort((a, b) => a.due.compareTo(b.due));
     return deadlines;
   }
 

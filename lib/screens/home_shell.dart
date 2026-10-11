@@ -10,6 +10,7 @@ import '../models/deadline.dart';
 import '../services/notification_service.dart';
 import '../services/deadline_filters.dart';
 import '../services/study_insights.dart';
+import 'pomodoro_dialog.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -287,6 +288,15 @@ class _HomeShellState extends State<HomeShell> {
                 'اكتمل $doneCount من $totalCount • ${conflicts.length} تعارضات في المواعيد',
               ),
             ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (_) => PomodoroDialog(arabic: _ar),
+            ),
+            icon: const Icon(Icons.timer_outlined),
+            label: Text(t('Pomodoro focus timer', 'مؤقت بومودورو')),
           ),
           const SizedBox(height: 8),
           FilledButton.icon(

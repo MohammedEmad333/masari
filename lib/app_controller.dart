@@ -10,6 +10,13 @@ class AppController extends ChangeNotifier {
   final CalendarRepository _repository;
 
   List<Deadline> deadlines = const [];
+  List<Deadline> manualDeadlines = const [];
+
+  List<Deadline> get allDeadlines =>
+      [...deadlines, ...manualDeadlines]..sort((a, b) {
+        final priority = b.priority.compareTo(a.priority);
+        return priority != 0 ? priority : a.due.compareTo(b.due);
+      });
   Set<String> completedIds = {};
   List<int> reminderOffsets = const [24, 6, 1];
   Map<String, List<int>> taskReminderOffsets = {};
@@ -22,11 +29,11 @@ class AppController extends ChangeNotifier {
   ThemeMode themeMode = ThemeMode.system;
   Locale locale = const Locale('en');
 
-  List<Deadline> get activeDeadlines => deadlines
+  List<Deadline> get activeDeadlines => allDeadlines
       .where((deadline) => !completedIds.contains(deadline.stableKey))
       .toList();
 
-  List<Deadline> get completedDeadlines => deadlines
+  List<Deadline> get completedDeadlines => allDeadlines
       .where((deadline) => completedIds.contains(deadline.stableKey))
       .toList();
 
@@ -42,6 +49,7 @@ class AppController extends ChangeNotifier {
       _repository.loadThemeMode(),
       _repository.loadLocale(),
       _repository.loadTaskReminderOffsets(),
+      _repository.loadManualDeadlines(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -52,6 +60,7 @@ class AppController extends ChangeNotifier {
     themeMode = _parseThemeMode(results[5] as String);
     locale = Locale((results[6] as String) == 'ar' ? 'ar' : 'en');
     taskReminderOffsets = results[7] as Map<String, List<int>>;
+    manualDeadlines = results[8] as List<Deadline>;
     initialized = true;
     notifyListeners();
 
@@ -107,6 +116,26 @@ class AppController extends ChangeNotifier {
     deadlines = await _repository.sync();
     lastSync = await _repository.loadLastSync();
     error = null;
+    await _rescheduleNotifications();
+    notifyListeners();
+  }
+
+  Future<void> addManualDeadline(Deadline deadline) async {
+    manualDeadlines = [...manualDeadlines, deadline];
+    await _repository.saveManualDeadlines(manualDeadlines);
+    await _rescheduleNotifications();
+    notifyListeners();
+  }
+
+  Future<void> deleteManualDeadline(Deadline deadline) async {
+    manualDeadlines = manualDeadlines
+        .where((item) => item.stableKey != deadline.stableKey)
+        .toList();
+    completedIds.remove(deadline.stableKey);
+    taskReminderOffsets.remove(deadline.stableKey);
+    await _repository.saveManualDeadlines(manualDeadlines);
+    await _repository.saveCompletedIds(completedIds);
+    await _repository.saveTaskReminderOffsets(taskReminderOffsets);
     await _rescheduleNotifications();
     notifyListeners();
   }
@@ -168,16 +197,13 @@ class AppController extends ChangeNotifier {
     lastSync = null;
     calendarConnected = false;
     error = null;
-    await NotificationService.scheduleAll(
-      const [],
-      reminderOffsetsHours: reminderOffsets,
-    );
+    await _rescheduleNotifications();
     notifyListeners();
   }
 
   Future<void> _rescheduleNotifications() {
     return NotificationService.scheduleAll(
-      deadlines,
+      allDeadlines,
       reminderOffsetsHours: reminderOffsets,
       completedIds: completedIds,
       taskReminderOffsets: taskReminderOffsets,

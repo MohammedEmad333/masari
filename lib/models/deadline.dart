@@ -9,6 +9,7 @@ class Deadline {
     this.location = '',
     this.status = '',
     this.sequence = 0,
+    this.priority = 1,
     this.lastModified,
   });
 
@@ -21,6 +22,7 @@ class Deadline {
   final String location;
   final String status;
   final int sequence;
+  final int priority;
   final DateTime? lastModified;
 
   double get hoursRemaining => due.difference(DateTime.now()).inMinutes / 60;
@@ -54,6 +56,7 @@ class Deadline {
     'location': location,
     'status': status,
     'sequence': sequence,
+    'priority': priority,
     'lastModified': lastModified?.toIso8601String(),
   };
 
@@ -73,6 +76,7 @@ class Deadline {
       location: (json['location'] as String?) ?? '',
       status: (json['status'] as String?) ?? '',
       sequence: (json['sequence'] as num?)?.toInt() ?? 0,
+      priority: (json['priority'] as num?)?.toInt() ?? 1,
       lastModified: json['lastModified'] is String
           ? DateTime.tryParse(json['lastModified'] as String)
           : null,

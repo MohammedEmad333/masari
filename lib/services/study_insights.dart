@@ -15,12 +15,17 @@ class StudyInsights {
     Iterable<Deadline> tasks,
     DateTime anchor,
   ) {
-    final start = DateTime(anchor.year, anchor.month, anchor.day)
-        .subtract(Duration(days: anchor.weekday - DateTime.monday));
+    final start = DateTime(
+      anchor.year,
+      anchor.month,
+      anchor.day,
+    ).subtract(Duration(days: anchor.weekday - DateTime.monday));
     return {
       for (var i = 0; i < 7; i++)
-        start.add(Duration(days: i)):
-            forDay(tasks, start.add(Duration(days: i))),
+        start.add(Duration(days: i)): forDay(
+          tasks,
+          start.add(Duration(days: i)),
+        ),
     };
   }
 

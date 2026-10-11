@@ -109,6 +109,90 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  Future<void> _addManualTask() async {
+    final titleController = TextEditingController();
+    DateTime due = DateTime.now().add(const Duration(days: 1));
+    int priority = 1;
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, update) => AlertDialog(
+            title: Text(t('New task', 'مهمة جديدة')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: t('Task title', 'عنوان المهمة'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  leading: const Icon(Icons.event),
+                  title: Text(_formatDue(due)),
+                  onTap: () async {
+                    final selected = await showDatePicker(
+                      context: context,
+                      initialDate: due,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                    );
+                    if (selected == null || !context.mounted) return;
+                    update(() => due = DateTime(
+                      selected.year,
+                      selected.month,
+                      selected.day,
+                      23,
+                      59,
+                    ));
+                  },
+                ),
+                DropdownButtonFormField<int>(
+                  initialValue: priority,
+                  decoration: InputDecoration(
+                    labelText: t('Priority', 'الأولوية'),
+                  ),
+                  items: [
+                    DropdownMenuItem(value: 1, child: Text(t('Normal', 'عادية'))),
+                    DropdownMenuItem(value: 2, child: Text(t('High', 'عالية'))),
+                    DropdownMenuItem(value: 3, child: Text(t('Urgent', 'عاجلة'))),
+                  ],
+                  onChanged: (value) => update(() => priority = value ?? 1),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(t('Cancel', 'إلغاء')),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final title = titleController.text.trim();
+                  if (title.isEmpty) return;
+                  final uid = 'manual-${DateTime.now().microsecondsSinceEpoch}';
+                  await widget.controller.addManualDeadline(
+                    Deadline(uid: uid, title: title, due: due, priority: priority),
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                child: Text(t('Save', 'حفظ')),
+              ),
+            ],
+          ),
+        ),
+      );
+    } finally {
+      titleController.dispose();
+    }
+  }
+
   Widget _home() {
     final controller = widget.controller;
     final active = controller.activeDeadlines;
@@ -124,6 +208,7 @@ class _HomeShellState extends State<HomeShell> {
     );
     final overdue = deadlines.where((d) => d.isPast).toList();
     final upcoming = deadlines.where((d) => !d.isPast).toList();
+    upcoming.sort((a, b) => a.due.compareTo(b.due));
     final next = upcoming.isEmpty ? null : upcoming.first;
     final weekEnd = DateTime.now().add(const Duration(days: 7));
     final weekCount = upcoming.where((d) => d.due.isBefore(weekEnd)).length;
@@ -175,6 +260,16 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _addManualTask,
+            icon: const Icon(Icons.add_task_rounded),
+            label: Text(t('Add task', 'إضافة مهمة')),
+          ),
+          const SizedBox(height: 12),
+          _section(t('My tasks today', 'مهامي اليوم'), '${active.where((d) => _sameDay(d.due, DateTime.now())).length}'),
+          const SizedBox(height: 8),
+          ...active.where((d) => _sameDay(d.due, DateTime.now())).map(_deadlineCard),
           const SizedBox(height: 16),
           TextField(
             decoration: InputDecoration(

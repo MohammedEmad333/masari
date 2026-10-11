@@ -9,6 +9,7 @@ import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
 import '../services/deadline_filters.dart';
+import '../services/study_insights.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -225,6 +226,9 @@ class _HomeShellState extends State<HomeShell> {
     final next = upcoming.isEmpty ? null : upcoming.first;
     final weekEnd = DateTime.now().add(const Duration(days: 7));
     final weekCount = upcoming.where((d) => d.due.isBefore(weekEnd)).length;
+    final conflicts = StudyInsights.conflicts(active);
+    final totalCount = controller.allDeadlines.length;
+    final doneCount = controller.completedDeadlines.length;
 
     return RefreshIndicator(
       onRefresh: () => controller.sync(),
@@ -274,6 +278,15 @@ class _HomeShellState extends State<HomeShell> {
             ),
           ],
           const SizedBox(height: 16),
+          ListTile(
+            leading: const Icon(Icons.insights_rounded),
+            title: Text(t('Study insights', 'إحصائيات الدراسة')),
+            subtitle: Text(t(
+              '$doneCount of $totalCount completed • ${conflicts.length} deadline conflicts',
+              'اكتمل $doneCount من $totalCount • ${conflicts.length} تعارضات في المواعيد',
+            )),
+          ),
+          const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: _addManualTask,
             icon: const Icon(Icons.add_task_rounded),

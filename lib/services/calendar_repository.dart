@@ -106,7 +106,9 @@ class CalendarRepository {
         'Moodle returned HTTP ${response.statusCode}. Check the calendar URL.',
       );
     }
-    if (!response.body.contains('BEGIN:VCALENDAR')) {
+    final calendarBody = response.body.trim();
+    if (!calendarBody.startsWith('BEGIN:VCALENDAR') ||
+        !calendarBody.endsWith('END:VCALENDAR')) {
       throw const CalendarSyncException(
         'The URL did not return a valid iCalendar feed.',
       );

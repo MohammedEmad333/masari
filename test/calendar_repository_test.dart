@@ -124,6 +124,39 @@ void main() {
     client.close();
   });
 
+  test('truncated calendar does not replace cached deadlines', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('deadline_cache_v2', 'previous-cache');
+    final client = MockClient(
+      (request) async => http.Response('BEGIN:VCALENDAR\\nBEGIN:VEVENT', 200),
+    );
+    final repository = CalendarRepository(client: client);
+    await expectLater(
+      repository.sync(calendarUrl: 'https://moodle.example/calendar.ics'),
+      throwsA(isA<CalendarSyncException>()),
+    );
+    expect(prefs.getString('deadline_cache_v2'), 'previous-cache');
+    client.close();
+  });
+
+  test('HTML-wrapped calendar does not replace cache', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('deadline_cache_v2', 'previous-cache');
+    final client = MockClient(
+      (request) async => http.Response(
+        '<html>BEGIN:VCALENDAR\\nEND:VCALENDAR</html>',
+        200,
+      ),
+    );
+    final repository = CalendarRepository(client: client);
+    await expectLater(
+      repository.sync(calendarUrl: 'https://moodle.example/calendar.ics'),
+      throwsA(isA<CalendarSyncException>()),
+    );
+    expect(prefs.getString('deadline_cache_v2'), 'previous-cache');
+    client.close();
+  });
+
   test('invalid persisted override data falls back to empty', () async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('task_reminder_offsets_v1', '{oops');

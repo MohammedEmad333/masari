@@ -76,7 +76,6 @@ void main() {
     expect(await CalendarRepository().loadReminderOffsets(), [24, 6, 1]);
   });
 
-
   test('HTTP sync failure preserves offline deadlines and timestamp', () async {
     final prefs = await SharedPreferences.getInstance();
     final deadline = Deadline(

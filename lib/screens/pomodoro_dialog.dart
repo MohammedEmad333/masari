@@ -89,14 +89,8 @@ class _PomodoroDialogState extends State<PomodoroDialog> {
       children: [
         SegmentedButton<bool>(
           segments: [
-            ButtonSegment(
-              value: false,
-              label: Text(_label('Focus', 'تركيز')),
-            ),
-            ButtonSegment(
-              value: true,
-              label: Text(_label('Break', 'استراحة')),
-            ),
+            ButtonSegment(value: false, label: Text(_label('Focus', 'تركيز'))),
+            ButtonSegment(value: true, label: Text(_label('Break', 'استراحة')),
           ],
           selected: {_break},
           onSelectionChanged: (value) => _reset(breakMode: value.first),
@@ -112,9 +106,11 @@ class _PomodoroDialogState extends State<PomodoroDialog> {
           children: [
             FilledButton(
               onPressed: _left == Duration.zero ? null : _toggle,
-              child: Text(_running
-                  ? _label('Pause', 'إيقاف مؤقت')
-                  : _label('Start', 'ابدأ')),
+              child: Text(
+                _running
+                    ? _label('Pause', 'إيقاف مؤقت')
+                    : _label('Start', 'ابدأ'),
+              ),
             ),
             OutlinedButton(
               onPressed: _reset,

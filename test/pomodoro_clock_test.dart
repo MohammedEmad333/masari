@@ -25,7 +25,10 @@ void main() {
   });
 
   test('clock display zero pads minutes and seconds', () {
-    expect(PomodoroClock.display(const Duration(minutes: 5, seconds: 9)), '05:09');
+    expect(
+      PomodoroClock.display(const Duration(minutes: 5, seconds: 9)),
+      '05:09',
+    );
     expect(PomodoroClock.display(Duration.zero), '00:00');
   });
 }

@@ -112,7 +112,9 @@ void main() {
     final cached = jsonEncode([deadline.toJson()]);
     await prefs.setString('deadline_cache_v2', cached);
 
-    final client = MockClient((request) async => http.Response('<html>Login</html>', 200));
+    final client = MockClient(
+      (request) async => http.Response('<html>Login</html>', 200),
+    );
     final repository = CalendarRepository(client: client);
 
     await expectLater(

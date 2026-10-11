@@ -90,7 +90,7 @@ class _PomodoroDialogState extends State<PomodoroDialog> {
         SegmentedButton<bool>(
           segments: [
             ButtonSegment(value: false, label: Text(_label('Focus', 'تركيز'))),
-            ButtonSegment(value: true, label: Text(_label('Break', 'استراحة')),
+            ButtonSegment(value: true, label: Text(_label('Break', 'استراحة'))),
           ],
           selected: {_break},
           onSelectionChanged: (value) => _reset(breakMode: value.first),

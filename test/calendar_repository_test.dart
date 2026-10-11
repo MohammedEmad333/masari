@@ -143,10 +143,8 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('deadline_cache_v2', 'previous-cache');
     final client = MockClient(
-      (request) async => http.Response(
-        '<html>BEGIN:VCALENDAR\\nEND:VCALENDAR</html>',
-        200,
-      ),
+      (request) async =>
+          http.Response('<html>BEGIN:VCALENDAR\\nEND:VCALENDAR</html>', 200),
     );
     final repository = CalendarRepository(client: client);
     await expectLater(

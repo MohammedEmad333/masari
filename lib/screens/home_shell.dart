@@ -144,13 +144,15 @@ class _HomeShellState extends State<HomeShell> {
                       lastDate: DateTime(2100),
                     );
                     if (selected == null || !context.mounted) return;
-                    update(() => due = DateTime(
-                      selected.year,
-                      selected.month,
-                      selected.day,
-                      23,
-                      59,
-                    ));
+                    update(
+                      () => due = DateTime(
+                        selected.year,
+                        selected.month,
+                        selected.day,
+                        23,
+                        59,
+                      ),
+                    );
                   },
                 ),
                 DropdownButtonFormField<int>(
@@ -159,9 +161,15 @@ class _HomeShellState extends State<HomeShell> {
                     labelText: t('Priority', 'الأولوية'),
                   ),
                   items: [
-                    DropdownMenuItem(value: 1, child: Text(t('Normal', 'عادية'))),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text(t('Normal', 'عادية')),
+                    ),
                     DropdownMenuItem(value: 2, child: Text(t('High', 'عالية'))),
-                    DropdownMenuItem(value: 3, child: Text(t('Urgent', 'عاجلة'))),
+                    DropdownMenuItem(
+                      value: 3,
+                      child: Text(t('Urgent', 'عاجلة')),
+                    ),
                   ],
                   onChanged: (value) => update(() => priority = value ?? 1),
                 ),
@@ -178,7 +186,12 @@ class _HomeShellState extends State<HomeShell> {
                   if (title.isEmpty) return;
                   final uid = 'manual-${DateTime.now().microsecondsSinceEpoch}';
                   await widget.controller.addManualDeadline(
-                    Deadline(uid: uid, title: title, due: due, priority: priority),
+                    Deadline(
+                      uid: uid,
+                      title: title,
+                      due: due,
+                      priority: priority,
+                    ),
                   );
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                 },
@@ -267,9 +280,14 @@ class _HomeShellState extends State<HomeShell> {
             label: Text(t('Add task', 'إضافة مهمة')),
           ),
           const SizedBox(height: 12),
-          _section(t('My tasks today', 'مهامي اليوم'), '${active.where((d) => _sameDay(d.due, DateTime.now())).length}'),
+          _section(
+            t('My tasks today', 'مهامي اليوم'),
+            '${active.where((d) => _sameDay(d.due, DateTime.now())).length}',
+          ),
           const SizedBox(height: 8),
-          ...active.where((d) => _sameDay(d.due, DateTime.now())).map(_deadlineCard),
+          ...active
+              .where((d) => _sameDay(d.due, DateTime.now()))
+              .map(_deadlineCard),
           const SizedBox(height: 16),
           TextField(
             decoration: InputDecoration(

@@ -281,10 +281,12 @@ class _HomeShellState extends State<HomeShell> {
           ListTile(
             leading: const Icon(Icons.insights_rounded),
             title: Text(t('Study insights', 'إحصائيات الدراسة')),
-            subtitle: Text(t(
-              '$doneCount of $totalCount completed • ${conflicts.length} deadline conflicts',
-              'اكتمل $doneCount من $totalCount • ${conflicts.length} تعارضات في المواعيد',
-            )),
+            subtitle: Text(
+              t(
+                '$doneCount of $totalCount completed • ${conflicts.length} deadline conflicts',
+                'اكتمل $doneCount من $totalCount • ${conflicts.length} تعارضات في المواعيد',
+              ),
+            ),
           ),
           const SizedBox(height: 8),
           FilledButton.icon(

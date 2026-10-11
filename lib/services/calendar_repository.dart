@@ -23,6 +23,7 @@ class CalendarRepository {
   static const _secureCalendarUrlKey = 'moodle_calendar_url';
   static const _legacyCalendarUrlKey = 'calendar_url';
   static const _cacheKey = 'deadline_cache_v2';
+  static const _manualKey = 'manual_deadlines_v1';
   static const _legacyCacheKey = 'deadline_cache';
   static const _lastSyncKey = 'last_sync_at';
   static const _reminderOffsetsKey = 'reminder_offsets_hours';
@@ -88,6 +89,30 @@ class CalendarRepository {
     } catch (_) {
       return const [];
     }
+  }
+
+  Future<List<Deadline>> loadManualDeadlines() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_manualKey);
+    if (raw == null) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((entry) => Deadline.fromJson(Map<String, dynamic>.from(entry)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveManualDeadlines(List<Deadline> deadlines) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _manualKey,
+      jsonEncode(deadlines.map((d) => d.toJson()).toList()),
+    );
   }
 
   Future<List<Deadline>> sync({String? calendarUrl}) async {

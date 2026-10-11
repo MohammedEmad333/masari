@@ -17,7 +17,9 @@ void main() {
   });
 
   test('conflicts require identical due instants', () {
-    expect(StudyInsights.conflicts([a, b, c]), [[a, b]]);
+    expect(StudyInsights.conflicts([a, b, c]), [
+      [a, b],
+    ]);
     expect(StudyInsights.conflicts([a, c]), isEmpty);
   });
 

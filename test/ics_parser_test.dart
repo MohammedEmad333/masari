@@ -3,6 +3,64 @@ import 'package:moodle_reminder/services/ics_parser.dart';
 
 void main() {
   group('IcsParser', () {
+    test('ignores cancelled events regardless of status casing', () {
+      const raw = '''BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:cancelled
+SUMMARY:Cancelled exam
+DTSTART:20300115T215900Z
+STATUS:cancelled
+END:VEVENT
+BEGIN:VEVENT
+UID:active
+SUMMARY:Active exam
+DTSTART:20300115T215900Z
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR''';
+      expect(IcsParser.parse(raw).map((e) => e.uid), ['active']);
+    });
+
+    test('newer cancellation supersedes older active revision', () {
+      const raw = '''BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:assignment
+SUMMARY:Old assignment
+DTSTART:20300115T215900Z
+SEQUENCE:1
+STATUS:CONFIRMED
+END:VEVENT
+BEGIN:VEVENT
+UID:assignment
+SUMMARY:Cancelled assignment
+DTSTART:20300115T215900Z
+SEQUENCE:2
+STATUS:CANCELLED
+END:VEVENT
+END:VCALENDAR''';
+      expect(IcsParser.parse(raw), isEmpty);
+    });
+
+    test('newer confirmed revision restores cancelled event', () {
+      const raw = '''BEGIN:VCALENDAR
+BEGIN:VEVENT
+UID:assignment
+SUMMARY:Old cancelled assignment
+DTSTART:20300115T215900Z
+SEQUENCE:1
+STATUS:CANCELLED
+END:VEVENT
+BEGIN:VEVENT
+UID:assignment
+SUMMARY:Restored assignment
+DTSTART:20300116T215900Z
+SEQUENCE:2
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR''';
+      expect(IcsParser.parse(raw).single.title, 'Restored assignment');
+    });
+
     test('parses Moodle metadata and UTC dates', () {
       const raw = '''BEGIN:VCALENDAR\r
 BEGIN:VEVENT\r

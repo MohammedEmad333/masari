@@ -30,6 +30,13 @@ void main() {
     expect(StudyInsights.conflicts([a, c]), isEmpty);
   });
 
+  test('insights distinguish overdue and upcoming deadlines', () {
+    final now = DateTime(2030, 1, 8, 12);
+    expect(StudyInsights.overdueCount([a, b, c], now), 2);
+    expect(StudyInsights.dueSoonCount([a, b, c], now), 1);
+    expect(StudyInsights.dueSoonCount([a, b, c], now, window: Duration.zero), 0);
+  });
+
   test('completion rate handles empty and partial lists', () {
     expect(StudyInsights.completionRate(0, 0), 0);
     expect(StudyInsights.completionRate(2, 4), 0.5);

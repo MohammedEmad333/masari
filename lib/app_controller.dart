@@ -12,11 +12,11 @@ class AppController extends ChangeNotifier {
   List<Deadline> deadlines = const [];
   List<Deadline> manualDeadlines = const [];
 
-  List<Deadline> get allDeadlines => [...deadlines, ...manualDeadlines]
-    ..sort((a, b) {
-      final priority = b.priority.compareTo(a.priority);
-      return priority != 0 ? priority : a.due.compareTo(b.due);
-    });
+  List<Deadline> get allDeadlines =>
+      [...deadlines, ...manualDeadlines]..sort((a, b) {
+        final priority = b.priority.compareTo(a.priority);
+        return priority != 0 ? priority : a.due.compareTo(b.due);
+      });
   Set<String> completedIds = {};
   List<int> reminderOffsets = const [24, 6, 1];
   Map<String, List<int>> taskReminderOffsets = {};

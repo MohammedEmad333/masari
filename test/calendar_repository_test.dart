@@ -155,6 +155,38 @@ void main() {
     client.close();
   });
 
+  test('manual tasks persist with priority without affecting Moodle cache', () async {
+    final repository = CalendarRepository();
+    final manual = Deadline(
+      uid: 'manual-1',
+      title: 'Study chemistry',
+      due: DateTime.utc(2030, 4, 1),
+      priority: 3,
+    );
+    await repository.saveManualDeadlines([manual]);
+    final restored = await CalendarRepository().loadManualDeadlines();
+    expect(restored.single.title, 'Study chemistry');
+    expect(restored.single.priority, 3);
+    expect(await repository.loadCachedDeadlines(), isEmpty);
+    await repository.clearCachedCalendarData();
+    expect((await repository.loadManualDeadlines()).single.uid, 'manual-1');
+  });
+
+  test('invalid manual task storage is handled safely', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('manual_deadlines_v1', 'not-json');
+    expect(await CalendarRepository().loadManualDeadlines(), isEmpty);
+  });
+
+  test('priority defaults for legacy Moodle tasks', () {
+    final deadline = Deadline.fromJson({
+      'uid': 'legacy',
+      'title': 'Old task',
+      'due': '2030-01-01T10:00:00.000',
+    });
+    expect(deadline.priority, 1);
+  });
+
   test('invalid persisted override data falls back to empty', () async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('task_reminder_offsets_v1', '{oops');

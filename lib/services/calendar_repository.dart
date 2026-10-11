@@ -154,7 +154,9 @@ class CalendarRepository {
             .toSet()
             .toList()
           ..sort((a, b) => b.compareTo(a));
-    return values.isEmpty ? const [24, 6, 1] : values;
+    // A saved selection is intentional, including an empty one. Never
+    // silently enable reminders again after restoring user preferences.
+    return values;
   }
 
   Future<void> saveReminderOffsets(List<int> values) async {

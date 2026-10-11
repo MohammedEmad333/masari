@@ -288,6 +288,25 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          _section(t('Weekly study plan', 'خطة المذاكرة الأسبوعية'), ''),
+          const SizedBox(height: 8),
+          ...StudyInsights.week(active, DateTime.now()).entries.map((entry) {
+            final day = entry.key;
+            final tasks = entry.value;
+            return ListTile(
+              leading: const Icon(Icons.calendar_view_week_rounded),
+              title: Text(DateFormat.EEEE(_localeName).format(day)),
+              subtitle: Text(
+                tasks.isEmpty
+                    ? t('No tasks', 'لا توجد مهام')
+                    : tasks.map((task) => task.title).join(' • '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: Text('${tasks.length}'),
+            );
+          }),
           const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: _addManualTask,

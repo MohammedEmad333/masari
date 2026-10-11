@@ -16,6 +16,13 @@ void main() {
     expect(week[DateTime(2030, 1, 9)], [c]);
   });
 
+  test('Sunday belongs to its preceding Monday study week', () {
+    final sunday = DateTime(2030, 1, 13);
+    final plan = StudyInsights.week([a, b, c], sunday);
+    expect(plan.keys.first, monday);
+    expect(plan[DateTime(2030, 1, 8)], [a, b]);
+  });
+
   test('conflicts require identical due instants', () {
     expect(StudyInsights.conflicts([a, b, c]), [
       [a, b],

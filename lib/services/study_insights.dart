@@ -46,8 +46,11 @@ class StudyInsights {
     Iterable<Deadline> tasks,
     DateTime now, {
     Duration window = const Duration(days: 7),
-  }) => tasks.where((task) =>
-      !task.due.isBefore(now) && task.due.isBefore(now.add(window))).length;
+  }) => tasks
+      .where(
+        (task) => !task.due.isBefore(now) && task.due.isBefore(now.add(window)),
+      )
+      .length;
 
   static double completionRate(int completed, int total) =>
       total == 0 ? 0 : completed / total;

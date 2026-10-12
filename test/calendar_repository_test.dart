@@ -190,6 +190,18 @@ void main() {
     expect(deadline.priority, 1);
   });
 
+  test('additional calendar rejects non-HTTP URLs before storage', () async {
+    final repository = CalendarRepository();
+    await expectLater(
+      repository.addAdditionalCalendarUrl('javascript:alert(1)'),
+      throwsA(isA<CalendarSyncException>()),
+    );
+    await expectLater(
+      repository.addAdditionalCalendarUrl('file:///private/calendar.ics'),
+      throwsA(isA<CalendarSyncException>()),
+    );
+  });
+
   test('invalid persisted override data falls back to empty', () async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('task_reminder_offsets_v1', '{oops');

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'models/deadline.dart';
 import 'services/calendar_repository.dart';
 import 'services/notification_service.dart';
+import 'services/home_widget_bridge.dart';
 
 class AppController extends ChangeNotifier {
   AppController(this._repository);
@@ -65,6 +66,7 @@ class AppController extends ChangeNotifier {
     manualDeadlines = results[8] as List<Deadline>;
     additionalCalendarUrls = results[9] as List<String>;
     initialized = true;
+    await _publishWidget();
     notifyListeners();
 
     if (calendarConnected) {
@@ -120,7 +122,16 @@ class AppController extends ChangeNotifier {
     lastSync = await _repository.loadLastSync();
     error = null;
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
+  }
+
+  Future<void> _publishWidget() async {
+    try {
+      await HomeWidgetBridge.publish(allDeadlines, completedIds);
+    } catch (_) {
+      // Platform widgets are optional (for example on iOS and in tests).
+    }
   }
 
   Future<void> addCalendarSource(String url) async {

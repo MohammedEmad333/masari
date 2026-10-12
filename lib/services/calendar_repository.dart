@@ -169,8 +169,10 @@ class CalendarRepository {
       throw const CalendarSyncException('Add your Moodle calendar URL first.');
     }
     _validateUrl(url);
-    final additional =
-        additionalCalendarUrls ?? await loadAdditionalCalendarUrls();
+    final additional = additionalCalendarUrls ??
+        (calendarUrl != null
+            ? const <String>[]
+            : await loadAdditionalCalendarUrls());
     final sources = <String, List<Deadline>>{'': await _fetchCalendar(url)};
     for (final extra in additional.toSet()) {
       if (extra == url) continue;

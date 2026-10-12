@@ -593,16 +593,25 @@ class _HomeShellState extends State<HomeShell> {
               TextField(
                 controller: serverField,
                 keyboardType: TextInputType.url,
-                decoration: InputDecoration(labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن')),
+                decoration: InputDecoration(
+                  labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن'),
+                ),
               ),
               TextField(
                 controller: tokenField,
                 obscureText: true,
                 enableSuggestions: false,
                 autocorrect: false,
-                decoration: InputDecoration(labelText: t('Web Services token', 'رمز خدمات الويب')),
+                decoration: InputDecoration(
+                  labelText: t('Web Services token', 'رمز خدمات الويب'),
+                ),
               ),
-              Text(t('Credentials are only saved after a successful test.', 'تُحفظ البيانات بعد نجاح اختبار الاتصال فقط.')),
+              Text(
+                t(
+                  'Credentials are only saved after a successful test.',
+                  'تُحفظ البيانات بعد نجاح اختبار الاتصال فقط.',
+                ),
+              ),
             ],
           ),
           actions: [
@@ -627,7 +636,11 @@ class _HomeShellState extends State<HomeShell> {
         await store.save(server: api.baseUrl, token: tokenField.text);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t('Moodle API connected', 'تم الاتصال بـ Moodle API'))),
+          SnackBar(
+            content: Text(
+              t('Moodle API connected', 'تم الاتصال بـ Moodle API'),
+            ),
+          ),
         );
       } finally {
         api.close();
@@ -635,7 +648,11 @@ class _HomeShellState extends State<HomeShell> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t('Moodle API connection failed', 'فشل الاتصال بـ Moodle API'))),
+        SnackBar(
+          content: Text(
+            t('Moodle API connection failed', 'فشل الاتصال بـ Moodle API'),
+          ),
+        ),
       );
     } finally {
       serverField.dispose();
@@ -647,7 +664,9 @@ class _HomeShellState extends State<HomeShell> {
     await MoodleApiCredentialsStore(const FlutterSecureStorage()).clear();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t('Moodle API disconnected', 'تم فصل Moodle API'))),
+      SnackBar(
+        content: Text(t('Moodle API disconnected', 'تم فصل Moodle API')),
+      ),
     );
   }
 
@@ -663,7 +682,12 @@ class _HomeShellState extends State<HomeShell> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(t('iCalendar will continue working independently.', 'ستستمر مزامنة iCalendar بشكل مستقل.')),
+              Text(
+                t(
+                  'iCalendar will continue working independently.',
+                  'ستستمر مزامنة iCalendar بشكل مستقل.',
+                ),
+              ),
               OutlinedButton.icon(
                 onPressed: _configureMoodleApi,
                 icon: const Icon(Icons.verified_user_outlined),

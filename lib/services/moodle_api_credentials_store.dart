@@ -16,7 +16,9 @@ class MoodleApiCredentialsStore {
         server.userInfo.isNotEmpty ||
         server.hasQuery ||
         server.hasFragment) {
-      throw const FormatException('A valid HTTPS Moodle server URL is required');
+      throw const FormatException(
+        'A valid HTTPS Moodle server URL is required',
+      );
     }
     if (token.trim().isEmpty) {
       throw const FormatException('A Moodle API token is required');

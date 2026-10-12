@@ -21,6 +21,7 @@ class CalendarRepository {
       _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   static const _secureCalendarUrlKey = 'moodle_calendar_url';
+  static const _calendarSourcesKey = 'moodle_calendar_sources_v1';
   static const _legacyCalendarUrlKey = 'calendar_url';
   static const _cacheKey = 'deadline_cache_v2';
   static const _manualKey = 'manual_deadlines_v1';
@@ -71,6 +72,45 @@ class CalendarRepository {
 
   Future<void> clearCalendarUrl() async {
     await _secureStorage.delete(key: _secureCalendarUrlKey);
+  }
+
+  /// Additional feeds are stored securely because Moodle export URLs can
+  /// contain access tokens. The original feed remains the primary source.
+  Future<List<String>> loadAdditionalCalendarUrls() async {
+    final encoded = await _secureStorage.read(key: _calendarSourcesKey);
+    if (encoded == null || encoded.isEmpty) return const [];
+    try {
+      final parsed = jsonDecode(encoded);
+      if (parsed is! List) return const [];
+      return parsed.whereType<String>().where((url) {
+        final uri = Uri.tryParse(url);
+        return uri != null &&
+            uri.hasAuthority &&
+            (uri.scheme == 'https' || uri.scheme == 'http');
+      }).toSet().toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> addAdditionalCalendarUrl(String value) async {
+    final url = value.trim();
+    _validateUrl(url);
+    if (url == await loadCalendarUrl()) return;
+    final sources = await loadAdditionalCalendarUrls();
+    if (sources.contains(url)) return;
+    await _secureStorage.write(
+      key: _calendarSourcesKey,
+      value: jsonEncode([...sources, url]),
+    );
+  }
+
+  Future<void> removeAdditionalCalendarUrl(String value) async {
+    final sources = await loadAdditionalCalendarUrls();
+    await _secureStorage.write(
+      key: _calendarSourcesKey,
+      value: jsonEncode(sources.where((url) => url != value).toList()),
+    );
   }
 
   Future<List<Deadline>> loadCachedDeadlines() async {

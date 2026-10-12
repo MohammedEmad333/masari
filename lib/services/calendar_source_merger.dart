@@ -32,7 +32,6 @@ class CalendarSourceMerger {
               );
       }
     }
-    return events.values.toList()
-      ..sort((a, b) => a.due.compareTo(b.due));
+    return events.values.toList()..sort((a, b) => a.due.compareTo(b.due));
   }
 }

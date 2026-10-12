@@ -34,7 +34,10 @@ void main() {
     final now = DateTime(2030, 1, 8, 12);
     expect(StudyInsights.overdueCount([a, b, c], now), 2);
     expect(StudyInsights.dueSoonCount([a, b, c], now), 1);
-    expect(StudyInsights.dueSoonCount([a, b, c], now, window: Duration.zero), 0);
+    expect(
+      StudyInsights.dueSoonCount([a, b, c], now, window: Duration.zero),
+      0,
+    );
   });
 
   test('completion rate handles empty and partial lists', () {

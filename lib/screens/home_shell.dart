@@ -1,6 +1,9 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../services/moodle_api_credentials_store.dart';
+import '../services/moodle_api_client.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -572,6 +575,82 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  Future<void> _configureMoodleApi() async {
+    final serverField = TextEditingController();
+    final tokenField = TextEditingController();
+    final store = MoodleApiCredentialsStore(const FlutterSecureStorage());
+    try {
+      final saved = await store.load();
+      if (!mounted) return;
+      serverField.text = saved?.server.toString() ?? '';
+      final submit = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t('Optional Moodle API', 'واجهة Moodle API الاختيارية')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: serverField,
+                keyboardType: TextInputType.url,
+                decoration: InputDecoration(labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن')),
+              ),
+              TextField(
+                controller: tokenField,
+                obscureText: true,
+                enableSuggestions: false,
+                autocorrect: false,
+                decoration: InputDecoration(labelText: t('Web Services token', 'رمز خدمات الويب')),
+              ),
+              Text(t('Credentials are only saved after a successful test.', 'تُحفظ البيانات بعد نجاح اختبار الاتصال فقط.')),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(t('Test and save', 'اختبار وحفظ')),
+            ),
+          ],
+        ),
+      );
+      if (submit != true || !mounted) return;
+      final api = MoodleApiClient(
+        baseUrl: Uri.parse(serverField.text.trim()),
+        token: tokenField.text.trim(),
+      );
+      try {
+        await api.siteInfo();
+        await store.save(server: api.baseUrl, token: tokenField.text);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t('Moodle API connected', 'تم الاتصال بـ Moodle API'))),
+        );
+      } finally {
+        api.close();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t('Moodle API connection failed', 'فشل الاتصال بـ Moodle API'))),
+      );
+    } finally {
+      serverField.dispose();
+      tokenField.dispose();
+    }
+  }
+
+  Future<void> _removeMoodleApi() async {
+    await MoodleApiCredentialsStore(const FlutterSecureStorage()).clear();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(t('Moodle API disconnected', 'تم فصل Moodle API'))),
+    );
+  }
+
   Widget _settings() {
     final controller = widget.controller;
     const choices = [72, 48, 24, 6, 1];
@@ -579,6 +658,25 @@ class _HomeShellState extends State<HomeShell> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        _settingsCard(
+          t('Moodle Web Services (optional)', 'خدمات Moodle (اختياري)'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(t('iCalendar will continue working independently.', 'ستستمر مزامنة iCalendar بشكل مستقل.')),
+              OutlinedButton.icon(
+                onPressed: _configureMoodleApi,
+                icon: const Icon(Icons.verified_user_outlined),
+                label: Text(t('Test and connect API', 'اختبار وربط API')),
+              ),
+              TextButton(
+                onPressed: _removeMoodleApi,
+                child: Text(t('Disconnect API', 'فصل API')),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         _settingsCard(
           t('Additional calendars', 'التقويمات الإضافية'),
           Column(

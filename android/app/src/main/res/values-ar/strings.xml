@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">تذكير مودل</string>
+    <string name="widget_open">اضغط لعرض مهامك الدراسية</string>
+    <string name="widget_no_upcoming">لا توجد مهام قادمة · اضغط للفتح</string>
+</resources>

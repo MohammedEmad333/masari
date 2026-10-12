@@ -7,10 +7,17 @@ import 'package:http/http.dart' as http;
 /// Requires a token provisioned by the Moodle administrator/user.
 /// iCalendar sync remains fully independent of this client.
 class MoodleApiClient {
-  MoodleApiClient({required this.baseUrl, required this.token, http.Client? client})
-      : _client = client ?? http.Client() {
+  MoodleApiClient({
+    required this.baseUrl,
+    required this.token,
+    http.Client? client,
+  }) : _client = client ?? http.Client() {
     if (baseUrl.scheme != 'https' || !baseUrl.hasAuthority) {
-      throw ArgumentError.value(baseUrl, 'baseUrl', 'Moodle API requires HTTPS');
+      throw ArgumentError.value(
+        baseUrl,
+        'baseUrl',
+        'Moodle API requires HTTPS',
+      );
     }
     if (token.trim().isEmpty) {
       throw ArgumentError.value(token, 'token', 'Token is required');
@@ -23,14 +30,16 @@ class MoodleApiClient {
 
   Future<Map<String, dynamic>> siteInfo() async {
     final endpoint = baseUrl.resolve('webservice/rest/server.php');
-    final response = await _client.post(
-      endpoint,
-      body: {
-        'wstoken': token,
-        'wsfunction': 'core_webservice_get_site_info',
-        'moodlewsrestformat': 'json',
-      },
-    ).timeout(const Duration(seconds: 20));
+    final response = await _client
+        .post(
+          endpoint,
+          body: {
+            'wstoken': token,
+            'wsfunction': 'core_webservice_get_site_info',
+            'moodlewsrestformat': 'json',
+          },
+        )
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200) {
       throw const MoodleApiException('Moodle API request failed');
     }

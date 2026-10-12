@@ -12,11 +12,12 @@ class HomeWidgetBridge {
     Set<String> completedIds,
     DateTime now,
   ) {
-    final pending = deadlines
-        .where((task) => !completedIds.contains(task.stableKey))
-        .where((task) => !task.due.isBefore(now))
-        .toList()
-      ..sort((a, b) => a.due.compareTo(b.due));
+    final pending =
+        deadlines
+            .where((task) => !completedIds.contains(task.stableKey))
+            .where((task) => !task.due.isBefore(now))
+            .toList()
+          ..sort((a, b) => a.due.compareTo(b.due));
     return pending.isEmpty ? null : pending.first;
   }
 

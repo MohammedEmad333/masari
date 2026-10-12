@@ -12,16 +12,16 @@ void main() {
     saved.clear();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
-      final args = Map<String, dynamic>.from(call.arguments as Map);
-      final key = args['key'] as String?;
-      if (call.method == 'read') return saved[key];
-      if (call.method == 'write') {
-        saved[key!] = args['value'] as String;
-      } else if (call.method == 'delete') {
-        saved.remove(key);
-      }
-      return null;
-    });
+          final args = Map<String, dynamic>.from(call.arguments as Map);
+          final key = args['key'] as String?;
+          if (call.method == 'read') return saved[key];
+          if (call.method == 'write') {
+            saved[key!] = args['value'] as String;
+          } else if (call.method == 'delete') {
+            saved.remove(key);
+          }
+          return null;
+        });
   });
 
   tearDown(() {

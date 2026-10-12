@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/deadline.dart';
 import 'ics_parser.dart';
+import 'calendar_source_merger.dart';
 
 class CalendarSyncException implements Exception {
   const CalendarSyncException(this.message);
@@ -159,17 +160,45 @@ class CalendarRepository {
     );
   }
 
-  Future<List<Deadline>> sync({String? calendarUrl}) async {
+  Future<List<Deadline>> sync({
+    String? calendarUrl,
+    List<String>? additionalCalendarUrls,
+  }) async {
     final url = (calendarUrl ?? await loadCalendarUrl())?.trim();
     if (url == null || url.isEmpty) {
       throw const CalendarSyncException('Add your Moodle calendar URL first.');
     }
     _validateUrl(url);
+    final additional = additionalCalendarUrls ?? await loadAdditionalCalendarUrls();
+    final sources = <String, List<Deadline>>{
+      '': await _fetchCalendar(url),
+    };
+    for (final extra in additional.toSet()) {
+      if (extra == url) continue;
+      _validateUrl(extra);
+      // Stable source identities must not embed secret calendar tokens.
+      final sourceId = extra.codeUnits.fold<int>(
+        0,
+        (hash, code) => ((hash * 31) + code) & 0x7fffffff,
+      ).toRadixString(16);
+      sources['feed-$sourceId'] = await _fetchCalendar(extra);
+    }
+    // Commit only once all feeds have been downloaded and parsed.
+    final upcoming = CalendarSourceMerger.merge(sources);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _cacheKey,
+      jsonEncode(upcoming.map((deadline) => deadline.toJson()).toList()),
+    );
+    await prefs.setString(_lastSyncKey, DateTime.now().toIso8601String());
+    await saveCalendarUrl(url);
+    return upcoming;
+  }
 
+  Future<List<Deadline>> _fetchCalendar(String url) async {
     final response = await _client
         .get(Uri.parse(url), headers: const {'Accept': 'text/calendar,*/*'})
         .timeout(const Duration(seconds: 20));
-
     if (response.statusCode != 200) {
       throw CalendarSyncException(
         'Moodle returned HTTP ${response.statusCode}. Check the calendar URL.',
@@ -182,19 +211,7 @@ class CalendarRepository {
         'The URL did not return a valid iCalendar feed.',
       );
     }
-
-    final upcoming = IcsParser.parse(response.body).toList()
-      ..sort((a, b) => a.due.compareTo(b.due));
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _cacheKey,
-      jsonEncode(upcoming.map((deadline) => deadline.toJson()).toList()),
-    );
-    await prefs.setString(_lastSyncKey, DateTime.now().toIso8601String());
-    await saveCalendarUrl(url);
-
-    return upcoming;
+    return IcsParser.parse(calendarBody).toList();
   }
 
   Future<void> clearCachedCalendarData() async {

@@ -43,7 +43,10 @@ class MoodleApiClient {
     if (data is! List) {
       throw const MoodleApiException('Unexpected Moodle course response');
     }
-    return data.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    return data
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
   }
 
   /// Retrieves available assignment deadlines for enrolled courses.
@@ -70,20 +73,29 @@ class MoodleApiClient {
         final id = (assignment['id'] as num?)?.toInt();
         final due = (assignment['duedate'] as num?)?.toInt() ?? 0;
         if (id == null || due <= 0) continue;
-        deadlines.add(Deadline(
-          uid: 'moodle-api:$courseId:$id',
-          title: assignment['name'] as String? ?? '',
-          course: courseName,
-          due: DateTime.fromMillisecondsSinceEpoch(due * 1000),
-          url: baseUrl.resolve('mod/assign/view.php?id=${assignment['cmid'] ?? ''}').toString(),
-        ));
+        deadlines.add(
+          Deadline(
+            uid: 'moodle-api:$courseId:$id',
+            title: assignment['name'] as String? ?? '',
+            course: courseName,
+            due: DateTime.fromMillisecondsSinceEpoch(due * 1000),
+            url: baseUrl
+                .resolve('mod/assign/view.php?id=${assignment['cmid'] ?? ''}')
+                .toString(),
+          ),
+        );
       }
     }
     return deadlines..sort((a, b) => a.due.compareTo(b.due));
   }
 
-  Future<dynamic> _request(String function, [Map<String, String> arguments = const {}]) async {
-    final root = baseUrl.toString().endsWith('/') ? baseUrl : Uri.parse('${baseUrl.toString()}/');
+  Future<dynamic> _request(
+    String function, [
+    Map<String, String> arguments = const {},
+  ]) async {
+    final root = baseUrl.toString().endsWith('/')
+        ? baseUrl
+        : Uri.parse('${baseUrl.toString()}/');
     final endpoint = root.resolve('webservice/rest/server.php');
     final response = await _client
         .post(
@@ -104,7 +116,8 @@ class MoodleApiClient {
       throw const MoodleApiException('Unexpected Moodle API response');
     }
     final data = result is Map ? Map<String, dynamic>.from(result) : result;
-    if (data is Map && (data.containsKey('exception') || data.containsKey('errorcode'))) {
+    if (data is Map &&
+        (data.containsKey('exception') || data.containsKey('errorcode'))) {
       throw const MoodleApiException('Moodle rejected the API credentials');
     }
     return data;

@@ -562,7 +562,9 @@ class _HomeShellState extends State<HomeShell> {
       } catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t('Invalid calendar URL', 'رابط التقويم غير صالح'))),
+          SnackBar(
+            content: Text(t('Invalid calendar URL', 'رابط التقويم غير صالح')),
+          ),
         );
       }
     } finally {
@@ -582,10 +584,12 @@ class _HomeShellState extends State<HomeShell> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(t(
-                'Add other Moodle calendar feeds. The links are stored securely.',
-                'أضف تقويمات Moodle أخرى. تُحفظ الروابط بشكل آمن.',
-              )),
+              Text(
+                t(
+                  'Add other Moodle calendar feeds. The links are stored securely.',
+                  'أضف تقويمات Moodle أخرى. تُحفظ الروابط بشكل آمن.',
+                ),
+              ),
               for (final url in controller.additionalCalendarUrls)
                 ListTile(
                   leading: const Icon(Icons.event_note_outlined),

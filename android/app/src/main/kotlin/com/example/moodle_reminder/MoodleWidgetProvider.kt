@@ -40,10 +40,10 @@ class MoodleWidgetProvider : AppWidgetProvider() {
             val preferences = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
             val title = preferences.getString("title", "") ?: ""
             val due = preferences.getLong("due", 0L)
-            val summary = if (title.isNotEmpty() && due > 0L) {
+            val summary = if (title.isNotEmpty() && due >= System.currentTimeMillis()) {
                 "$title · ${DateFormat.getMediumDateFormat(context).format(Date(due))}"
             } else {
-                context.getString(R.string.widget_open)
+                context.getString(R.string.widget_no_upcoming)
             }
             views.setTextViewText(R.id.widget_summary, summary)
             views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)

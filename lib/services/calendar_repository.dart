@@ -82,12 +82,16 @@ class CalendarRepository {
     try {
       final parsed = jsonDecode(encoded);
       if (parsed is! List) return const [];
-      return parsed.whereType<String>().where((url) {
-        final uri = Uri.tryParse(url);
-        return uri != null &&
-            uri.hasAuthority &&
-            (uri.scheme == 'https' || uri.scheme == 'http');
-      }).toSet().toList();
+      return parsed
+          .whereType<String>()
+          .where((url) {
+            final uri = Uri.tryParse(url);
+            return uri != null &&
+                uri.hasAuthority &&
+                (uri.scheme == 'https' || uri.scheme == 'http');
+          })
+          .toSet()
+          .toList();
     } catch (_) {
       return const [];
     }

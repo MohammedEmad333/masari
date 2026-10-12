@@ -529,6 +529,49 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  Future<void> _addCalendarSource() async {
+    final field = TextEditingController();
+    try {
+      final url = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t('Add Moodle calendar', 'إضافة تقويم Moodle')),
+          content: TextField(
+            controller: field,
+            autofocus: true,
+            keyboardType: TextInputType.url,
+            decoration: InputDecoration(
+              labelText: t('Private iCalendar URL', 'رابط التقويم الخاص'),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, field.text.trim()),
+              child: Text(t('Add', 'إضافة')),
+            ),
+          ],
+        ),
+      );
+      if (url == null || url.isEmpty || !mounted) return;
+      try {
+        await widget.controller.addCalendarSource(url);
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t('Invalid calendar URL', 'رابط التقويم غير صالح')),
+          ),
+        );
+      }
+    } finally {
+      field.dispose();
+    }
+  }
+
   Widget _settings() {
     final controller = widget.controller;
     const choices = [72, 48, 24, 6, 1];
@@ -536,6 +579,37 @@ class _HomeShellState extends State<HomeShell> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        _settingsCard(
+          t('Additional calendars', 'التقويمات الإضافية'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                t(
+                  'Add other Moodle calendar feeds. The links are stored securely.',
+                  'أضف تقويمات Moodle أخرى. تُحفظ الروابط بشكل آمن.',
+                ),
+              ),
+              for (final url in controller.additionalCalendarUrls)
+                ListTile(
+                  leading: const Icon(Icons.event_note_outlined),
+                  title: Text(t('Moodle calendar', 'تقويم Moodle')),
+                  subtitle: Text(t('Private link saved', 'رابط خاص محفوظ')),
+                  trailing: IconButton(
+                    tooltip: t('Remove calendar', 'حذف التقويم'),
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => controller.removeCalendarSource(url),
+                  ),
+                ),
+              OutlinedButton.icon(
+                onPressed: _addCalendarSource,
+                icon: const Icon(Icons.add),
+                label: Text(t('Add calendar', 'إضافة تقويم')),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         _settingsCard(
           t('Reminder schedule', 'جدول التنبيهات'),
           Wrap(

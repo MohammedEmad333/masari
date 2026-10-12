@@ -11,6 +11,7 @@ class AppController extends ChangeNotifier {
 
   List<Deadline> deadlines = const [];
   List<Deadline> manualDeadlines = const [];
+  List<String> additionalCalendarUrls = const [];
 
   List<Deadline> get allDeadlines =>
       [...deadlines, ...manualDeadlines]..sort((a, b) {
@@ -50,6 +51,7 @@ class AppController extends ChangeNotifier {
       _repository.loadLocale(),
       _repository.loadTaskReminderOffsets(),
       _repository.loadManualDeadlines(),
+      _repository.loadAdditionalCalendarUrls(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -61,6 +63,7 @@ class AppController extends ChangeNotifier {
     locale = Locale((results[6] as String) == 'ar' ? 'ar' : 'en');
     taskReminderOffsets = results[7] as Map<String, List<int>>;
     manualDeadlines = results[8] as List<Deadline>;
+    additionalCalendarUrls = results[9] as List<String>;
     initialized = true;
     notifyListeners();
 
@@ -118,6 +121,20 @@ class AppController extends ChangeNotifier {
     error = null;
     await _rescheduleNotifications();
     notifyListeners();
+  }
+
+  Future<void> addCalendarSource(String url) async {
+    await _repository.addAdditionalCalendarUrl(url);
+    additionalCalendarUrls = await _repository.loadAdditionalCalendarUrls();
+    notifyListeners();
+    if (calendarConnected) await sync();
+  }
+
+  Future<void> removeCalendarSource(String url) async {
+    await _repository.removeAdditionalCalendarUrl(url);
+    additionalCalendarUrls = await _repository.loadAdditionalCalendarUrls();
+    notifyListeners();
+    if (calendarConnected) await sync();
   }
 
   Future<void> addManualDeadline(Deadline deadline) async {

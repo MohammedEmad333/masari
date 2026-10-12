@@ -169,18 +169,16 @@ class CalendarRepository {
       throw const CalendarSyncException('Add your Moodle calendar URL first.');
     }
     _validateUrl(url);
-    final additional = additionalCalendarUrls ?? await loadAdditionalCalendarUrls();
-    final sources = <String, List<Deadline>>{
-      '': await _fetchCalendar(url),
-    };
+    final additional =
+        additionalCalendarUrls ?? await loadAdditionalCalendarUrls();
+    final sources = <String, List<Deadline>>{'': await _fetchCalendar(url)};
     for (final extra in additional.toSet()) {
       if (extra == url) continue;
       _validateUrl(extra);
       // Stable source identities must not embed secret calendar tokens.
-      final sourceId = extra.codeUnits.fold<int>(
-        0,
-        (hash, code) => ((hash * 31) + code) & 0x7fffffff,
-      ).toRadixString(16);
+      final sourceId = extra.codeUnits
+          .fold<int>(0, (hash, code) => ((hash * 31) + code) & 0x7fffffff)
+          .toRadixString(16);
       sources['feed-$sourceId'] = await _fetchCalendar(extra);
     }
     // Commit only once all feeds have been downloaded and parsed.

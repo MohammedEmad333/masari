@@ -230,6 +230,11 @@ class _HomeShellState extends State<HomeShell> {
     final conflicts = StudyInsights.conflicts(active);
     final totalCount = controller.allDeadlines.length;
     final doneCount = controller.completedDeadlines.length;
+    final now = DateTime.now();
+    final overdueCount = StudyInsights.overdueCount(active, now);
+    final dueSoonCount = StudyInsights.dueSoonCount(active, now);
+    final completionPercent =
+        (StudyInsights.completionRate(doneCount, totalCount) * 100).round();
 
     return RefreshIndicator(
       onRefresh: () => controller.sync(),
@@ -284,8 +289,8 @@ class _HomeShellState extends State<HomeShell> {
             title: Text(t('Study insights', 'إحصائيات الدراسة')),
             subtitle: Text(
               t(
-                '$doneCount of $totalCount completed • ${conflicts.length} deadline conflicts',
-                'اكتمل $doneCount من $totalCount • ${conflicts.length} تعارضات في المواعيد',
+                '$completionPercent% completed • $overdueCount overdue • $dueSoonCount due within 7 days • ${conflicts.length} conflicts',
+                'الإنجاز $completionPercent% • المتأخرة $overdueCount • خلال 7 أيام $dueSoonCount • التعارضات ${conflicts.length}',
               ),
             ),
           ),

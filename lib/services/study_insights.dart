@@ -39,6 +39,19 @@ class StudyInsights {
       ..sort((a, b) => a.first.due.compareTo(b.first.due));
   }
 
+  static int overdueCount(Iterable<Deadline> tasks, DateTime now) =>
+      tasks.where((task) => task.due.isBefore(now)).length;
+
+  static int dueSoonCount(
+    Iterable<Deadline> tasks,
+    DateTime now, {
+    Duration window = const Duration(days: 7),
+  }) => tasks
+      .where(
+        (task) => !task.due.isBefore(now) && task.due.isBefore(now.add(window)),
+      )
+      .length;
+
   static double completionRate(int completed, int total) =>
       total == 0 ? 0 : completed / total;
 }

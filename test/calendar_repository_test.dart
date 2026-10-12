@@ -190,6 +190,32 @@ void main() {
     expect(deadline.priority, 1);
   });
 
+  test('failed additional feed does not overwrite primary cache', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('deadline_cache_v2', 'preserved-cache');
+    await prefs.setString('last_sync_at', '2030-01-01T00:00:00');
+    final requested = <String>[];
+    final client = MockClient((request) async {
+      requested.add(request.url.host);
+      if (request.url.host == 'secondary.example') {
+        return http.Response('Service unavailable', 503);
+      }
+      return http.Response('BEGIN:VCALENDAR\\nEND:VCALENDAR', 200);
+    });
+    final repository = CalendarRepository(client: client);
+    await expectLater(
+      repository.sync(
+        calendarUrl: 'https://primary.example/calendar.ics',
+        additionalCalendarUrls: ['https://secondary.example/calendar.ics'],
+      ),
+      throwsA(isA<CalendarSyncException>()),
+    );
+    expect(requested, ['primary.example', 'secondary.example']);
+    expect(prefs.getString('deadline_cache_v2'), 'preserved-cache');
+    expect(prefs.getString('last_sync_at'), '2030-01-01T00:00:00');
+    client.close();
+  });
+
   test('additional calendar rejects non-HTTP URLs before storage', () async {
     final repository = CalendarRepository();
     await expectLater(

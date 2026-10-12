@@ -8,11 +8,17 @@ import 'package:moodle_reminder/services/moodle_api_client.dart';
 void main() {
   test('requires HTTPS and a nonempty API token', () {
     expect(
-      () => MoodleApiClient(baseUrl: Uri.parse('http://moodle.example/'), token: 'x'),
+      () => MoodleApiClient(
+        baseUrl: Uri.parse('http://moodle.example/'),
+        token: 'x',
+      ),
       throwsArgumentError,
     );
     expect(
-      () => MoodleApiClient(baseUrl: Uri.parse('https://moodle.example/'), token: ''),
+      () => MoodleApiClient(
+        baseUrl: Uri.parse('https://moodle.example/'),
+        token: '',
+      ),
       throwsArgumentError,
     );
   });
@@ -36,10 +42,15 @@ void main() {
   });
 
   test('reports Moodle credential failures without exposing tokens', () async {
-    final client = MockClient((request) async => http.Response(
-      jsonEncode({'exception': 'moodle_exception', 'errorcode': 'invalidtoken'}),
-      200,
-    ));
+    final client = MockClient(
+      (request) async => http.Response(
+        jsonEncode({
+          'exception': 'moodle_exception',
+          'errorcode': 'invalidtoken',
+        }),
+        200,
+      ),
+    );
     final api = MoodleApiClient(
       baseUrl: Uri.parse('https://moodle.example/'),
       token: 'private-token',

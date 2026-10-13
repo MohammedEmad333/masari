@@ -40,7 +40,7 @@ class _HomeShellState extends State<HomeShell> {
     if (!controller.initialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (!controller.calendarConnected) return _Setup(controller: controller);
+    if (!controller.hasConnection) return _Setup(controller: controller);
 
     final titles = [
       t('Home', 'الرئيسية'),
@@ -634,6 +634,8 @@ class _HomeShellState extends State<HomeShell> {
       try {
         await api.siteInfo();
         await store.save(server: api.baseUrl, token: tokenField.text);
+        await widget.controller.refreshApiConnection();
+        await widget.controller.sync();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -662,6 +664,7 @@ class _HomeShellState extends State<HomeShell> {
 
   Future<void> _removeMoodleApi() async {
     await MoodleApiCredentialsStore(const FlutterSecureStorage()).clear();
+    await widget.controller.refreshApiConnection();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1175,13 +1178,61 @@ class _Setup extends StatefulWidget {
 
 class _SetupState extends State<_Setup> {
   final _url = TextEditingController();
+  final _apiServer = TextEditingController();
+  final _apiToken = TextEditingController();
+  bool _apiBusy = false;
   bool get _ar => widget.controller.locale.languageCode == 'ar';
   String t(String en, String ar) => _ar ? ar : en;
 
   @override
   void dispose() {
     _url.dispose();
+    _apiServer.dispose();
+    _apiToken.dispose();
     super.dispose();
+  }
+
+  Future<void> _connectApi() async {
+    setState(() => _apiBusy = true);
+    try {
+      final server = Uri.parse(_apiServer.text.trim());
+      final api = MoodleApiClient(
+        baseUrl: server,
+        token: _apiToken.text.trim(),
+      );
+      try {
+        final info = await api.siteInfo();
+        final userId = (info['userid'] as num?)?.toInt();
+        if (userId == null) {
+          throw const MoodleApiException('Moodle user ID is unavailable');
+        }
+        final courses = await api.courses(userId);
+        final courseIds = courses
+            .map((course) => (course['id'] as num?)?.toInt())
+            .whereType<int>()
+            .toList();
+        await api.assignments(courseIds);
+        await MoodleApiCredentialsStore(
+          const FlutterSecureStorage(),
+        ).save(server: server, token: _apiToken.text.trim());
+      } finally {
+        api.close();
+      }
+      await widget.controller.refreshApiConnection();
+      await widget.controller.sync();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t('Moodle API connection failed or assignments unavailable.',
+                'فشل اتصال Moodle API أو تعذّر جلب الواجبات.'),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _apiBusy = false);
+    }
   }
 
   @override
@@ -1281,6 +1332,39 @@ class _SetupState extends State<_Setup> {
                   )
                 : const Icon(Icons.lock_open_rounded),
             label: Text(t('Connect securely', 'اتصال آمن')),
+          ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 12),
+          Text(
+            t('Or connect using Moodle Web Services',
+                'أو اتصل باستخدام خدمات Moodle'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _apiServer,
+            keyboardType: TextInputType.url,
+            decoration: InputDecoration(
+              labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _apiToken,
+            obscureText: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            decoration: InputDecoration(
+              labelText: t('Web Services token', 'رمز خدمات الويب'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: _apiBusy || widget.controller.busy
+                ? null
+                : _connectApi,
+            child: Text(t('Test and connect API', 'اختبار وربط API')),
           ),
         ],
       ),

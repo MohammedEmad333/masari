@@ -34,15 +34,12 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
   Completer<String>? _pendingImport;
   String? _error;
 
-  String t(String english, String arabic) =>
-      widget.isArabic ? arabic : english;
+  String t(String english, String arabic) => widget.isArabic ? arabic : english;
 
   @override
   void initState() {
     super.initState();
-    final login = MoodleBrowserLogin.universityLoginUrl(
-      widget.moodleServer,
-    )!;
+    final login = MoodleBrowserLogin.universityLoginUrl(widget.moodleServer)!;
     _webView = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel(
@@ -75,7 +72,7 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
             });
           },
           onWebResourceError: (error) {
-            if (!error.isForMainFrame || !mounted) return;
+            if (error.isForMainFrame != true || !mounted) return;
             setState(() {
               _busy = false;
               _error = error.description;
@@ -164,10 +161,7 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
       """;
       await _webView.runJavaScript(javascript);
       final raw = await response.future.timeout(const Duration(seconds: 40));
-      final deadlines = MoodleSessionEvents.parse(
-        raw,
-        login.resolve('../'),
-      );
+      final deadlines = MoodleSessionEvents.parse(raw, login.resolve('../'));
       await widget.onImport(deadlines);
       if (!mounted) return;
       setState(() => _importedCount = deadlines.length);
@@ -211,11 +205,10 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: _exit,
+          leading: IconButton(icon: const Icon(Icons.close), onPressed: _exit),
+          title: Text(
+            t('Experimental Moodle session', 'جلسة Moodle التجريبية'),
           ),
-          title: Text(t('Experimental Moodle session', 'جلسة Moodle التجريبية')),
         ),
         body: Column(
           children: [
@@ -235,17 +228,21 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
               ),
             ),
             if (_error != null)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(_error!),
-              ),
+              Padding(padding: const EdgeInsets.all(8), child: Text(_error!)),
             if (_importedCount != null)
-              Text(t('Imported $_importedCount events.', 'تم استيراد $_importedCount موعدًا.')),
+              Text(
+                t(
+                  'Imported $_importedCount events.',
+                  'تم استيراد $_importedCount موعدًا.',
+                ),
+              ),
             Expanded(child: WebViewWidget(controller: _webView)),
             FilledButton.icon(
               onPressed: _importing ? null : _importEvents,
               icon: const Icon(Icons.download_rounded),
-              label: Text(t('Import upcoming deadlines', 'استيراد المواعيد القادمة')),
+              label: Text(
+                t('Import upcoming deadlines', 'استيراد المواعيد القادمة'),
+              ),
             ),
             TextButton.icon(
               onPressed: () {

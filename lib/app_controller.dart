@@ -38,7 +38,8 @@ class AppController extends ChangeNotifier {
   bool initialized = false;
   bool calendarConnected = false;
   bool apiConnected = false;
-  bool get hasConnection => calendarConnected || apiConnected || sessionDeadlines.isNotEmpty;
+  bool get hasConnection =>
+      calendarConnected || apiConnected || sessionDeadlines.isNotEmpty;
   String? error;
   ThemeMode themeMode = ThemeMode.system;
   Locale locale = const Locale('en');

@@ -1225,8 +1225,10 @@ class _SetupState extends State<_Setup> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            t('Moodle API connection failed or assignments unavailable.',
-                'فشل اتصال Moodle API أو تعذّر جلب الواجبات.'),
+            t(
+              'Moodle API connection failed or assignments unavailable.',
+              'فشل اتصال Moodle API أو تعذّر جلب الواجبات.',
+            ),
           ),
         ),
       );
@@ -1337,8 +1339,10 @@ class _SetupState extends State<_Setup> {
           const Divider(),
           const SizedBox(height: 12),
           Text(
-            t('Or connect using Moodle Web Services',
-                'أو اتصل باستخدام خدمات Moodle'),
+            t(
+              'Or connect using Moodle Web Services',
+              'أو اتصل باستخدام خدمات Moodle',
+            ),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -1361,9 +1365,7 @@ class _SetupState extends State<_Setup> {
           ),
           const SizedBox(height: 8),
           OutlinedButton(
-            onPressed: _apiBusy || widget.controller.busy
-                ? null
-                : _connectApi,
+            onPressed: _apiBusy || widget.controller.busy ? null : _connectApi,
             child: Text(t('Test and connect API', 'اختبار وربط API')),
           ),
         ],

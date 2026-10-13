@@ -73,7 +73,14 @@ class _HomeShellState extends State<HomeShell> {
       ),
       body: IndexedStack(
         index: _index,
-        children: [_home(), _tasks(), _plan(), _calendar(), _courses(), _settings()],
+        children: [
+          _home(),
+          _tasks(),
+          _plan(),
+          _calendar(),
+          _courses(),
+          _settings(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -305,14 +312,21 @@ class _HomeShellState extends State<HomeShell> {
           ListTile(
             leading: const Icon(Icons.task_alt_rounded),
             title: Text(t('My tasks', 'المهام')),
-            subtitle: Text(t('View and manage all deadlines', 'عرض المواعيد والمهام وإدارتها')),
+            subtitle: Text(
+              t(
+                'View and manage all deadlines',
+                'عرض المواعيد والمهام وإدارتها',
+              ),
+            ),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => setState(() => _index = 1),
           ),
           ListTile(
             leading: const Icon(Icons.menu_book_rounded),
             title: Text(t('Weekly study plan', 'خطة المذاكرة الأسبوعية')),
-            subtitle: Text(t('Review your weekly schedule', 'راجع جدول المذاكرة الأسبوعي')),
+            subtitle: Text(
+              t('Review your weekly schedule', 'راجع جدول المذاكرة الأسبوعي'),
+            ),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => setState(() => _index = 2),
           ),
@@ -366,7 +380,10 @@ class _HomeShellState extends State<HomeShell> {
   Widget _tasks() {
     final controller = widget.controller;
     final active = controller.activeDeadlines;
-    final courses = active.map((d) => d.course).where((c) => c.isNotEmpty).toSet();
+    final courses = active
+        .map((d) => d.course)
+        .where((c) => c.isNotEmpty)
+        .toSet();
     final selectedCourse = validCourseSelection(active, _selectedCourse);
     final deadlines = filterDeadlines(
       active,
@@ -385,75 +402,75 @@ class _HomeShellState extends State<HomeShell> {
           label: Text(t('Add task', 'إضافة مهمة')),
         ),
         const SizedBox(height: 12),
-          _section(
-            t('My tasks today', 'مهامي اليوم'),
-            '${active.where((d) => _sameDay(d.due, DateTime.now())).length}',
+        _section(
+          t('My tasks today', 'مهامي اليوم'),
+          '${active.where((d) => _sameDay(d.due, DateTime.now())).length}',
+        ),
+        const SizedBox(height: 8),
+        ...active
+            .where((d) => _sameDay(d.due, DateTime.now()))
+            .map(_deadlineCard),
+        const SizedBox(height: 16),
+        TextField(
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.search_rounded),
+            labelText: t('Search deadlines', 'ابحث عن المهام'),
           ),
-          const SizedBox(height: 8),
-          ...active
-              .where((d) => _sameDay(d.due, DateTime.now()))
-              .map(_deadlineCard),
-          const SizedBox(height: 16),
-          TextField(
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search_rounded),
-              labelText: t('Search deadlines', 'ابحث عن المهام'),
+          onChanged: (value) => setState(() => _searchQuery = value),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          key: ValueKey(selectedCourse),
+          initialValue: selectedCourse ?? '',
+          decoration: InputDecoration(
+            labelText: t('Filter by course', 'تصفية حسب المساق'),
+          ),
+          items: [
+            DropdownMenuItem(
+              value: '',
+              child: Text(t('All courses', 'كل المساقات')),
             ),
-            onChanged: (value) => setState(() => _searchQuery = value),
-          ),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            key: ValueKey(selectedCourse),
-            initialValue: selectedCourse ?? '',
-            decoration: InputDecoration(
-              labelText: t('Filter by course', 'تصفية حسب المساق'),
+            ...(courses.toList()..sort()).map(
+              (course) =>
+                  DropdownMenuItem(value: course, child: Text(course)),
             ),
-            items: [
-              DropdownMenuItem(
-                value: '',
-                child: Text(t('All courses', 'كل المساقات')),
-              ),
-              ...(courses.toList()..sort()).map(
-                (course) =>
-                    DropdownMenuItem(value: course, child: Text(course)),
-              ),
-            ],
-            onChanged: (value) => setState(() {
-              _selectedCourse = value == null || value.isEmpty ? null : value;
-            }),
-          ),
-          if (overdue.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            _section(t('Overdue', 'مهام متأخرة'), '${overdue.length}'),
-            const SizedBox(height: 8),
-            ...overdue.take(15).map(_deadlineCard),
           ],
+          onChanged: (value) => setState(() {
+            _selectedCourse = value == null || value.isEmpty ? null : value;
+          }),
+        ),
+        if (overdue.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _section(t('Overdue', 'مهام متأخرة'), '${overdue.length}'),
+          const SizedBox(height: 8),
+          ...overdue.take(15).map(_deadlineCard),
+        ],
+        const SizedBox(height: 18),
+        _section(
+          t('Upcoming deadlines', 'المواعيد القادمة'),
+          '${upcoming.length}',
+        ),
+        const SizedBox(height: 8),
+        if (upcoming.isEmpty)
+          _empty(
+            Icons.task_alt_rounded,
+            t('You are all caught up', 'لا توجد مواعيد قادمة'),
+            t(
+              'Pull down to sync your Moodle calendar.',
+              'اسحب للأسفل لمزامنة تقويم Moodle.',
+            ),
+          )
+        else
+          ...upcoming.take(15).map(_deadlineCard),
+        if (controller.completedDeadlines.isNotEmpty) ...[
           const SizedBox(height: 18),
           _section(
-            t('Upcoming deadlines', 'المواعيد القادمة'),
-            '${upcoming.length}',
+            t('Completed', 'المكتملة'),
+            '${controller.completedDeadlines.length}',
           ),
           const SizedBox(height: 8),
-          if (upcoming.isEmpty)
-            _empty(
-              Icons.task_alt_rounded,
-              t('You are all caught up', 'لا توجد مواعيد قادمة'),
-              t(
-                'Pull down to sync your Moodle calendar.',
-                'اسحب للأسفل لمزامنة تقويم Moodle.',
-              ),
-            )
-          else
-            ...upcoming.take(15).map(_deadlineCard),
-          if (controller.completedDeadlines.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            _section(
-              t('Completed', 'المكتملة'),
-              '${controller.completedDeadlines.length}',
-            ),
-            const SizedBox(height: 8),
-            ...controller.completedDeadlines.take(5).map(_deadlineCard),
-          ],
+          ...controller.completedDeadlines.take(5).map(_deadlineCard),
+        ],
       ],
     );
   }

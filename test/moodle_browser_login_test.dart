@@ -4,8 +4,9 @@ import 'package:moodle_reminder/services/moodle_browser_login.dart';
 void main() {
   test('uses university HTTPS login page without handling credentials', () {
     expect(
-      MoodleBrowserLogin.universityLoginUrl('https://uni.example/moodle')
-          .toString(),
+      MoodleBrowserLogin.universityLoginUrl(
+        'https://uni.example/moodle',
+      ).toString(),
       'https://uni.example/moodle/login/index.php',
     );
   });

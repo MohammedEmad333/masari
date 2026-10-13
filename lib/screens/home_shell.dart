@@ -1216,6 +1216,7 @@ class _SetupState extends State<_Setup> {
         builder: (_) => MoodleSessionPilotScreen(
           moodleServer: _apiServer.text.trim(),
           isArabic: _ar,
+          onImport: widget.controller.importSessionDeadlines,
         ),
       ),
     );
@@ -1490,8 +1491,8 @@ class _SetupState extends State<_Setup> {
           ),
           Text(
             t(
-              'Experimental sign-in opens Moodle inside an isolated browser. It does not import tasks yet and does not save your university password.',
-              'يفتح تسجيل الدخول التجريبي Moodle داخل متصفح منفصل. لا يستورد المهام بعد ولا يحفظ كلمة مرور الجامعة.',
+              'Experimental sign-in opens Moodle inside an isolated browser. You can import deadlines manually; it does not save your university password.',
+              'يفتح تسجيل الدخول التجريبي Moodle داخل متصفح منفصل. يمكنك استيراد المواعيد يدويًا ولا يحفظ كلمة مرور الجامعة.',
             ),
           ),
           const SizedBox(height: 8),

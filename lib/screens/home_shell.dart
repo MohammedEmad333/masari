@@ -1208,10 +1208,7 @@ class _SetupState extends State<_Setup> {
       );
       return;
     }
-    final opened = await launchUrl(
-      login,
-      mode: LaunchMode.externalApplication,
-    );
+    final opened = await launchUrl(login, mode: LaunchMode.externalApplication);
     if (!mounted) return;
     if (!opened) {
       ScaffoldMessenger.of(context).showSnackBar(

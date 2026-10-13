@@ -91,9 +91,7 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
     });
     try {
       final current = await _webView.currentUrl();
-      final login = MoodleBrowserLogin.universityLoginUrl(
-        widget.moodleServer,
-      )!;
+      final login = MoodleBrowserLogin.universityLoginUrl(widget.moodleServer)!;
       final page = Uri.tryParse(current ?? '');
       if (page == null ||
           page.scheme != 'https' ||

@@ -61,6 +61,7 @@ class AppController extends ChangeNotifier {
       _repository.loadTaskReminderOffsets(),
       _repository.loadManualDeadlines(),
       _repository.loadAdditionalCalendarUrls(),
+      _repository.loadCachedApiDeadlines(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -73,6 +74,7 @@ class AppController extends ChangeNotifier {
     taskReminderOffsets = results[7] as Map<String, List<int>>;
     manualDeadlines = results[8] as List<Deadline>;
     additionalCalendarUrls = results[9] as List<String>;
+    apiDeadlines = results[10] as List<Deadline>;
     initialized = true;
     await _publishWidget();
     notifyListeners();
@@ -141,6 +143,7 @@ class AppController extends ChangeNotifier {
       final credentials = await store.load();
       if (credentials == null) {
         apiDeadlines = const [];
+        await _repository.clearCachedApiDeadlines();
         return;
       }
       final api = MoodleApiClient(
@@ -156,7 +159,9 @@ class AppController extends ChangeNotifier {
             .map((course) => (course['id'] as num?)?.toInt())
             .whereType<int>()
             .toList();
-        apiDeadlines = await api.assignments(ids);
+        final fetched = await api.assignments(ids);
+        await _repository.saveCachedApiDeadlines(fetched);
+        apiDeadlines = fetched;
       } finally {
         api.close();
       }

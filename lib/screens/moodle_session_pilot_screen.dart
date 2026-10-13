@@ -1,3 +1,4 @@
+import 'dart:async';
 import '../models/deadline.dart';
 import '../services/moodle_session_events.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +31,7 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
   bool _dashboardReached = false;
   bool _importing = false;
   int? _importedCount;
+  Completer<String>? _pendingImport;
   String? _error;
 
   String t(String english, String arabic) =>
@@ -43,6 +45,15 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
     )!;
     _webView = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..addJavaScriptChannel(
+        'MoodleSessionBridge',
+        onMessageReceived: (message) {
+          final pending = _pendingImport;
+          if (pending != null && !pending.isCompleted) {
+            pending.complete(message.message);
+          }
+        },
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
@@ -95,6 +106,8 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
       }
       // Runs entirely inside the authenticated first-party Moodle origin.
       // The sesskey is used solely by Moodle AJAX; never returned to Flutter.
+      final response = Completer<String>();
+      _pendingImport = response;
       const javascript = r"""
         (async () => {
           const sesskey = window.M?.cfg?.sesskey;
@@ -146,10 +159,11 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
               }
             }
           }
-          return JSON.stringify(events);
-        })()
+          MoodleSessionBridge.postMessage(JSON.stringify(events));
+        })().catch(() => MoodleSessionBridge.postMessage('null'))
       """;
-      final raw = await _webView.runJavaScriptReturningResult(javascript);
+      await _webView.runJavaScript(javascript);
+      final raw = await response.future.timeout(const Duration(seconds: 40));
       final deadlines = MoodleSessionEvents.parse(
         raw,
         login.resolve('../'),
@@ -166,6 +180,7 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
         ),
       );
     } finally {
+      _pendingImport = null;
       if (mounted) setState(() => _importing = false);
     }
   }

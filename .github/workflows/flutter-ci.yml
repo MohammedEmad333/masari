@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Analyze, test and build
+    name: Analyze and test (build on main)
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -59,9 +59,11 @@ jobs:
         run: flutter test
 
       - name: Build release APK
+        if: github.event_name != 'pull_request'
         run: flutter build apk --release
 
       - name: Upload APK
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v7
         with:
           name: moodle-reminder-release-apk

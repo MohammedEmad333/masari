@@ -35,6 +35,8 @@ class AppController extends ChangeNotifier {
   bool _syncInProgress = false;
   bool initialized = false;
   bool calendarConnected = false;
+  bool apiConnected = false;
+  bool get hasConnection => calendarConnected || apiConnected;
   String? error;
   ThemeMode themeMode = ThemeMode.system;
   Locale locale = const Locale('en');
@@ -75,11 +77,12 @@ class AppController extends ChangeNotifier {
     manualDeadlines = results[8] as List<Deadline>;
     additionalCalendarUrls = results[9] as List<String>;
     apiDeadlines = results[10] as List<Deadline>;
+    apiConnected = await _hasApiCredentials();
     initialized = true;
     await _publishWidget();
     notifyListeners();
 
-    if (calendarConnected) {
+    if (hasConnection) {
       await NotificationService.init(requestPermissions: true);
       await sync(silent: true);
     }
@@ -108,7 +111,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<bool> sync({bool silent = false}) async {
-    if (!calendarConnected || busy || _syncInProgress) return false;
+    if (!hasConnection || busy || _syncInProgress) return false;
     _syncInProgress = true;
     busy = true;
     error = null;
@@ -128,23 +131,47 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _syncInternal() async {
-    deadlines = await _repository.sync();
-    await _syncOptionalApi();
-    lastSync = await _repository.loadLastSync();
+    if (calendarConnected) {
+      deadlines = await _repository.sync();
+    }
+    final apiSucceeded = await _syncOptionalApi();
+    if (!calendarConnected && !apiSucceeded) {
+      throw const CalendarSyncException('Could not sync Moodle API. Check your connection.');
+    }
+    lastSync = calendarConnected
+        ? await _repository.loadLastSync()
+        : DateTime.now();
     error = null;
     await _rescheduleNotifications();
     await _publishWidget();
     notifyListeners();
   }
 
-  Future<void> _syncOptionalApi() async {
+  Future<bool> _hasApiCredentials() async {
+    final store = MoodleApiCredentialsStore(const FlutterSecureStorage());
+    return await store.load() != null;
+  }
+
+  Future<void> refreshApiConnection() async {
+    apiConnected = await _hasApiCredentials();
+    if (!apiConnected) {
+      apiDeadlines = const [];
+      await _repository.clearCachedApiDeadlines();
+    }
+    await _rescheduleNotifications();
+    await _publishWidget();
+    notifyListeners();
+  }
+
+  Future<bool> _syncOptionalApi() async {
     try {
       final store = MoodleApiCredentialsStore(const FlutterSecureStorage());
       final credentials = await store.load();
+      apiConnected = credentials != null;
       if (credentials == null) {
         apiDeadlines = const [];
         await _repository.clearCachedApiDeadlines();
-        return;
+        return false;
       }
       final api = MoodleApiClient(
         baseUrl: credentials.server,
@@ -153,7 +180,7 @@ class AppController extends ChangeNotifier {
       try {
         final info = await api.siteInfo();
         final userId = (info['userid'] as num?)?.toInt();
-        if (userId == null) return;
+        if (userId == null) return false;
         final courses = await api.courses(userId);
         final ids = courses
             .map((course) => (course['id'] as num?)?.toInt())
@@ -162,11 +189,13 @@ class AppController extends ChangeNotifier {
         final fetched = await api.assignments(ids);
         await _repository.saveCachedApiDeadlines(fetched);
         apiDeadlines = fetched;
+        return true;
       } finally {
         api.close();
       }
     } catch (_) {
-      // Optional API errors must never prevent iCalendar synchronization.
+      // Preserve cached API tasks and keep iCalendar independent.
+      return false;
     }
   }
 

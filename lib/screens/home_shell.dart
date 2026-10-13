@@ -1199,8 +1199,10 @@ class _SetupState extends State<_Setup> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            t('Enter a valid HTTPS university Moodle URL.',
-                'أدخل رابط Moodle الجامعي الآمن HTTPS.'),
+            t(
+              'Enter a valid HTTPS university Moodle URL.',
+              'أدخل رابط Moodle الجامعي الآمن HTTPS.',
+            ),
           ),
         ),
       );
@@ -1386,8 +1388,10 @@ class _SetupState extends State<_Setup> {
             onPressed: _openUniversityLogin,
             icon: const Icon(Icons.open_in_browser_rounded),
             label: Text(
-              t('Open university login in browser',
-                  'افتح تسجيل دخول الجامعة في المتصفح'),
+              t(
+                'Open university login in browser',
+                'افتح تسجيل دخول الجامعة في المتصفح',
+              ),
             ),
           ),
           Text(

@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/moodle_api_credentials_store.dart';
 import '../services/moodle_api_client.dart';
 import '../services/moodle_browser_login.dart';
+import '../services/moodle_compatibility_checker.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1182,6 +1183,8 @@ class _SetupState extends State<_Setup> {
   final _apiServer = TextEditingController();
   final _apiToken = TextEditingController();
   bool _apiBusy = false;
+  bool _checkingCompatibility = false;
+  MoodleCompatibilityResult? _compatibility;
   bool get _ar => widget.controller.locale.languageCode == 'ar';
   String t(String en, String ar) => _ar ? ar : en;
 
@@ -1191,6 +1194,34 @@ class _SetupState extends State<_Setup> {
     _apiServer.dispose();
     _apiToken.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkUniversityCompatibility() async {
+    setState(() {
+      _checkingCompatibility = true;
+      _compatibility = null;
+    });
+    final checker = MoodleCompatibilityChecker();
+    try {
+      final result = await checker.check(_apiServer.text);
+      if (!mounted) return;
+      setState(() => _compatibility = result);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'Enter a valid HTTPS Moodle server URL.',
+              'أدخل رابط خادم Moodle صالحًا باستخدام HTTPS.',
+            ),
+          ),
+        ),
+      );
+    } finally {
+      checker.close();
+      if (mounted) setState(() => _checkingCompatibility = false);
+    }
   }
 
   Future<void> _openUniversityLogin() async {
@@ -1380,6 +1411,38 @@ class _SetupState extends State<_Setup> {
               labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن'),
             ),
           ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _checkingCompatibility
+                ? null
+                : _checkUniversityCompatibility,
+            icon: const Icon(Icons.fact_check_outlined),
+            label: Text(
+              t('Check university compatibility', 'فحص توافق الجامعة'),
+            ),
+          ),
+          if (_checkingCompatibility)
+            const LinearProgressIndicator(),
+          if (_compatibility != null) ...[
+            Text(
+              _compatibility!.loginReachable
+                  ? t('Moodle login page responded.',
+                      'استجابت صفحة تسجيل الدخول إلى Moodle.')
+                  : t('Login page could not be verified.',
+                      'تعذّر التحقق من صفحة تسجيل الدخول.'),
+            ),
+            Text(
+              _compatibility!.apiEndpointReachable
+                  ? t('Web Services endpoint responded; API access is not confirmed.',
+                      'استجابت نقطة خدمات الويب؛ صلاحية API غير مؤكدة.')
+                  : t('Web Services endpoint could not be verified.',
+                      'تعذّر التحقق من نقطة خدمات الويب.'),
+            ),
+            Text(
+              t('Token issuance and assignment permissions require an authorized account test.',
+                  'إصدار الرموز وصلاحيات الواجبات يحتاجان اختبارًا بحساب مصرح به.'),
+            ),
+          ],
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _openUniversityLogin,

@@ -10,7 +10,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('persists API assignment deadlines across repository instances', () async {
+  test('restores API deadlines across repositories', () async {
     final deadline = Deadline(
       uid: 'moodle-api:10:20',
       title: 'Lab report',
@@ -32,6 +32,7 @@ void main() {
     SharedPreferences.setMockInitialValues({
       'moodle_api_deadline_cache_v1': 'not-json',
     });
-    expect(await CalendarRepository().loadCachedApiDeadlines(), isEmpty);
+    final values = await CalendarRepository().loadCachedApiDeadlines();
+    expect(values, isEmpty);
   });
 }

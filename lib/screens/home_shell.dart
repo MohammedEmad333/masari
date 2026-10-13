@@ -431,8 +431,7 @@ class _HomeShellState extends State<HomeShell> {
               child: Text(t('All courses', 'كل المساقات')),
             ),
             ...(courses.toList()..sort()).map(
-              (course) =>
-                  DropdownMenuItem(value: course, child: Text(course)),
+              (course) => DropdownMenuItem(value: course, child: Text(course)),
             ),
           ],
           onChanged: (value) => setState(() {

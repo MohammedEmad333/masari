@@ -47,6 +47,8 @@ class _HomeShellState extends State<HomeShell> {
 
     final titles = [
       t('Home', 'الرئيسية'),
+      t('Tasks', 'المهام'),
+      t('Study plan', 'خطة الدراسة'),
       t('Calendar', 'التقويم'),
       t('Courses', 'المساقات'),
       t('Settings', 'الإعدادات'),
@@ -71,7 +73,14 @@ class _HomeShellState extends State<HomeShell> {
       ),
       body: IndexedStack(
         index: _index,
-        children: [_home(), _calendar(), _courses(), _settings()],
+        children: [
+          _home(),
+          _tasks(),
+          _plan(),
+          _calendar(),
+          _courses(),
+          _settings(),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -82,6 +91,16 @@ class _HomeShellState extends State<HomeShell> {
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home_rounded),
             label: t('Home', 'الرئيسية'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.task_alt_outlined),
+            selectedIcon: const Icon(Icons.task_alt_rounded),
+            label: t('Tasks', 'المهام'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.menu_book_outlined),
+            selectedIcon: const Icon(Icons.menu_book_rounded),
+            label: t('Plan', 'الخطة'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.calendar_month_outlined),
@@ -217,18 +236,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget _home() {
     final controller = widget.controller;
     final active = controller.activeDeadlines;
-    final courses = active
-        .map((d) => d.course)
-        .where((c) => c.isNotEmpty)
-        .toSet();
-    final selectedCourse = validCourseSelection(active, _selectedCourse);
-    final deadlines = filterDeadlines(
-      active,
-      query: _searchQuery,
-      course: selectedCourse,
-    );
-    final overdue = deadlines.where((d) => d.isPast).toList();
-    final upcoming = deadlines.where((d) => !d.isPast).toList();
+    final upcoming = active.where((d) => !d.isPast).toList();
     upcoming.sort((a, b) => a.due.compareTo(b.due));
     final next = upcoming.isEmpty ? null : upcoming.first;
     final weekEnd = DateTime.now().add(const Duration(days: 7));
@@ -301,111 +309,168 @@ class _HomeShellState extends State<HomeShell> {
             ),
           ),
           const SizedBox(height: 12),
-          _section(t('Weekly study plan', 'خطة المذاكرة الأسبوعية'), ''),
-          const SizedBox(height: 8),
-          ...StudyInsights.week(active, DateTime.now()).entries.map((entry) {
-            final day = entry.key;
-            final tasks = entry.value;
-            return ListTile(
-              leading: const Icon(Icons.calendar_view_week_rounded),
-              title: Text(DateFormat.EEEE(_localeName).format(day)),
-              subtitle: Text(
-                tasks.isEmpty
-                    ? t('No tasks', 'لا توجد مهام')
-                    : tasks.map((task) => task.title).join(' • '),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Text('${tasks.length}'),
-            );
-          }),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: () => showDialog<void>(
-              context: context,
-              builder: (_) => PomodoroDialog(arabic: _ar),
-            ),
-            icon: const Icon(Icons.timer_outlined),
-            label: Text(t('Pomodoro focus timer', 'مؤقت بومودورو')),
-          ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: _addManualTask,
-            icon: const Icon(Icons.add_task_rounded),
-            label: Text(t('Add task', 'إضافة مهمة')),
-          ),
-          const SizedBox(height: 12),
-          _section(
-            t('My tasks today', 'مهامي اليوم'),
-            '${active.where((d) => _sameDay(d.due, DateTime.now())).length}',
-          ),
-          const SizedBox(height: 8),
-          ...active
-              .where((d) => _sameDay(d.due, DateTime.now()))
-              .map(_deadlineCard),
-          const SizedBox(height: 16),
-          TextField(
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search_rounded),
-              labelText: t('Search deadlines', 'ابحث عن المهام'),
-            ),
-            onChanged: (value) => setState(() => _searchQuery = value),
-          ),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            key: ValueKey(selectedCourse),
-            initialValue: selectedCourse ?? '',
-            decoration: InputDecoration(
-              labelText: t('Filter by course', 'تصفية حسب المساق'),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: '',
-                child: Text(t('All courses', 'كل المساقات')),
-              ),
-              ...(courses.toList()..sort()).map(
-                (course) =>
-                    DropdownMenuItem(value: course, child: Text(course)),
-              ),
-            ],
-            onChanged: (value) => setState(() {
-              _selectedCourse = value == null || value.isEmpty ? null : value;
-            }),
-          ),
-          if (overdue.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            _section(t('Overdue', 'مهام متأخرة'), '${overdue.length}'),
-            const SizedBox(height: 8),
-            ...overdue.take(15).map(_deadlineCard),
-          ],
-          const SizedBox(height: 18),
-          _section(
-            t('Upcoming deadlines', 'المواعيد القادمة'),
-            '${upcoming.length}',
-          ),
-          const SizedBox(height: 8),
-          if (upcoming.isEmpty)
-            _empty(
-              Icons.task_alt_rounded,
-              t('You are all caught up', 'لا توجد مواعيد قادمة'),
+          ListTile(
+            leading: const Icon(Icons.task_alt_rounded),
+            title: Text(t('My tasks', 'المهام')),
+            subtitle: Text(
               t(
-                'Pull down to sync your Moodle calendar.',
-                'اسحب للأسفل لمزامنة تقويم Moodle.',
+                'View and manage all deadlines',
+                'عرض المواعيد والمهام وإدارتها',
               ),
-            )
-          else
-            ...upcoming.take(15).map(_deadlineCard),
-          if (controller.completedDeadlines.isNotEmpty) ...[
-            const SizedBox(height: 18),
-            _section(
-              t('Completed', 'المكتملة'),
-              '${controller.completedDeadlines.length}',
             ),
-            const SizedBox(height: 8),
-            ...controller.completedDeadlines.take(5).map(_deadlineCard),
-          ],
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => setState(() => _index = 1),
+          ),
+          ListTile(
+            leading: const Icon(Icons.menu_book_rounded),
+            title: Text(t('Weekly study plan', 'خطة المذاكرة الأسبوعية')),
+            subtitle: Text(
+              t('Review your weekly schedule', 'راجع جدول المذاكرة الأسبوعي'),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => setState(() => _index = 2),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _plan() {
+    final active = widget.controller.activeDeadlines;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        _section(t('Weekly study plan', 'خطة المذاكرة الأسبوعية'), ''),
+        const SizedBox(height: 8),
+        ...StudyInsights.week(active, DateTime.now()).entries.map((entry) {
+          final day = entry.key;
+          final tasks = entry.value;
+          return ListTile(
+            leading: const Icon(Icons.calendar_view_week_rounded),
+            title: Text(DateFormat.EEEE(_localeName).format(day)),
+            subtitle: Text(
+              tasks.isEmpty
+                  ? t('No tasks', 'لا توجد مهام')
+                  : tasks.map((task) => task.title).join(' • '),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Text('${tasks.length}'),
+          );
+        }),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: () => showDialog<void>(
+            context: context,
+            builder: (_) => PomodoroDialog(arabic: _ar),
+          ),
+          icon: const Icon(Icons.timer_outlined),
+          label: Text(t('Pomodoro focus timer', 'مؤقت بومودورو')),
+        ),
+        const SizedBox(height: 8),
+        FilledButton.icon(
+          onPressed: _addManualTask,
+          icon: const Icon(Icons.add_task_rounded),
+          label: Text(t('Add task', 'إضافة مهمة')),
+        ),
+      ],
+    );
+  }
+
+  Widget _tasks() {
+    final controller = widget.controller;
+    final active = controller.activeDeadlines;
+    final courses = active
+        .map((d) => d.course)
+        .where((c) => c.isNotEmpty)
+        .toSet();
+    final selectedCourse = validCourseSelection(active, _selectedCourse);
+    final deadlines = filterDeadlines(
+      active,
+      query: _searchQuery,
+      course: selectedCourse,
+    );
+    final overdue = deadlines.where((d) => d.isPast).toList();
+    final upcoming = deadlines.where((d) => !d.isPast).toList();
+    upcoming.sort((a, b) => a.due.compareTo(b.due));
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        FilledButton.icon(
+          onPressed: _addManualTask,
+          icon: const Icon(Icons.add_task_rounded),
+          label: Text(t('Add task', 'إضافة مهمة')),
+        ),
+        const SizedBox(height: 12),
+        _section(
+          t('My tasks today', 'مهامي اليوم'),
+          '${active.where((d) => _sameDay(d.due, DateTime.now())).length}',
+        ),
+        const SizedBox(height: 8),
+        ...active
+            .where((d) => _sameDay(d.due, DateTime.now()))
+            .map(_deadlineCard),
+        const SizedBox(height: 16),
+        TextField(
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.search_rounded),
+            labelText: t('Search deadlines', 'ابحث عن المهام'),
+          ),
+          onChanged: (value) => setState(() => _searchQuery = value),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          key: ValueKey(selectedCourse),
+          initialValue: selectedCourse ?? '',
+          decoration: InputDecoration(
+            labelText: t('Filter by course', 'تصفية حسب المساق'),
+          ),
+          items: [
+            DropdownMenuItem(
+              value: '',
+              child: Text(t('All courses', 'كل المساقات')),
+            ),
+            ...(courses.toList()..sort()).map(
+              (course) => DropdownMenuItem(value: course, child: Text(course)),
+            ),
+          ],
+          onChanged: (value) => setState(() {
+            _selectedCourse = value == null || value.isEmpty ? null : value;
+          }),
+        ),
+        if (overdue.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _section(t('Overdue', 'مهام متأخرة'), '${overdue.length}'),
+          const SizedBox(height: 8),
+          ...overdue.take(15).map(_deadlineCard),
+        ],
+        const SizedBox(height: 18),
+        _section(
+          t('Upcoming deadlines', 'المواعيد القادمة'),
+          '${upcoming.length}',
+        ),
+        const SizedBox(height: 8),
+        if (upcoming.isEmpty)
+          _empty(
+            Icons.task_alt_rounded,
+            t('You are all caught up', 'لا توجد مواعيد قادمة'),
+            t(
+              'Pull down to sync your Moodle calendar.',
+              'اسحب للأسفل لمزامنة تقويم Moodle.',
+            ),
+          )
+        else
+          ...upcoming.take(15).map(_deadlineCard),
+        if (controller.completedDeadlines.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _section(
+            t('Completed', 'المكتملة'),
+            '${controller.completedDeadlines.length}',
+          ),
+          const SizedBox(height: 8),
+          ...controller.completedDeadlines.take(5).map(_deadlineCard),
+        ],
+      ],
     );
   }
 

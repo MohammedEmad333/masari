@@ -229,18 +229,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget _home() {
     final controller = widget.controller;
     final active = controller.activeDeadlines;
-    final courses = active
-        .map((d) => d.course)
-        .where((c) => c.isNotEmpty)
-        .toSet();
-    final selectedCourse = validCourseSelection(active, _selectedCourse);
-    final deadlines = filterDeadlines(
-      active,
-      query: _searchQuery,
-      course: selectedCourse,
-    );
-    final overdue = deadlines.where((d) => d.isPast).toList();
-    final upcoming = deadlines.where((d) => !d.isPast).toList();
+    final upcoming = active.where((d) => !d.isPast).toList();
     upcoming.sort((a, b) => a.due.compareTo(b.due));
     final next = upcoming.isEmpty ? null : upcoming.first;
     final weekEnd = DateTime.now().add(const Duration(days: 7));
@@ -370,7 +359,6 @@ class _HomeShellState extends State<HomeShell> {
           icon: const Icon(Icons.add_task_rounded),
           label: Text(t('Add task', 'إضافة مهمة')),
         ),
-
       ],
     );
   }

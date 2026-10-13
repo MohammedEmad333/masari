@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'models/deadline.dart';
 import 'services/calendar_repository.dart';
 import 'services/notification_service.dart';
 import 'services/home_widget_bridge.dart';
+import 'services/moodle_api_client.dart';
+import 'services/moodle_api_credentials_store.dart';
+import 'services/moodle_deadline_merger.dart';
 
 class AppController extends ChangeNotifier {
   AppController(this._repository);
@@ -12,10 +16,11 @@ class AppController extends ChangeNotifier {
 
   List<Deadline> deadlines = const [];
   List<Deadline> manualDeadlines = const [];
+  List<Deadline> apiDeadlines = const [];
   List<String> additionalCalendarUrls = const [];
 
   List<Deadline> get allDeadlines =>
-      [...deadlines, ...manualDeadlines]..sort((a, b) {
+      [...MoodleDeadlineMerger.merge(deadlines, apiDeadlines), ...manualDeadlines]..sort((a, b) {
         final priority = b.priority.compareTo(a.priority);
         return priority != 0 ? priority : a.due.compareTo(b.due);
       });
@@ -119,11 +124,43 @@ class AppController extends ChangeNotifier {
 
   Future<void> _syncInternal() async {
     deadlines = await _repository.sync();
+    await _syncOptionalApi();
     lastSync = await _repository.loadLastSync();
     error = null;
     await _rescheduleNotifications();
     await _publishWidget();
     notifyListeners();
+  }
+
+  Future<void> _syncOptionalApi() async {
+    try {
+      final credentials = await MoodleApiCredentialsStore(
+        const FlutterSecureStorage(),
+      ).load();
+      if (credentials == null) {
+        apiDeadlines = const [];
+        return;
+      }
+      final api = MoodleApiClient(
+        baseUrl: credentials.server,
+        token: credentials.token,
+      );
+      try {
+        final info = await api.siteInfo();
+        final userId = (info['userid'] as num?)?.toInt();
+        if (userId == null) return;
+        final courses = await api.courses(userId);
+        final ids = courses
+            .map((course) => (course['id'] as num?)?.toInt())
+            .whereType<int>()
+            .toList();
+        apiDeadlines = await api.assignments(ids);
+      } finally {
+        api.close();
+      }
+    } catch (_) {
+      // Moodle API is optional: preserve the last successful API result.
+    }
   }
 
   Future<void> _publishWidget() async {

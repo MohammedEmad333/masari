@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/moodle_api_credentials_store.dart';
 import '../services/moodle_api_client.dart';
+import '../services/moodle_browser_login.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -1192,6 +1193,33 @@ class _SetupState extends State<_Setup> {
     super.dispose();
   }
 
+  Future<void> _openUniversityLogin() async {
+    final login = MoodleBrowserLogin.universityLoginUrl(_apiServer.text);
+    if (login == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t('Enter a valid HTTPS university Moodle URL.',
+                'أدخل رابط Moodle الجامعي الآمن HTTPS.'),
+          ),
+        ),
+      );
+      return;
+    }
+    final opened = await launchUrl(
+      login,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!mounted) return;
+    if (!opened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(t('Could not open browser.', 'تعذّر فتح المتصفح.')),
+        ),
+      );
+    }
+  }
+
   Future<void> _connectApi() async {
     setState(() => _apiBusy = true);
     try {
@@ -1351,6 +1379,21 @@ class _SetupState extends State<_Setup> {
             keyboardType: TextInputType.url,
             decoration: InputDecoration(
               labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _openUniversityLogin,
+            icon: const Icon(Icons.open_in_browser_rounded),
+            label: Text(
+              t('Open university login in browser',
+                  'افتح تسجيل دخول الجامعة في المتصفح'),
+            ),
+          ),
+          Text(
+            t(
+              'Browser sign-in does not connect this app. API access still requires a supported university authorization flow or a Web Services token.',
+              'تسجيل الدخول في المتصفح لا يربط التطبيق. يتطلب الوصول للواجبات تفويضًا مدعومًا من الجامعة أو رمز خدمات الويب.',
             ),
           ),
           const SizedBox(height: 8),

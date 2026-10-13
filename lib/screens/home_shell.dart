@@ -1421,26 +1421,35 @@ class _SetupState extends State<_Setup> {
               t('Check university compatibility', 'فحص توافق الجامعة'),
             ),
           ),
-          if (_checkingCompatibility)
-            const LinearProgressIndicator(),
+          if (_checkingCompatibility) const LinearProgressIndicator(),
           if (_compatibility != null) ...[
             Text(
               _compatibility!.loginReachable
-                  ? t('Moodle login page responded.',
-                      'استجابت صفحة تسجيل الدخول إلى Moodle.')
-                  : t('Login page could not be verified.',
-                      'تعذّر التحقق من صفحة تسجيل الدخول.'),
+                  ? t(
+                      'Moodle login page responded.',
+                      'استجابت صفحة تسجيل الدخول إلى Moodle.',
+                    )
+                  : t(
+                      'Login page could not be verified.',
+                      'تعذّر التحقق من صفحة تسجيل الدخول.',
+                    ),
             ),
             Text(
               _compatibility!.apiEndpointReachable
-                  ? t('Web Services endpoint responded; API access is not confirmed.',
-                      'استجابت نقطة خدمات الويب؛ صلاحية API غير مؤكدة.')
-                  : t('Web Services endpoint could not be verified.',
-                      'تعذّر التحقق من نقطة خدمات الويب.'),
+                  ? t(
+                      'Web Services endpoint responded; API access is not confirmed.',
+                      'استجابت نقطة خدمات الويب؛ صلاحية API غير مؤكدة.',
+                    )
+                  : t(
+                      'Web Services endpoint could not be verified.',
+                      'تعذّر التحقق من نقطة خدمات الويب.',
+                    ),
             ),
             Text(
-              t('Token issuance and assignment permissions require an authorized account test.',
-                  'إصدار الرموز وصلاحيات الواجبات يحتاجان اختبارًا بحساب مصرح به.'),
+              t(
+                'Token issuance and assignment permissions require an authorized account test.',
+                'إصدار الرموز وصلاحيات الواجبات يحتاجان اختبارًا بحساب مصرح به.',
+              ),
             ),
           ],
           const SizedBox(height: 8),

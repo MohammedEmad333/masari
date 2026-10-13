@@ -27,6 +27,7 @@ class CalendarRepository {
   static const _cacheKey = 'deadline_cache_v2';
   static const _manualKey = 'manual_deadlines_v1';
   static const _apiCacheKey = 'moodle_api_deadline_cache_v1';
+  static const _sessionCacheKey = 'moodle_session_events_v1';
   static const _legacyCacheKey = 'deadline_cache';
   static const _lastSyncKey = 'last_sync_at';
   static const _reminderOffsetsKey = 'reminder_offsets_hours';
@@ -165,6 +166,35 @@ class CalendarRepository {
   Future<void> clearCachedApiDeadlines() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_apiCacheKey);
+  }
+
+  Future<List<Deadline>> loadSessionDeadlines() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_sessionCacheKey);
+    if (raw == null) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((item) => Deadline.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveSessionDeadlines(List<Deadline> values) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _sessionCacheKey,
+      jsonEncode(values.map((value) => value.toJson()).toList()),
+    );
+  }
+
+  Future<void> clearSessionDeadlines() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionCacheKey);
   }
 
   Future<List<Deadline>> loadManualDeadlines() async {

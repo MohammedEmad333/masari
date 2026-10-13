@@ -136,7 +136,9 @@ class AppController extends ChangeNotifier {
     }
     final apiSucceeded = await _syncOptionalApi();
     if (!calendarConnected && !apiSucceeded) {
-      throw const CalendarSyncException('Could not sync Moodle API. Check your connection.');
+      throw const CalendarSyncException(
+        'Could not sync Moodle API. Check your connection.',
+      );
     }
     lastSync = calendarConnected
         ? await _repository.loadLastSync()

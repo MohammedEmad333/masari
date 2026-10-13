@@ -23,9 +23,10 @@ void main() {
       course: 'Science',
       due: due,
     );
-    final merged = MoodleDeadlineMerger.merge([
-      calendar,
-    ], [duplicate, distinct]);
+    final merged = MoodleDeadlineMerger.merge(
+      [calendar],
+      [duplicate, distinct],
+    );
     expect(merged, hasLength(2));
     expect(merged.first.uid, 'ical-1');
     expect(merged.last.uid, 'api-2');

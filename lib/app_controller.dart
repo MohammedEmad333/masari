@@ -17,11 +17,13 @@ class AppController extends ChangeNotifier {
   List<Deadline> deadlines = const [];
   List<Deadline> manualDeadlines = const [];
   List<Deadline> apiDeadlines = const [];
+  List<Deadline> sessionDeadlines = const [];
   List<String> additionalCalendarUrls = const [];
 
   List<Deadline> get allDeadlines =>
       [
         ...MoodleDeadlineMerger.merge(deadlines, apiDeadlines),
+        ...sessionDeadlines,
         ...manualDeadlines,
       ]..sort((a, b) {
         final priority = b.priority.compareTo(a.priority);
@@ -36,7 +38,8 @@ class AppController extends ChangeNotifier {
   bool initialized = false;
   bool calendarConnected = false;
   bool apiConnected = false;
-  bool get hasConnection => calendarConnected || apiConnected;
+  bool get hasConnection =>
+      calendarConnected || apiConnected || sessionDeadlines.isNotEmpty;
   String? error;
   ThemeMode themeMode = ThemeMode.system;
   Locale locale = const Locale('en');
@@ -64,6 +67,7 @@ class AppController extends ChangeNotifier {
       _repository.loadManualDeadlines(),
       _repository.loadAdditionalCalendarUrls(),
       _repository.loadCachedApiDeadlines(),
+      _repository.loadSessionDeadlines(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -77,6 +81,7 @@ class AppController extends ChangeNotifier {
     manualDeadlines = results[8] as List<Deadline>;
     additionalCalendarUrls = results[9] as List<String>;
     apiDeadlines = results[10] as List<Deadline>;
+    sessionDeadlines = results[11] as List<Deadline>;
     apiConnected = await _hasApiCredentials();
     initialized = true;
     await _publishWidget();
@@ -84,7 +89,7 @@ class AppController extends ChangeNotifier {
 
     if (hasConnection) {
       await NotificationService.init(requestPermissions: true);
-      await sync(silent: true);
+      if (calendarConnected || apiConnected) await sync(silent: true);
     }
   }
 
@@ -111,7 +116,9 @@ class AppController extends ChangeNotifier {
   }
 
   Future<bool> sync({bool silent = false}) async {
-    if (!hasConnection || busy || _syncInProgress) return false;
+    if (!(calendarConnected || apiConnected) || busy || _syncInProgress) {
+      return false;
+    }
     _syncInProgress = true;
     busy = true;
     error = null;
@@ -221,6 +228,25 @@ class AppController extends ChangeNotifier {
     additionalCalendarUrls = await _repository.loadAdditionalCalendarUrls();
     notifyListeners();
     if (calendarConnected) await sync();
+  }
+
+  /// One-time manual import; session cookies and university credentials
+  /// never leave the embedded browser or enter persistent storage.
+  Future<void> importSessionDeadlines(List<Deadline> values) async {
+    sessionDeadlines = values;
+    await _repository.saveSessionDeadlines(values);
+    await NotificationService.init(requestPermissions: true);
+    await _rescheduleNotifications();
+    await _publishWidget();
+    notifyListeners();
+  }
+
+  Future<void> clearImportedSessionDeadlines() async {
+    sessionDeadlines = const [];
+    await _repository.clearSessionDeadlines();
+    await _rescheduleNotifications();
+    await _publishWidget();
+    notifyListeners();
   }
 
   Future<void> addManualDeadline(Deadline deadline) async {

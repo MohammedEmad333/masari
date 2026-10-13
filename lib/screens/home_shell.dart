@@ -16,6 +16,7 @@ import '../services/notification_service.dart';
 import '../services/deadline_filters.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
+import 'moodle_session_pilot_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -1196,6 +1197,31 @@ class _SetupState extends State<_Setup> {
     super.dispose();
   }
 
+  Future<void> _openSessionPilot() async {
+    if (MoodleBrowserLogin.universityLoginUrl(_apiServer.text) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'Enter a valid HTTPS Moodle server URL first.',
+              'أدخل رابط خادم Moodle الآمن أولًا.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MoodleSessionPilotScreen(
+          moodleServer: _apiServer.text.trim(),
+          isArabic: _ar,
+          onImport: widget.controller.importSessionDeadlines,
+        ),
+      ),
+    );
+  }
+
   Future<void> _checkUniversityCompatibility() async {
     setState(() {
       _checkingCompatibility = true;
@@ -1452,6 +1478,23 @@ class _SetupState extends State<_Setup> {
               ),
             ),
           ],
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _openSessionPilot,
+            icon: const Icon(Icons.science_outlined),
+            label: Text(
+              t(
+                'Try experimental university session',
+                'جرّب جلسة الجامعة التجريبية',
+              ),
+            ),
+          ),
+          Text(
+            t(
+              'Experimental sign-in opens Moodle inside an isolated browser. You can import deadlines manually; it does not save your university password.',
+              'يفتح تسجيل الدخول التجريبي Moodle داخل متصفح منفصل. يمكنك استيراد المواعيد يدويًا ولا يحفظ كلمة مرور الجامعة.',
+            ),
+          ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
             onPressed: _openUniversityLogin,

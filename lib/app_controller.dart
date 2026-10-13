@@ -20,7 +20,10 @@ class AppController extends ChangeNotifier {
   List<String> additionalCalendarUrls = const [];
 
   List<Deadline> get allDeadlines =>
-      [...MoodleDeadlineMerger.merge(deadlines, apiDeadlines), ...manualDeadlines]..sort((a, b) {
+      [
+        ...MoodleDeadlineMerger.merge(deadlines, apiDeadlines),
+        ...manualDeadlines,
+      ]..sort((a, b) {
         final priority = b.priority.compareTo(a.priority);
         return priority != 0 ? priority : a.due.compareTo(b.due);
       });

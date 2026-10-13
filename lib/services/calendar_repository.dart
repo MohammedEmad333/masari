@@ -26,6 +26,7 @@ class CalendarRepository {
   static const _legacyCalendarUrlKey = 'calendar_url';
   static const _cacheKey = 'deadline_cache_v2';
   static const _manualKey = 'manual_deadlines_v1';
+  static const _apiCacheKey = 'moodle_api_deadline_cache_v1';
   static const _legacyCacheKey = 'deadline_cache';
   static const _lastSyncKey = 'last_sync_at';
   static const _reminderOffsetsKey = 'reminder_offsets_hours';
@@ -134,6 +135,36 @@ class CalendarRepository {
     } catch (_) {
       return const [];
     }
+  }
+
+  /// Cached non-secret assignment metadata for offline API access.
+  Future<List<Deadline>> loadCachedApiDeadlines() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_apiCacheKey);
+    if (raw == null) return const [];
+    try {
+      final data = jsonDecode(raw);
+      if (data is! List) return const [];
+      return data
+          .whereType<Map>()
+          .map((value) => Deadline.fromJson(Map<String, dynamic>.from(value)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveCachedApiDeadlines(List<Deadline> values) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _apiCacheKey,
+      jsonEncode(values.map((value) => value.toJson()).toList()),
+    );
+  }
+
+  Future<void> clearCachedApiDeadlines() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_apiCacheKey);
   }
 
   Future<List<Deadline>> loadManualDeadlines() async {

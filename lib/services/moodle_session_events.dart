@@ -26,9 +26,8 @@ class MoodleSessionEvents {
       if (ts == null || ts <= 0 || title == null || title.isEmpty) continue;
       final rawUrl = event['url'] as String? ?? '';
       final url = Uri.tryParse(rawUrl);
-      final safeUrl = url != null &&
-              url.scheme == 'https' &&
-              url.host == server.host
+      final safeUrl =
+          url != null && url.scheme == 'https' && url.host == server.host
           ? url.toString()
           : '';
       values.add(

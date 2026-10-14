@@ -18,8 +18,12 @@ void main() {
 
   test('persists courses, chapters and links', () async {
     final link = library.createLink('Lecture', 'https://example.edu/video');
-    final chapters = [CourseChapter(id: library.newId(), name: 'Chapter 1', materials: [link])];
-    await library.save([LocalCourse(id: library.newId(), name: 'Math', chapters: chapters)]);
+    final chapters = [
+      CourseChapter(id: library.newId(), name: 'Chapter 1', materials: [link]),
+    ];
+    await library.save([
+      LocalCourse(id: library.newId(), name: 'Math', chapters: chapters),
+    ]);
     final loaded = await library.load();
     expect(loaded.single.name, 'Math');
     expect(loaded.single.chapters.single.materials.single.title, 'Lecture');

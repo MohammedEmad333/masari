@@ -55,7 +55,12 @@ void main() {
     final other = File('${sandbox.path}/keep.txt');
     await other.writeAsString('important');
     await library.deleteMaterial(
-      CourseMaterial(id: 'external', title: 'external', value: other.path, isLink: false),
+      CourseMaterial(
+        id: 'external',
+        title: 'external',
+        value: other.path,
+        isLink: false,
+      ),
     );
     expect(await other.exists(), isTrue);
   });

@@ -559,7 +559,12 @@ class _HomeShellState extends State<HomeShell> {
           child: ListTile(
             leading: const Icon(Icons.folder_copy_outlined),
             title: Text(t('My study library', 'مكتبتي الدراسية')),
-            subtitle: Text(t('Organize your own courses, chapters, files and links', 'نظّم مساقاتك وفصولك وملفاتك وروابطك')),
+            subtitle: Text(
+              t(
+                'Organize your own courses, chapters, files and links',
+                'نظّم مساقاتك وفصولك وملفاتك وروابطك',
+              ),
+            ),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(

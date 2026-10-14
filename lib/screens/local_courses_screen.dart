@@ -30,12 +30,13 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
     try {
       final library = await LocalCourseLibrary.open();
       final courses = await library.load();
-      if (mounted)
+      if (mounted) {
         setState(() {
           _library = library;
           _courses = courses;
           _busy = false;
         });
+      }
     } catch (_) {
       if (mounted) setState(() => _busy = false);
       _error();
@@ -215,14 +216,11 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
 
   Future<void> _addFiles(LocalCourse course, CourseChapter chapter) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        withData: false,
-      );
-      if (result == null) return;
+      final result = await FilePicker.pickFiles();
+      if (result.isEmpty) return;
       final copied = <CourseMaterial>[];
       try {
-        for (final file in result.files) {
+        for (final file in result) {
           if (file.path == null) continue;
           copied.add(await _library!.importFile(file.path!, file.name));
         }
@@ -278,8 +276,9 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         if (!await launchUrl(
           Uri.parse(item.value),
           mode: LaunchMode.externalApplication,
-        ))
+        )) {
           _error();
+        }
       } else {
         final result = await OpenFilex.open(item.value);
         if (result.type != ResultType.done) _error();
@@ -346,10 +345,12 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                             ),
                             trailing: PopupMenuButton<String>(
                               onSelected: (value) {
-                                if (value == 'edit')
+                                if (value == 'edit') {
                                   _renameChapter(course, chapter);
-                                if (value == 'delete')
+                                }
+                                if (value == 'delete') {
                                   _removeChapter(course, chapter);
+                                }
                               },
                               itemBuilder: (_) => [
                                 PopupMenuItem(

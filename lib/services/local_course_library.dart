@@ -128,8 +128,9 @@ class LocalCourseLibrary {
     String displayName,
   ) async {
     final source = File(sourcePath);
-    if (!await source.exists())
+    if (!await source.exists()) {
       throw const FileSystemException('Selected file not found');
+    }
     await _files.create(recursive: true);
     final id = newId();
     final suffix = displayName.contains('.')

@@ -41,8 +41,14 @@ void main() {
   });
 
   test('rejects non-http links and embedded credentials', () {
-    expect(() => library.createLink('Bad', 'javascript:alert(1)'), throwsFormatException);
-    expect(() => library.createLink('Bad', 'https://user:pass@example.edu/'), throwsFormatException);
+    expect(
+      () => library.createLink('Bad', 'javascript:alert(1)'),
+      throwsFormatException,
+    );
+    expect(
+      () => library.createLink('Bad', 'https://user:pass@example.edu/'),
+      throwsFormatException,
+    );
   });
 
   test('cannot delete unrelated files from outside library', () async {

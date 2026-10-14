@@ -16,6 +16,7 @@ import '../services/notification_service.dart';
 import '../services/deadline_filters.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
+import 'local_courses_screen.dart';
 import 'moodle_session_pilot_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -554,6 +555,25 @@ class _HomeShellState extends State<HomeShell> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.folder_copy_outlined),
+            title: Text(t('My study library', 'مكتبتي الدراسية')),
+            subtitle: Text(
+              t(
+                'Organize your own courses, chapters, files and links',
+                'نظّم مساقاتك وفصولك وملفاتك وروابطك',
+              ),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => LocalCoursesScreen(arabic: _ar),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         _section(t('My courses', 'مساقاتي'), '${entries.length}'),
         const SizedBox(height: 8),
         if (entries.isEmpty)

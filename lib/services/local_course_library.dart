@@ -50,13 +50,20 @@ class CourseChapter {
     id: json['id'] as String,
     name: json['name'] as String,
     materials: (json['materials'] as List<dynamic>? ?? [])
-        .map((item) => CourseMaterial.fromJson(Map<String, dynamic>.from(item as Map)))
+        .map(
+          (item) =>
+              CourseMaterial.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
         .toList(),
   );
 }
 
 class LocalCourse {
-  const LocalCourse({required this.id, required this.name, this.chapters = const []});
+  const LocalCourse({
+    required this.id,
+    required this.name,
+    this.chapters = const [],
+  });
   final String id;
   final String name;
   final List<CourseChapter> chapters;
@@ -71,7 +78,10 @@ class LocalCourse {
     id: json['id'] as String,
     name: json['name'] as String,
     chapters: (json['chapters'] as List<dynamic>? ?? [])
-        .map((item) => CourseChapter.fromJson(Map<String, dynamic>.from(item as Map)))
+        .map(
+          (item) =>
+              CourseChapter.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
         .toList(),
   );
 }
@@ -94,34 +104,61 @@ class LocalCourseLibrary {
   Future<List<LocalCourse>> load() async {
     if (!await _index.exists()) return [];
     final decoded = jsonDecode(await _index.readAsString()) as List<dynamic>;
-    return decoded.map((item) => LocalCourse.fromJson(Map<String, dynamic>.from(item as Map))).toList();
+    return decoded
+        .map(
+          (item) =>
+              LocalCourse.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
   }
 
   Future<void> save(List<LocalCourse> courses) async {
     await _index.parent.create(recursive: true);
     final temp = File('${_index.path}.tmp');
-    await temp.writeAsString(jsonEncode(courses.map((c) => c.toJson()).toList()), flush: true);
+    await temp.writeAsString(
+      jsonEncode(courses.map((c) => c.toJson()).toList()),
+      flush: true,
+    );
     await temp.rename(_index.path);
   }
 
   /// Only accepts a local file produced by the platform picker.
-  Future<CourseMaterial> importFile(String sourcePath, String displayName) async {
+  Future<CourseMaterial> importFile(
+    String sourcePath,
+    String displayName,
+  ) async {
     final source = File(sourcePath);
-    if (!await source.exists()) throw const FileSystemException('Selected file not found');
+    if (!await source.exists())
+      throw const FileSystemException('Selected file not found');
     await _files.create(recursive: true);
     final id = newId();
-    final suffix = displayName.contains('.') ? '.${displayName.split('.').last.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')}' : '';
+    final suffix = displayName.contains('.')
+        ? '.${displayName.split('.').last.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')}'
+        : '';
     final target = File('${_files.path}/$id$suffix');
     await source.copy(target.path);
-    return CourseMaterial(id: id, title: displayName, value: target.path, isLink: false);
+    return CourseMaterial(
+      id: id,
+      title: displayName,
+      value: target.path,
+      isLink: false,
+    );
   }
 
   CourseMaterial createLink(String title, String input) {
     final uri = Uri.tryParse(input.trim());
-    if (uri == null || (uri.scheme != 'https' && uri.scheme != 'http') || uri.host.isEmpty || uri.userInfo.isNotEmpty) {
+    if (uri == null ||
+        (uri.scheme != 'https' && uri.scheme != 'http') ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty) {
       throw const FormatException('Enter a valid HTTP or HTTPS URL');
     }
-    return CourseMaterial(id: newId(), title: title.trim(), value: uri.toString(), isLink: true);
+    return CourseMaterial(
+      id: newId(),
+      title: title.trim(),
+      value: uri.toString(),
+      isLink: true,
+    );
   }
 
   Future<void> deleteMaterial(CourseMaterial material) async {

@@ -127,7 +127,7 @@ class LocalCourseLibrary {
   Future<void> deleteMaterial(CourseMaterial material) async {
     if (material.isLink) return;
     final file = File(material.value);
-    final parent = await _files.absolute.path;
+    final parent = _files.absolute.path;
     if (file.parent.absolute.path != parent) return;
     if (await file.exists()) await file.delete();
   }

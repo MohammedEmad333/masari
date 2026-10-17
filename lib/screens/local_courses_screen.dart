@@ -169,8 +169,9 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           ],
         ),
       );
-      if (url != null && url.isNotEmpty && mounted)
+      if (url != null && url.isNotEmpty && mounted) {
         await _importSharedCourse(url);
+      }
     } finally {
       field.dispose();
     }
@@ -420,6 +421,7 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                       title: Text(course.name),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
+                          if (value == 'share') _shareCourse(course);
                           if (value == 'edit') _editCourse(course);
                           if (value == 'delete') _removeCourse(course);
                         },

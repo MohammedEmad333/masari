@@ -1,3 +1,6 @@
+import 'package:flutter/services.dart';
+
+import '../services/course_share_codec.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
@@ -6,8 +9,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/local_course_library.dart';
 
 class LocalCoursesScreen extends StatefulWidget {
-  const LocalCoursesScreen({super.key, required this.arabic});
+  const LocalCoursesScreen({
+    super.key,
+    required this.arabic,
+    this.incomingLink,
+  });
   final bool arabic;
+  final String? incomingLink;
 
   @override
   State<LocalCoursesScreen> createState() => _LocalCoursesScreenState();
@@ -36,6 +44,11 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           _courses = courses;
           _busy = false;
         });
+        if (widget.incomingLink != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _importSharedCourse(widget.incomingLink!);
+          });
+        }
       }
     } catch (_) {
       if (mounted) setState(() => _busy = false);
@@ -117,6 +130,87 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         ),
       ) ??
       false;
+
+  Future<void> _shareCourse(LocalCourse course) async {
+    try {
+      final url = CourseShareCodec.encode(course);
+      await Clipboard.setData(ClipboardData(text: url));
+      await const MethodChannel(
+        'moodle_reminder/course_share',
+      ).invokeMethod<void>('shareLink', {'url': url});
+    } catch (_) {
+      _error();
+    }
+  }
+
+  Future<void> _pasteSharedCourse() async {
+    final field = TextEditingController();
+    try {
+      final url = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(t('Import shared course', 'استيراد مساق مشارك')),
+          content: TextField(
+            controller: field,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: t('Paste course link', 'ألصق رابط المساق'),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, field.text.trim()),
+              child: Text(t('Preview', 'معاينة')),
+            ),
+          ],
+        ),
+      );
+      if (url != null && url.isNotEmpty && mounted) {
+        await _importSharedCourse(url);
+      }
+    } finally {
+      field.dispose();
+    }
+  }
+
+  Future<void> _importSharedCourse(String link) async {
+    final library = _library;
+    if (library == null || !mounted) return;
+    try {
+      final course = CourseShareCodec.decode(link, library);
+      final approved = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(t('Import shared course?', 'استيراد المساق المشارك؟')),
+          content: Text(
+            t(
+              '${course.name}: ${course.chapters.length} chapters. Only web links will be imported; no local files.',
+              '${course.name}: ${course.chapters.length} فصول. سيتم استيراد الروابط فقط دون الملفات المحلية.',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(t('Import', 'استيراد')),
+            ),
+          ],
+        ),
+      );
+      if (approved == true && mounted) {
+        await _commit([..._courses, course]);
+      }
+    } catch (_) {
+      _error();
+    }
+  }
 
   Future<void> _addCourse() async {
     final name = await _askName(t('New course', 'مساق جديد'));
@@ -291,7 +385,16 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(t('My study library', 'مكتبتي الدراسية'))),
+      appBar: AppBar(
+        title: Text(t('My study library', 'مكتبتي الدراسية')),
+        actions: [
+          IconButton(
+            tooltip: t('Import shared course', 'استيراد مساق مشارك'),
+            onPressed: _library == null ? null : _pasteSharedCourse,
+            icon: const Icon(Icons.download_rounded),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _busy || _library == null ? null : _addCourse,
         icon: const Icon(Icons.add),
@@ -318,10 +421,15 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                       title: Text(course.name),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
+                          if (value == 'share') _shareCourse(course);
                           if (value == 'edit') _editCourse(course);
                           if (value == 'delete') _removeCourse(course);
                         },
                         itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'share',
+                            child: Text(t('Share course', 'مشاركة المساق')),
+                          ),
                           PopupMenuItem(
                             value: 'edit',
                             child: Text(t('Rename', 'تعديل الاسم')),

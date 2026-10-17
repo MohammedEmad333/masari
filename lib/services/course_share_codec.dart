@@ -44,8 +44,9 @@ class CourseShareCodec {
   }
 
   static LocalCourse decode(String raw, LocalCourseLibrary library) {
-    if (raw.length > maxLinkLength)
+    if (raw.length > maxLinkLength) {
       throw const FormatException('Share link is too long');
+    }
     final uri = Uri.tryParse(raw.trim());
     if (uri == null ||
         uri.scheme != scheme ||
@@ -59,12 +60,14 @@ class CourseShareCodec {
     final decoded = jsonDecode(
       utf8.decode(base64Url.decode(base64Url.normalize(token))),
     );
-    if (decoded is! Map || decoded['v'] != 1)
+    if (decoded is! Map || decoded['v'] != 1) {
       throw const FormatException('Unsupported course link');
+    }
     final name = _text(decoded['name']);
     final chapters = decoded['chapters'];
-    if (chapters is! List || chapters.length > maxChapters)
+    if (chapters is! List || chapters.length > maxChapters) {
       throw const FormatException('Invalid chapters');
+    }
     var count = 0;
     return LocalCourse(
       id: library.newId(),

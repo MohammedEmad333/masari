@@ -9,7 +9,11 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/local_course_library.dart';
 
 class LocalCoursesScreen extends StatefulWidget {
-  const LocalCoursesScreen({super.key, required this.arabic, this.incomingLink});
+  const LocalCoursesScreen({
+    super.key,
+    required this.arabic,
+    this.incomingLink,
+  });
   final bool arabic;
   final String? incomingLink;
 
@@ -131,10 +135,9 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
     try {
       final url = CourseShareCodec.encode(course);
       await Clipboard.setData(ClipboardData(text: url));
-      await const MethodChannel('moodle_reminder/course_share').invokeMethod<void>(
-        'shareLink',
-        {'url': url},
-      );
+      await const MethodChannel(
+        'moodle_reminder/course_share',
+      ).invokeMethod<void>('shareLink', {'url': url});
     } catch (_) {
       _error();
     }
@@ -150,15 +153,24 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           content: TextField(
             controller: field,
             maxLines: 3,
-            decoration: InputDecoration(labelText: t('Paste course link', 'ألصق رابط المساق')),
+            decoration: InputDecoration(
+              labelText: t('Paste course link', 'ألصق رابط المساق'),
+            ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(t('Cancel', 'إلغاء'))),
-            FilledButton(onPressed: () => Navigator.pop(ctx, field.text.trim()), child: Text(t('Preview', 'معاينة'))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, field.text.trim()),
+              child: Text(t('Preview', 'معاينة')),
+            ),
           ],
         ),
       );
-      if (url != null && url.isNotEmpty && mounted) await _importSharedCourse(url);
+      if (url != null && url.isNotEmpty && mounted)
+        await _importSharedCourse(url);
     } finally {
       field.dispose();
     }
@@ -173,13 +185,21 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(t('Import shared course?', 'استيراد المساق المشارك؟')),
-          content: Text(t(
-            '${course.name}: ${course.chapters.length} chapters. Only web links will be imported; no local files.',
-            '${course.name}: ${course.chapters.length} فصول. سيتم استيراد الروابط فقط دون الملفات المحلية.',
-          )),
+          content: Text(
+            t(
+              '${course.name}: ${course.chapters.length} chapters. Only web links will be imported; no local files.',
+              '${course.name}: ${course.chapters.length} فصول. سيتم استيراد الروابط فقط دون الملفات المحلية.',
+            ),
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('Cancel', 'إلغاء'))),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('Import', 'استيراد'))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(t('Import', 'استيراد')),
+            ),
           ],
         ),
       );

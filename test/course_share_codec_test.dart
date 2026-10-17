@@ -50,7 +50,10 @@ void main() {
     expect(imported.name, course.name);
     expect(imported.chapters.single.name, 'Motion');
     expect(imported.chapters.single.materials.single.title, 'Lecture');
-    expect(imported.chapters.single.materials.single.value, 'https://example.edu/lecture');
+    expect(
+      imported.chapters.single.materials.single.value,
+      'https://example.edu/lecture',
+    );
   });
 
   test('rejects invalid and oversized links', () {

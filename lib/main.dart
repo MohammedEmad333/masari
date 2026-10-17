@@ -18,12 +18,14 @@ const courseChannel = MethodChannel('moodle_reminder/course_share');
 void showIncomingCourse(String link, AppController controller) {
   final nav = navigatorKey.currentState;
   if (nav == null) return;
-  nav.push(MaterialPageRoute<void>(
-    builder: (_) => LocalCoursesScreen(
-      arabic: controller.locale.languageCode == 'ar',
-      incomingLink: link,
+  nav.push(
+    MaterialPageRoute<void>(
+      builder: (_) => LocalCoursesScreen(
+        arabic: controller.locale.languageCode == 'ar',
+        incomingLink: link,
+      ),
     ),
-  ));
+  );
 }
 
 Future<void> main() async {

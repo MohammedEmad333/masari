@@ -22,34 +22,49 @@ class CourseShareCodec {
             'name': chapter.name,
             'links': [
               for (final item in chapter.materials)
-                if (item.isLink)
-                  {'title': item.title, 'url': item.value},
+                if (item.isLink) {'title': item.title, 'url': item.value},
             ],
           },
       ],
     };
-    final data = base64Url.encode(utf8.encode(jsonEncode(payload))).replaceAll('=', '');
-    final uri = Uri(scheme: scheme, host: 'course', queryParameters: {'data': data});
+    final data = base64Url
+        .encode(utf8.encode(jsonEncode(payload)))
+        .replaceAll('=', '');
+    final uri = Uri(
+      scheme: scheme,
+      host: 'course',
+      queryParameters: {'data': data},
+    );
     if (uri.toString().length > maxLinkLength) {
-      throw const FormatException('Course has too many links to share in one URL');
+      throw const FormatException(
+        'Course has too many links to share in one URL',
+      );
     }
     return uri.toString();
   }
 
   static LocalCourse decode(String raw, LocalCourseLibrary library) {
-    if (raw.length > maxLinkLength) throw const FormatException('Share link is too long');
+    if (raw.length > maxLinkLength)
+      throw const FormatException('Share link is too long');
     final uri = Uri.tryParse(raw.trim());
-    if (uri == null || uri.scheme != scheme || uri.host != 'course' ||
-        uri.path.isNotEmpty || uri.queryParameters.length != 1 ||
+    if (uri == null ||
+        uri.scheme != scheme ||
+        uri.host != 'course' ||
+        uri.path.isNotEmpty ||
+        uri.queryParameters.length != 1 ||
         !uri.queryParameters.containsKey('data')) {
       throw const FormatException('Not a Moodle Reminder course link');
     }
     final token = uri.queryParameters['data']!;
-    final decoded = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(token))));
-    if (decoded is! Map || decoded['v'] != 1) throw const FormatException('Unsupported course link');
+    final decoded = jsonDecode(
+      utf8.decode(base64Url.decode(base64Url.normalize(token))),
+    );
+    if (decoded is! Map || decoded['v'] != 1)
+      throw const FormatException('Unsupported course link');
     final name = _text(decoded['name']);
     final chapters = decoded['chapters'];
-    if (chapters is! List || chapters.length > maxChapters) throw const FormatException('Invalid chapters');
+    if (chapters is! List || chapters.length > maxChapters)
+      throw const FormatException('Invalid chapters');
     var count = 0;
     return LocalCourse(
       id: library.newId(),
@@ -62,8 +77,7 @@ class CourseShareCodec {
               name: _text(rawChapter['name']),
               materials: [
                 for (final rawLink in rawChapter['links'] as List)
-                  if (rawLink is Map)
-                    _material(rawLink, library, ++count),
+                  if (rawLink is Map) _material(rawLink, library, ++count),
               ],
             )
           else
@@ -72,7 +86,11 @@ class CourseShareCodec {
     );
   }
 
-  static CourseMaterial _material(Map<dynamic, dynamic> value, LocalCourseLibrary library, int number) {
+  static CourseMaterial _material(
+    Map<dynamic, dynamic> value,
+    LocalCourseLibrary library,
+    int number,
+  ) {
     if (number > maxMaterials) throw const FormatException('Too many links');
     return library.createLink(_text(value['title']), _text(value['url']));
   }

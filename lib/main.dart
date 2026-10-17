@@ -1,14 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app_controller.dart';
 import 'screens/home_shell.dart';
+import 'screens/local_courses_screen.dart';
 import 'services/background_sync_service.dart';
 import 'services/calendar_repository.dart';
 import 'services/notification_service.dart';
+
+final navigatorKey = GlobalKey<NavigatorState>();
+const courseChannel = MethodChannel('moodle_reminder/course_share');
+
+void showIncomingCourse(String link, AppController controller) {
+  final nav = navigatorKey.currentState;
+  if (nav == null) return;
+  nav.push(MaterialPageRoute<void>(
+    builder: (_) => LocalCoursesScreen(
+      arabic: controller.locale.languageCode == 'ar',
+      incomingLink: link,
+    ),
+  ));
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +34,15 @@ Future<void> main() async {
 
   final controller = AppController(CalendarRepository());
   runApp(MoodleReminderApp(controller: controller));
+  courseChannel.setMethodCallHandler((call) async {
+    if (call.method == 'courseLink' && call.arguments is String) {
+      showIncomingCourse(call.arguments as String, controller);
+    }
+  });
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final link = await courseChannel.invokeMethod<String>('consumeLink');
+    if (link != null) showIncomingCourse(link, controller);
+  });
   unawaited(controller.initialize());
 }
 
@@ -32,6 +57,7 @@ class MoodleReminderApp extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           title: 'Moodle Reminder',
           debugShowCheckedModeBanner: false,
           locale: controller.locale,

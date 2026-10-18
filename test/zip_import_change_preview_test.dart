@@ -18,12 +18,30 @@ void main() {
   test('previews duplicates and new versions without copying files', () async {
     final original = File('${dir.path}/old.pdf');
     await original.writeAsString('first');
-    final current = LocalCourse(id: 'course', name: 'Physics', chapters: [
-      CourseChapter(id: 'chapter', name: 'Motion', materials: [
-        CourseMaterial(id: 'file', title: 'Lecture.pdf', value: original.path, isLink: false),
-        const CourseMaterial(id: 'url', title: 'Video', value: 'https://example.org/a', isLink: true),
-      ]),
-    ]);
+    final current = LocalCourse(
+      id: 'course',
+      name: 'Physics',
+      chapters: [
+        CourseChapter(
+          id: 'chapter',
+          name: 'Motion',
+          materials: [
+            CourseMaterial(
+              id: 'file',
+              title: 'Lecture.pdf',
+              value: original.path,
+              isLink: false,
+            ),
+            const CourseMaterial(
+              id: 'url',
+              title: 'Video',
+              value: 'https://example.org/a',
+              isLink: true,
+            ),
+          ],
+        ),
+      ],
+    );
     final data = jsonEncode({
       'v': 1,
       'name': 'Physics',
@@ -41,7 +59,9 @@ void main() {
       ],
     });
     final archive = Archive()
-      ..addFile(ArchiveFile('course.json', utf8.encode(data).length, utf8.encode(data)))
+      ..addFile(
+        ArchiveFile('course.json', utf8.encode(data).length, utf8.encode(data)),
+      )
       ..addFile(ArchiveFile('files/1', 5, utf8.encode('first')))
       ..addFile(ArchiveFile('files/2', 6, utf8.encode('second')));
     final zip = File('${dir.path}/bundle.zip');

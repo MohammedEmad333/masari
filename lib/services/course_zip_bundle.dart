@@ -104,8 +104,9 @@ class CourseZipBundle {
       throw const FormatException('Invalid course metadata');
     }
     final chapters = decoded['chapters'] as List;
-    if (chapters.length > maxChapters)
+    if (chapters.length > maxChapters) {
       throw const FormatException('Too many chapters');
+    }
     var files = 0;
     var links = 0;
     for (final chapter in chapters) {

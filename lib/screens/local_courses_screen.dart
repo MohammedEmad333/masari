@@ -196,10 +196,10 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         File(path),
         _library!,
       );
+      final updated = existing == null
+          ? imported
+          : CourseImportMerger.mergeZip(existing, imported);
       try {
-        final updated = existing == null
-            ? imported
-            : CourseImportMerger.mergeZip(existing, imported);
         final nextCourses = existing == null
             ? [..._courses, updated]
             : [

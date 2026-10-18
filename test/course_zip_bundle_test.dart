@@ -35,7 +35,11 @@ void main() {
     });
     final archive = Archive()
       ..addFile(
-        ArchiveFile('course.json', utf8.encode(manifest).length, utf8.encode(manifest)),
+        ArchiveFile(
+          'course.json',
+          utf8.encode(manifest).length,
+          utf8.encode(manifest),
+        ),
       )
       ..addFile(ArchiveFile('files/1', 4, utf8.encode('test')));
     final zip = File('${sandbox.path}/course.zip');

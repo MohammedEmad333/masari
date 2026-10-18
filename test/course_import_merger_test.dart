@@ -73,10 +73,15 @@ void main() {
     expect(merged.id, 'original');
     expect(merged.chapters.single.id, 'old-chapter');
     expect(merged.chapters.single.materials.map((item) => item.id), [
-      'f', 'l1', 'extra-file', 'l2',
+      'f',
+      'l1',
+      'extra-file',
+      'l2',
     ]);
-    expect(CourseImportMerger.mergeZip(merged, zip)
-        .chapters.single.materials, hasLength(4));
+    expect(
+      CourseImportMerger.mergeZip(merged, zip).chapters.single.materials,
+      hasLength(4),
+    );
   });
 
   test('finds a case-insensitive existing course', () {

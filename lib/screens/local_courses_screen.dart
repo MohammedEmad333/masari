@@ -167,10 +167,12 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
               ),
               const SizedBox(height: 12),
               Text(course.name, textAlign: TextAlign.center),
-              Text(t(
-                'Scan using any QR scanner and open the link with Moodle Reminder.',
-                'امسح الرمز بالكاميرا وافتح الرابط باستخدام Moodle Reminder.',
-              )),
+              Text(
+                t(
+                  'Scan using any QR scanner and open the link with Moodle Reminder.',
+                  'امسح الرمز بالكاميرا وافتح الرابط باستخدام Moodle Reminder.',
+                ),
+              ),
             ],
           ),
           actions: [
@@ -184,10 +186,14 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(
-          'Course is too large for QR. Use Share course instead.',
-          'المساق كبير على رمز QR. استخدم مشاركة المساق بدلاً منه.',
-        ))),
+        SnackBar(
+          content: Text(
+            t(
+              'Course is too large for QR. Use Share course instead.',
+              'المساق كبير على رمز QR. استخدم مشاركة المساق بدلاً منه.',
+            ),
+          ),
+        ),
       );
     }
   }

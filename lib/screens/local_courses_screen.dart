@@ -160,15 +160,23 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         return;
       }
       final preview = await CourseZipBundle.previewCourse(File(path));
+      final existing = CourseImportMerger.findMatch(
+        _courses,
+        LocalCourse(id: '', name: preview.name),
+      );
       if (!mounted) return;
       final approved = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(t('Import course bundle?', 'استيراد حزمة المساق؟')),
+          title: Text(
+            existing == null
+                ? t('Import course bundle?', 'استيراد حزمة المساق؟')
+                : t('Update existing course?', 'تحديث المساق الموجود؟'),
+          ),
           content: Text(
             t(
-              '${preview.name} — ${preview.chapters} chapters, ${preview.files} files, ${preview.links} links. Files will only be copied after confirmation.',
-              '${preview.name} — ${preview.chapters} فصول، ${preview.files} ملفات، ${preview.links} روابط. لن تُنسخ الملفات إلا بعد الموافقة.',
+              '${preview.name} — ${preview.chapters} chapters, ${preview.files} files, ${preview.links} links. ${existing == null ? 'Import as a new course?' : 'Add only missing chapters, files and links? Existing files remain untouched.'}',
+              '${preview.name} — ${preview.chapters} فصول، ${preview.files} ملفات، ${preview.links} روابط. ${existing == null ? 'استيراد كمساق جديد؟' : 'إضافة الفصول والملفات والروابط غير الموجودة فقط؟ ستبقى الملفات الحالية دون تغيير.'}',
             ),
           ),
           actions: [
@@ -188,14 +196,40 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         File(path),
         _library!,
       );
+      final updated = existing == null
+          ? imported
+          : CourseImportMerger.mergeZip(existing, imported);
       try {
-        await _library!.save([..._courses, imported]);
-        if (mounted) setState(() => _courses = [..._courses, imported]);
+        final nextCourses = existing == null
+            ? [..._courses, updated]
+            : [
+                for (final item in _courses)
+                  if (item.id == existing.id) updated else item,
+              ];
+        await _library!.save(nextCourses);
+        if (mounted) setState(() => _courses = nextCourses);
       } catch (_) {
         for (final chapter in imported.chapters) {
           await _library!.deleteChapterFiles(chapter);
         }
         rethrow;
+      }
+      if (existing != null) {
+        final retained = {
+          for (final chapter in updated.chapters)
+            for (final resource in chapter.materials) resource.id,
+        };
+        for (final chapter in imported.chapters) {
+          for (final resource in chapter.materials) {
+            if (!resource.isLink && !retained.contains(resource.id)) {
+              try {
+                await _library!.deleteMaterial(resource);
+              } catch (_) {
+                // Cleanup is best-effort after metadata has been saved.
+              }
+            }
+          }
+        }
       }
     } catch (_) {
       _error();

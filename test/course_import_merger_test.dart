@@ -45,6 +45,45 @@ void main() {
     ],
   );
 
+  test('ZIP merge keeps existing file and appends only new attachments', () {
+    const updatedFile = CourseMaterial(
+      id: 'imported-file',
+      title: ' Notes ',
+      value: '/tmp/duplicate.pdf',
+      isLink: false,
+    );
+    const extraFile = CourseMaterial(
+      id: 'extra-file',
+      title: 'Slides',
+      value: '/tmp/slides.pdf',
+      isLink: false,
+    );
+    final zip = LocalCourse(
+      id: 'zip',
+      name: 'Physics',
+      chapters: [
+        const CourseChapter(
+          id: 'zip-chapter',
+          name: 'Chapter 1',
+          materials: [updatedFile, extraFile, newLink],
+        ),
+      ],
+    );
+    final merged = CourseImportMerger.mergeZip(existing, zip);
+    expect(merged.id, 'original');
+    expect(merged.chapters.single.id, 'old-chapter');
+    expect(merged.chapters.single.materials.map((item) => item.id), [
+      'f',
+      'l1',
+      'extra-file',
+      'l2',
+    ]);
+    expect(
+      CourseImportMerger.mergeZip(merged, zip).chapters.single.materials,
+      hasLength(4),
+    );
+  });
+
   test('finds a case-insensitive existing course', () {
     expect(CourseImportMerger.findMatch([existing], incoming)?.id, 'original');
   });

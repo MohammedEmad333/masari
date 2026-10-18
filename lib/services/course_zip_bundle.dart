@@ -99,7 +99,7 @@ class CourseZipBundle {
     if (manifest == null || manifest.size > 1024 * 1024) {
       throw const FormatException('Invalid ZIP manifest');
     }
-    final data = jsonDecode(utf8.decode(manifest.readBytes()));
+    final data = jsonDecode(utf8.decode(manifest.readBytes() ?? <int>[]));
     if (data is! Map ||
         data['v'] != 1 ||
         data['name'] is! String ||
@@ -140,7 +140,7 @@ class CourseZipBundle {
             final folder = await Directory.systemTemp.createTemp('course-zip-');
             try {
               final source = File('${folder.path}/attachment');
-              await source.writeAsBytes(entry.readBytes());
+              await source.writeAsBytes(entry.readBytes() ?? <int>[]);
               final attached = await library.importFile(source.path, title);
               created.add(attached);
               resources.add(attached);

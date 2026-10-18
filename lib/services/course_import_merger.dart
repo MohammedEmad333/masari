@@ -34,7 +34,8 @@ class CourseImportMerger {
       final materials = [...current.materials];
       for (final resource in received.materials) {
         final duplicate = materials.any(
-          (item) => item.isLink == resource.isLink &&
+          (item) =>
+              item.isLink == resource.isLink &&
               (item.isLink
                   ? item.value.trim() == resource.value.trim()
                   : normalize(item.title) == normalize(resource.title)),

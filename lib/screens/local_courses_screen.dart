@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'package:share_plus/share_plus.dart';
+import '../services/course_zip_bundle.dart';
 import 'package:flutter/services.dart';
 
 import '../services/course_share_codec.dart';
@@ -130,6 +133,63 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         ),
       ) ??
       false;
+
+  Future<void> _shareZip(LocalCourse course) async {
+    try {
+      final bundle = await CourseZipBundle.exportCourse(course);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(bundle.path, mimeType: 'application/zip')],
+          text: course.name,
+        ),
+      );
+    } catch (_) {
+      _error();
+    }
+  }
+
+  Future<void> _importZip() async {
+    try {
+      final selected = await FilePicker.pickFiles();
+      if (selected.isEmpty || selected.first.path == null) return;
+      final path = selected.first.path!;
+      if (!path.toLowerCase().endsWith('.zip')) {
+        _error();
+        return;
+      }
+      final imported = await CourseZipBundle.importCourse(File(path), _library!);
+      if (!mounted) return;
+      final approved = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(t('Import course bundle?', 'استيراد حزمة المساق؟')),
+          content: Text(t(
+            '${imported.name} — ${imported.chapters.length} chapters. Files will be copied to private app storage.',
+            '${imported.name} — ${imported.chapters.length} فصول. سيتم نسخ الملفات إلى مساحة التطبيق الخاصة.',
+          )),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(t('Import', 'استيراد')),
+            ),
+          ],
+        ),
+      );
+      if (approved == true) {
+        await _commit([..._courses, imported]);
+      } else {
+        for (final chapter in imported.chapters) {
+          await _library!.deleteChapterFiles(chapter);
+        }
+      }
+    } catch (_) {
+      _error();
+    }
+  }
 
   Future<void> _shareCourse(LocalCourse course) async {
     try {
@@ -389,6 +449,11 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         title: Text(t('My study library', 'مكتبتي الدراسية')),
         actions: [
           IconButton(
+            tooltip: t('Import ZIP bundle', 'استيراد حزمة ZIP'),
+            onPressed: _library == null ? null : _importZip,
+            icon: const Icon(Icons.folder_zip_outlined),
+          ),
+          IconButton(
             tooltip: t('Import shared course', 'استيراد مساق مشارك'),
             onPressed: _library == null ? null : _pasteSharedCourse,
             icon: const Icon(Icons.download_rounded),
@@ -421,11 +486,16 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                       title: Text(course.name),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
+                          if (value == 'zip') _shareZip(course);
                           if (value == 'share') _shareCourse(course);
                           if (value == 'edit') _editCourse(course);
                           if (value == 'delete') _removeCourse(course);
                         },
                         itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'zip',
+                            child: Text(t('Share as ZIP', 'مشاركة ZIP بالملفات')),
+                          ),
                           PopupMenuItem(
                             value: 'share',
                             child: Text(t('Share course', 'مشاركة المساق')),

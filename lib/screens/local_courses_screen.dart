@@ -1,3 +1,4 @@
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/course_import_merger.dart';
 import 'package:flutter/services.dart';
 
@@ -141,6 +142,60 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
       ).invokeMethod<void>('shareLink', {'url': url});
     } catch (_) {
       _error();
+    }
+  }
+
+  Future<void> _showCourseQr(LocalCourse course) async {
+    try {
+      final url = CourseShareCodec.encode(course);
+      // QR codes have a much smaller payload capacity than custom share links.
+      if (url.length > 2000) {
+        throw const FormatException('QR payload too large');
+      }
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t('Course QR code', 'رمز QR للمساق')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              QrImageView(
+                data: url,
+                version: QrVersions.auto,
+                size: 240,
+                backgroundColor: Colors.white,
+              ),
+              const SizedBox(height: 12),
+              Text(course.name, textAlign: TextAlign.center),
+              Text(
+                t(
+                  'Scan using any QR scanner and open the link with Moodle Reminder.',
+                  'امسح الرمز بالكاميرا وافتح الرابط باستخدام Moodle Reminder.',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(t('Close', 'إغلاق')),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'Course is too large for QR. Use Share course instead.',
+              'المساق كبير على رمز QR. استخدم مشاركة المساق بدلاً منه.',
+            ),
+          ),
+        ),
+      );
     }
   }
 
@@ -499,6 +554,7 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
                           if (value == 'share') _shareCourse(course);
+                          if (value == 'qr') _showCourseQr(course);
                           if (value == 'edit') _editCourse(course);
                           if (value == 'delete') _removeCourse(course);
                         },
@@ -506,6 +562,10 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                           PopupMenuItem(
                             value: 'share',
                             child: Text(t('Share course', 'مشاركة المساق')),
+                          ),
+                          PopupMenuItem(
+                            value: 'qr',
+                            child: Text(t('Show QR code', 'عرض رمز QR')),
                           ),
                           PopupMenuItem(
                             value: 'edit',

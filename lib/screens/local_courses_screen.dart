@@ -157,16 +157,21 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         _error();
         return;
       }
-      final imported = await CourseZipBundle.importCourse(File(path), _library!);
+      final imported = await CourseZipBundle.importCourse(
+        File(path),
+        _library!,
+      );
       if (!mounted) return;
       final approved = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(t('Import course bundle?', 'استيراد حزمة المساق؟')),
-          content: Text(t(
-            '${imported.name} — ${imported.chapters.length} chapters. Files will be copied to private app storage.',
-            '${imported.name} — ${imported.chapters.length} فصول. سيتم نسخ الملفات إلى مساحة التطبيق الخاصة.',
-          )),
+          content: Text(
+            t(
+              '${imported.name} — ${imported.chapters.length} chapters. Files will be copied to private app storage.',
+              '${imported.name} — ${imported.chapters.length} فصول. سيتم نسخ الملفات إلى مساحة التطبيق الخاصة.',
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -494,7 +499,9 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                         itemBuilder: (_) => [
                           PopupMenuItem(
                             value: 'zip',
-                            child: Text(t('Share as ZIP', 'مشاركة ZIP بالملفات')),
+                            child: Text(
+                              t('Share as ZIP', 'مشاركة ZIP بالملفات'),
+                            ),
                           ),
                           PopupMenuItem(
                             value: 'share',

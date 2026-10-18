@@ -56,7 +56,14 @@ class CourseZipBundle {
     File zip,
     LocalCourseLibrary library,
   ) async {
+    if (await zip.length() > 50 * 1024 * 1024) {
+      throw const FormatException('Course ZIP exceeds size limit');
+    }
     final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
+    if (archive.files.length > 1000 ||
+        archive.files.fold<int>(0, (sum, entry) => sum + entry.size) > 100 * 1024 * 1024) {
+      throw const FormatException('Course ZIP contains too much data');
+    }
     final manifestFiles = archive.files
         .where((entry) => entry.name == 'course.json' && entry.isFile)
         .toList();

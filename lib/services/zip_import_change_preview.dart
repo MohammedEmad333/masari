@@ -32,11 +32,10 @@ class ZipImportChangePreview {
     // Validate every archive entry before inspecting its contents.
     await CourseZipBundle.previewCourse(zip);
     final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
-    final entries = {
-      for (final entry in archive.files) entry.name: entry,
-    };
+    final entries = {for (final entry in archive.files) entry.name: entry};
     final manifest = entries['course.json']!;
-    final data = jsonDecode(utf8.decode(manifest.readBytes() ?? <int>[])) as Map;
+    final data =
+        jsonDecode(utf8.decode(manifest.readBytes() ?? <int>[])) as Map;
     final hashes = <String, String>{};
     Future<String> hash(CourseMaterial material) async {
       final previous = hashes[material.value];
@@ -85,7 +84,9 @@ class ZipImportChangePreview {
           if (!seenHashes.add(digest)) {
             filesDuplicate++;
           } else {
-            final normalized = CourseImportMerger.normalize(item['title'] as String);
+            final normalized = CourseImportMerger.normalize(
+              item['title'] as String,
+            );
             if (names.contains(normalized)) {
               filesChanged++;
             } else {

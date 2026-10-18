@@ -1,3 +1,4 @@
+import '../services/course_import_merger.dart';
 import 'package:flutter/services.dart';
 
 import '../services/course_share_codec.dart';
@@ -205,7 +206,37 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         ),
       );
       if (approved == true && mounted) {
-        await _commit([..._courses, course]);
+        final existing = CourseImportMerger.findMatch(_courses, course);
+        if (existing == null) {
+          await _commit([..._courses, course]);
+        } else {
+          final update = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text(t('Course already exists', 'المساق موجود بالفعل')),
+              content: Text(t(
+                'Add only missing chapters and links? Your local files and current materials are preserved.',
+                'إضافة الفصول والروابط الناقصة فقط؟ ستبقى ملفاتك المحلية ومحتوياتك الحالية محفوظة.',
+              )),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: Text(t('Cancel', 'إلغاء')),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: Text(t('Update', 'تحديث')),
+                ),
+              ],
+            ),
+          );
+          if (update != true || !mounted) return;
+          final merged = CourseImportMerger.merge(existing, course);
+          await _commit([
+            for (final item in _courses)
+              if (item.id == existing.id) merged else item,
+          ]);
+        }
       }
     } catch (_) {
       _error();

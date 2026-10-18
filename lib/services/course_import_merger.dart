@@ -4,7 +4,10 @@ import 'local_course_library.dart';
 class CourseImportMerger {
   const CourseImportMerger._();
 
-  static LocalCourse? matching(List<LocalCourse> courses, LocalCourse incoming) {
+  static LocalCourse? matching(
+    List<LocalCourse> courses,
+    LocalCourse incoming,
+  ) {
     final key = incoming.name.trim().toLowerCase();
     for (final course in courses) {
       if (course.name.trim().toLowerCase() == key) return course;
@@ -16,14 +19,19 @@ class CourseImportMerger {
     final chapters = [...existing.chapters];
     for (final newChapter in incoming.chapters) {
       final index = chapters.indexWhere(
-        (ch) => ch.name.trim().toLowerCase() == newChapter.name.trim().toLowerCase(),
+        (ch) =>
+            ch.name.trim().toLowerCase() ==
+            newChapter.name.trim().toLowerCase(),
       );
       if (index < 0) {
         chapters.add(newChapter);
         continue;
       }
       final oldChapter = chapters[index];
-      final urls = oldChapter.materials.where((m) => m.isLink).map((m) => m.value.trim().toLowerCase()).toSet();
+      final urls = oldChapter.materials
+          .where((m) => m.isLink)
+          .map((m) => m.value.trim().toLowerCase())
+          .toSet();
       final materials = [...oldChapter.materials];
       for (final material in newChapter.materials) {
         if (!material.isLink || urls.add(material.value.trim().toLowerCase())) {

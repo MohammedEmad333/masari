@@ -576,7 +576,9 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                         itemBuilder: (_) => [
                           PopupMenuItem(
                             value: 'zip',
-                            child: Text(t('Share as ZIP', 'مشاركة ZIP بالملفات')),
+                            child: Text(
+                              t('Share as ZIP', 'مشاركة ZIP بالملفات'),
+                            ),
                           ),
                           PopupMenuItem(
                             value: 'share',

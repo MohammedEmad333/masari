@@ -4,6 +4,7 @@ import '../services/course_zip_bundle.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/course_import_merger.dart';
 import '../services/course_file_hash_merger.dart';
+import '../services/zip_import_change_preview.dart';
 import 'package:flutter/services.dart';
 
 import '../services/course_share_codec.dart';
@@ -165,6 +166,9 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         _courses,
         LocalCourse(id: '', name: preview.name),
       );
+      final changes = existing == null
+          ? null
+          : await ZipImportChangePreview.inspect(File(path), existing);
       if (!mounted) return;
       final approved = await showDialog<bool>(
         context: context,
@@ -176,8 +180,8 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           ),
           content: Text(
             t(
-              '${preview.name} — ${preview.chapters} chapters, ${preview.files} files, ${preview.links} links. ${existing == null ? 'Import as a new course?' : 'Add only missing chapters, files and links? Existing files remain untouched.'}',
-              '${preview.name} — ${preview.chapters} فصول، ${preview.files} ملفات، ${preview.links} روابط. ${existing == null ? 'استيراد كمساق جديد؟' : 'إضافة الفصول والملفات والروابط غير الموجودة فقط؟ ستبقى الملفات الحالية دون تغيير.'}',
+              '${preview.name} — ${preview.chapters} chapters, ${preview.files} files, ${preview.links} links. ${changes == null ? 'Import as a new course?' : '${changes.newChapters} new chapters, ${changes.newFiles} new files, ${changes.changedFiles} changed file versions, ${changes.duplicateFiles} duplicates skipped, ${changes.newLinks} new links. Existing files stay untouched.'}',
+              '${preview.name} — ${preview.chapters} فصول، ${preview.files} ملفات، ${preview.links} روابط. ${changes == null ? 'استيراد كمساق جديد؟' : '${changes.newChapters} فصول جديدة، ${changes.newFiles} ملفات جديدة، ${changes.changedFiles} نسخ ملفات محدّثة، ${changes.duplicateFiles} ملفات مكررة سيتم تخطيها، ${changes.newLinks} روابط جديدة. ستبقى ملفاتك الحالية محفوظة.'}',
             ),
           ),
           actions: [

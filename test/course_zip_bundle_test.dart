@@ -34,7 +34,9 @@ void main() {
       ],
     });
     final archive = Archive()
-      ..addFile(ArchiveFile('course.json', utf8.encode(manifest).length, utf8.encode(manifest)))
+      ..addFile(
+        ArchiveFile('course.json', utf8.encode(manifest).length, utf8.encode(manifest)),
+      )
       ..addFile(ArchiveFile('files/1', 4, utf8.encode('test')));
     final zip = File('${sandbox.path}/course.zip');
     await zip.writeAsBytes(ZipEncoder().encode(archive));
@@ -44,7 +46,10 @@ void main() {
     final file = result.chapters.single.materials.first;
     expect(file.isLink, isFalse);
     expect(await File(file.value).readAsString(), 'test');
-    expect(result.chapters.single.materials.last.value, 'https://example.edu/video');
+    expect(
+      result.chapters.single.materials.last.value,
+      'https://example.edu/video',
+    );
   });
 
   test('rejects invalid ZIP paths before touching storage', () async {

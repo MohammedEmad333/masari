@@ -1,3 +1,4 @@
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/course_import_merger.dart';
 import 'package:flutter/services.dart';
 
@@ -131,6 +132,60 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         ),
       ) ??
       false;
+
+  Future<void> _showCourseQr(LocalCourse course) async {
+    try {
+      final link = CourseShareCodec.encode(course);
+      if (link.length > 2000) {
+        throw const FormatException('Course link too large for QR');
+      }
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(t('Course QR code', 'رمز QR للمساق')),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                QrImageView(
+                  data: link,
+                  version: QrVersions.auto,
+                  size: 240,
+                  backgroundColor: Colors.white,
+                  errorCorrectionLevel: QrErrorCorrectLevel.L,
+                ),
+                const SizedBox(height: 12),
+                Text(course.name, textAlign: TextAlign.center),
+                const SizedBox(height: 8),
+                Text(
+                  t(
+                    'Scan with a QR reader, then open in Moodle Reminder. Alternatively copy the link.',
+                    'امسح الرمز بقارئ QR ثم افتحه في Moodle Reminder، أو انسخ الرابط.',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: link));
+                Navigator.pop(ctx);
+              },
+              child: Text(t('Copy link', 'نسخ الرابط')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(t('Done', 'تم')),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      _error();
+    }
+  }
 
   Future<void> _shareCourse(LocalCourse course) async {
     try {
@@ -498,11 +553,16 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                       title: Text(course.name),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
+                          if (value == 'qr') _showCourseQr(course);
                           if (value == 'share') _shareCourse(course);
                           if (value == 'edit') _editCourse(course);
                           if (value == 'delete') _removeCourse(course);
                         },
                         itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'qr',
+                            child: Text(t('Show QR code', 'عرض QR للمساق')),
+                          ),
                           PopupMenuItem(
                             value: 'share',
                             child: Text(t('Share course', 'مشاركة المساق')),

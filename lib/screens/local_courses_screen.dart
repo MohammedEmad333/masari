@@ -214,10 +214,12 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: Text(t('Course already exists', 'المساق موجود بالفعل')),
-              content: Text(t(
-                'Add only missing chapters and links? Your local files and current materials are preserved.',
-                'إضافة الفصول والروابط الناقصة فقط؟ ستبقى ملفاتك المحلية ومحتوياتك الحالية محفوظة.',
-              )),
+              content: Text(
+                t(
+                  'Add only missing chapters and links? Your local files and current materials are preserved.',
+                  'إضافة الفصول والروابط الناقصة فقط؟ ستبقى ملفاتك المحلية ومحتوياتك الحالية محفوظة.',
+                ),
+              ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),

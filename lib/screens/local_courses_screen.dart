@@ -168,9 +168,11 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
       final approved = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(existing == null
-              ? t('Import course bundle?', 'استيراد حزمة المساق؟')
-              : t('Update existing course?', 'تحديث المساق الموجود؟')),
+          title: Text(
+            existing == null
+                ? t('Import course bundle?', 'استيراد حزمة المساق؟')
+                : t('Update existing course?', 'تحديث المساق الموجود؟'),
+          ),
           content: Text(
             t(
               '${preview.name} — ${preview.chapters} chapters, ${preview.files} files, ${preview.links} links. ${existing == null ? 'Import as a new course?' : 'Add only missing chapters, files and links? Existing files remain untouched.'}',
@@ -212,24 +214,23 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         }
         rethrow;
       }
-        if (existing != null) {
-          final retained = {
-            for (final chapter in updated.chapters)
-              for (final resource in chapter.materials) resource.id,
-          };
-          for (final chapter in imported.chapters) {
-            for (final resource in chapter.materials) {
-              if (!resource.isLink && !retained.contains(resource.id)) {
-                try {
-                  await _library!.deleteMaterial(resource);
-                } catch (_) {
-                  // Cleanup is best-effort after metadata has been saved.
-                }
+      if (existing != null) {
+        final retained = {
+          for (final chapter in updated.chapters)
+            for (final resource in chapter.materials) resource.id,
+        };
+        for (final chapter in imported.chapters) {
+          for (final resource in chapter.materials) {
+            if (!resource.isLink && !retained.contains(resource.id)) {
+              try {
+                await _library!.deleteMaterial(resource);
+              } catch (_) {
+                // Cleanup is best-effort after metadata has been saved.
               }
             }
           }
         }
-
+      }
     } catch (_) {
       _error();
     }

@@ -66,7 +66,8 @@ class CourseZipBundle {
   }
 
   /// Reads ZIP summary without copying attachments into app storage.
-  static Future<({String name, int chapters, int files, int links})> previewCourse(File zip) async {
+  static Future<({String name, int chapters, int files, int links})>
+  previewCourse(File zip) async {
     if (await zip.length() > maxArchiveBytes) {
       throw const FormatException('ZIP exceeds size limit');
     }
@@ -95,23 +96,30 @@ class CourseZipBundle {
       throw const FormatException('Invalid ZIP manifest');
     }
     final decoded = jsonDecode(utf8.decode(manifest.readBytes() ?? <int>[]));
-    if (decoded is! Map || decoded['v'] != 1 || decoded['name'] is! String ||
-        (decoded['name'] as String).trim().isEmpty || decoded['chapters'] is! List) {
+    if (decoded is! Map ||
+        decoded['v'] != 1 ||
+        decoded['name'] is! String ||
+        (decoded['name'] as String).trim().isEmpty ||
+        decoded['chapters'] is! List) {
       throw const FormatException('Invalid course metadata');
     }
     final chapters = decoded['chapters'] as List;
-    if (chapters.length > maxChapters) throw const FormatException('Too many chapters');
+    if (chapters.length > maxChapters)
+      throw const FormatException('Too many chapters');
     var files = 0;
     var links = 0;
     for (final chapter in chapters) {
-      if (chapter is! Map || chapter['name'] is! String || chapter['resources'] is! List) {
+      if (chapter is! Map ||
+          chapter['name'] is! String ||
+          chapter['resources'] is! List) {
         throw const FormatException('Invalid chapter');
       }
       for (final resource in chapter['resources'] as List) {
         if (resource is! Map || resource['title'] is! String) {
           throw const FormatException('Invalid material');
         }
-        if (resource['file'] is String && entries.containsKey(resource['file'])) {
+        if (resource['file'] is String &&
+            entries.containsKey(resource['file'])) {
           files++;
         } else if (resource['url'] is String) {
           links++;
@@ -120,8 +128,14 @@ class CourseZipBundle {
         }
       }
     }
-    return (name: decoded['name'] as String, chapters: chapters.length, files: files, links: links);
+    return (
+      name: decoded['name'] as String,
+      chapters: chapters.length,
+      files: files,
+      links: links,
+    );
   }
+
   static Future<LocalCourse> importCourse(
     File zip,
     LocalCourseLibrary library,
@@ -229,4 +243,3 @@ class CourseZipBundle {
     }
   }
 }
-

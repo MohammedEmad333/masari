@@ -67,10 +67,7 @@ void main() {
       ..addFile(ArchiveFile('../outside', 3, utf8.encode('bad')));
     final zip = File('${sandbox.path}/bad.zip');
     await zip.writeAsBytes(ZipEncoder().encode(archive));
-    expect(
-      () => CourseZipBundle.previewCourse(zip),
-      throwsFormatException,
-    );
+    expect(() => CourseZipBundle.previewCourse(zip), throwsFormatException);
     expect(
       () => CourseZipBundle.importCourse(zip, library),
       throwsFormatException,

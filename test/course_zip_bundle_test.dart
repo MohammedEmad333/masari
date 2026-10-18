@@ -44,6 +44,12 @@ void main() {
       ..addFile(ArchiveFile('files/1', 4, utf8.encode('test')));
     final zip = File('${sandbox.path}/course.zip');
     await zip.writeAsBytes(ZipEncoder().encode(archive));
+    final preview = await CourseZipBundle.previewCourse(zip);
+    expect(preview.name, 'Physics');
+    expect(preview.chapters, 1);
+    expect(preview.files, 1);
+    expect(preview.links, 1);
+    expect(await library.load(), isEmpty);
     final result = await CourseZipBundle.importCourse(zip, library);
     expect(result.name, 'Physics');
     expect(result.chapters.single.materials, hasLength(2));
@@ -61,6 +67,10 @@ void main() {
       ..addFile(ArchiveFile('../outside', 3, utf8.encode('bad')));
     final zip = File('${sandbox.path}/bad.zip');
     await zip.writeAsBytes(ZipEncoder().encode(archive));
+    expect(
+      () => CourseZipBundle.previewCourse(zip),
+      throwsFormatException,
+    );
     expect(
       () => CourseZipBundle.importCourse(zip, library),
       throwsFormatException,

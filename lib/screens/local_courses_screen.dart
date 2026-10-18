@@ -182,14 +182,58 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
     if (library == null || !mounted) return;
     try {
       final course = CourseShareCodec.decode(link, library);
+      final linkCount = course.chapters.fold<int>(
+        0,
+        (total, chapter) => total + chapter.materials.length,
+      );
       final approved = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(t('Import shared course?', 'استيراد المساق المشارك؟')),
-          content: Text(
-            t(
-              '${course.name}: ${course.chapters.length} chapters. Only web links will be imported; no local files.',
-              '${course.name}: ${course.chapters.length} فصول. سيتم استيراد الروابط فقط دون الملفات المحلية.',
+          title: Text(t('Preview shared course', 'معاينة المساق المشارك')),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Text(course.name, style: Theme.of(ctx).textTheme.titleLarge),
+                Text(
+                  t(
+                    '${course.chapters.length} chapters • $linkCount links',
+                    '${course.chapters.length} فصول • $linkCount روابط',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  t(
+                    'Only web links are shared. Local files are not included.',
+                    'تتضمن المشاركة روابط الويب فقط، ولا تتضمن الملفات المحلية.',
+                  ),
+                ),
+                const Divider(),
+                for (final chapter in course.chapters)
+                  ExpansionTile(
+                    title: Text(chapter.name),
+                    subtitle: Text(
+                      t(
+                        '${chapter.materials.length} links',
+                        '${chapter.materials.length} روابط',
+                      ),
+                    ),
+                    children: [
+                      for (final material in chapter.materials)
+                        ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.link),
+                          title: Text(material.title),
+                          subtitle: Text(
+                            material.value,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  ),
+              ],
             ),
           ),
           actions: [

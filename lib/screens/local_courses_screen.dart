@@ -152,10 +152,7 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                   errorCorrectionLevel: QrErrorCorrectLevel.L,
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  course.name,
-                  textAlign: TextAlign.center,
-                ),
+                Text(course.name, textAlign: TextAlign.center),
                 const SizedBox(height: 8),
                 Text(
                   t(

@@ -6,17 +6,23 @@ import 'package:path_provider/path_provider.dart';
 
 import 'local_course_library.dart';
 
-/// Portable ZIP containing a JSON manifest and copies of local resources.
+/// Course ZIP: manifest plus explicitly indexed copied files. Never extract
+/// arbitrary archive paths into the device filesystem.
 class CourseZipBundle {
   const CourseZipBundle._();
 
+  static const maxArchiveBytes = 40 * 1024 * 1024;
+  static const maxExpandedBytes = 100 * 1024 * 1024;
+  static const maxFiles = 300;
+  static const maxChapters = 100;
+
   static Future<File> exportCourse(LocalCourse course) async {
     final cache = await getTemporaryDirectory();
-    final file = File(
+    final output = File(
       '${cache.path}/moodle-course-${DateTime.now().microsecondsSinceEpoch}.zip',
     );
     final encoder = ZipFileEncoder();
-    encoder.create(file.path);
+    encoder.create(output.path);
     try {
       final chapters = <Map<String, Object>>[];
       var serial = 0;
@@ -28,9 +34,12 @@ class CourseZipBundle {
           } else {
             final original = File(item.value);
             if (!await original.exists()) continue;
-            final archiveName = 'files/${serial++}';
-            await encoder.addFile(original, archiveName);
-            resources.add({'title': item.title, 'file': archiveName});
+            if (++serial > maxFiles) {
+              throw const FormatException('Too many attached files');
+            }
+            final path = 'files/$serial';
+            await encoder.addFile(original, path);
+            resources.add({'title': item.title, 'file': path});
           }
         }
         chapters.add({'name': chapter.name, 'resources': resources});
@@ -49,42 +58,63 @@ class CourseZipBundle {
     } finally {
       encoder.close();
     }
-    return file;
+    if (await output.length() > maxArchiveBytes) {
+      await output.delete();
+      throw const FormatException('ZIP exceeds sharing size limit');
+    }
+    return output;
   }
 
   static Future<LocalCourse> importCourse(
     File zip,
     LocalCourseLibrary library,
   ) async {
-    if (await zip.length() > 50 * 1024 * 1024) {
-      throw const FormatException('Course ZIP exceeds size limit');
+    if (await zip.length() > maxArchiveBytes) {
+      throw const FormatException('ZIP exceeds size limit');
     }
     final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
-    if (archive.files.length > 1000 ||
-        archive.files.fold<int>(0, (sum, entry) => sum + entry.size) > 100 * 1024 * 1024) {
-      throw const FormatException('Course ZIP contains too much data');
+    if (archive.files.length > maxFiles + 1) {
+      throw const FormatException('Too many ZIP entries');
     }
-    final manifestFiles = archive.files
-        .where((entry) => entry.name == 'course.json' && entry.isFile)
-        .toList();
-    if (manifestFiles.length != 1)
-      throw const FormatException('Missing course manifest');
-    final raw = utf8.decode(manifestFiles.single.content as List<int>);
-    final data = jsonDecode(raw);
+    var expandedSize = 0;
+    final entries = <String, ArchiveFile>{};
+    for (final entry in archive.files) {
+      if (!entry.isFile) {
+        throw const FormatException('Unsupported ZIP entry');
+      }
+      if (entry.name != 'course.json' &&
+          !RegExp(r'^files/[0-9]+$').hasMatch(entry.name)) {
+        throw const FormatException('Unsafe ZIP entry');
+      }
+      if (entries.containsKey(entry.name)) {
+        throw const FormatException('Duplicate ZIP path');
+      }
+      expandedSize += entry.size;
+      if (expandedSize > maxExpandedBytes) {
+        throw const FormatException('ZIP expands beyond safety limit');
+      }
+      entries[entry.name] = entry;
+    }
+    final manifest = entries['course.json'];
+    if (manifest == null || manifest.size > 1024 * 1024) {
+      throw const FormatException('Invalid ZIP manifest');
+    }
+    final data = jsonDecode(utf8.decode(manifest.readBytes()));
     if (data is! Map ||
         data['v'] != 1 ||
         data['name'] is! String ||
-        data['chapters'] is! List) {
-      throw const FormatException('Invalid course manifest');
+        data['chapters'] is! List ||
+        (data['name'] as String).trim().isEmpty) {
+      throw const FormatException('Invalid course metadata');
+    }
+    final chapterData = data['chapters'] as List;
+    if (chapterData.length > maxChapters) {
+      throw const FormatException('Too many chapters');
     }
     final chapters = <CourseChapter>[];
-    final files = {
-      for (final entry in archive.files)
-        if (entry.isFile) entry.name: entry,
-    };
-    final imported = <CourseMaterial>[];
+    final created = <CourseMaterial>[];
     try {
-      for (final chapter in data['chapters'] as List) {
+      for (final chapter in chapterData) {
         if (chapter is! Map ||
             chapter['name'] is! String ||
             chapter['resources'] is! List) {
@@ -92,22 +122,33 @@ class CourseZipBundle {
         }
         final resources = <CourseMaterial>[];
         for (final item in chapter['resources'] as List) {
-          if (item is! Map || item['title'] is! String)
-            throw const FormatException('Invalid resource');
+          if (item is! Map || item['title'] is! String) {
+            throw const FormatException('Invalid material');
+          }
+          final title = item['title'] as String;
+          if (title.trim().isEmpty || title.length > 250) {
+            throw const FormatException('Invalid material title');
+          }
           if (item['url'] is String) {
-            resources.add(
-              library.createLink(
-                item['title'] as String,
-                item['url'] as String,
-              ),
-            );
+            resources.add(library.createLink(title, item['url'] as String));
           } else if (item['file'] is String) {
             final path = item['file'] as String;
-            if (!RegExp(r'^files/[0-9]+
-              await temp.delete(recursive: true);
+            final entry = entries[path];
+            if (!RegExp(r'^files/[0-9]+$').hasMatch(path) || entry == null) {
+              throw const FormatException('Missing or invalid attachment');
+            }
+            final folder = await Directory.systemTemp.createTemp('course-zip-');
+            try {
+              final source = File('${folder.path}/attachment');
+              await source.writeAsBytes(entry.readBytes());
+              final attached = await library.importFile(source.path, title);
+              created.add(attached);
+              resources.add(attached);
+            } finally {
+              await folder.delete(recursive: true);
             }
           } else {
-            throw const FormatException('Invalid resource type');
+            throw const FormatException('Unsupported material');
           }
         }
         chapters.add(
@@ -124,43 +165,8 @@ class CourseZipBundle {
         chapters: chapters,
       );
     } catch (_) {
-      for (final resource in imported) {
-        await library.deleteMaterial(resource);
-      }
-      rethrow;
-    }
-  }
-}
-).hasMatch(path) ||
-                !files.containsKey(path)) {
-              throw const FormatException('Invalid attachment');
-            }
-            final bytes = files[path]!.content as List<int>;
-            final temp = await Directory.systemTemp.createTemp(
-              'moodle-import-',
-            );
-            try {
-              final original = File('${temp.path}/attachment');
-              await original.writeAsBytes(bytes);
-              final resource = await library.importFile(
-                original.path,
-                item['title'] as String,
-              );
-              imported.add(resource);
-              resources.add(resource);
-            } finally {
-              await temp.delete(recursive: true);
-            }
-          } else {
-            throw const FormatException('Invalid resource type');
-          }
-        }
-        chapters.add(CourseChapter(id: library.newId(), name: chapter['name'] as String, materials: resources));
-      }
-      return LocalCourse(id: library.newId(), name: data['name'] as String, chapters: chapters);
-    } catch (_) {
-      for (final resource in imported) {
-        await library.deleteMaterial(resource);
+      for (final item in created) {
+        await library.deleteMaterial(item);
       }
       rethrow;
     }

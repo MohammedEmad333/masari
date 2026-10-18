@@ -159,10 +159,7 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         _error();
         return;
       }
-      final imported = await CourseZipBundle.importCourse(
-        File(path),
-        _library!,
-      );
+      final preview = await CourseZipBundle.previewCourse(File(path));
       if (!mounted) return;
       final approved = await showDialog<bool>(
         context: context,
@@ -170,8 +167,8 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           title: Text(t('Import course bundle?', 'استيراد حزمة المساق؟')),
           content: Text(
             t(
-              '${imported.name} — ${imported.chapters.length} chapters. Files will be copied to private app storage.',
-              '${imported.name} — ${imported.chapters.length} فصول. سيتم نسخ الملفات إلى مساحة التطبيق الخاصة.',
+              '${preview.name} — ${preview.chapters} chapters, ${preview.files} files, ${preview.links} links. Files will only be copied after confirmation.',
+              '${preview.name} — ${preview.chapters} فصول، ${preview.files} ملفات، ${preview.links} روابط. لن تُنسخ الملفات إلا بعد الموافقة.',
             ),
           ),
           actions: [
@@ -186,12 +183,16 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           ],
         ),
       );
-      if (approved == true) {
-        await _commit([..._courses, imported]);
-      } else {
+      if (approved != true || !mounted) return;
+      final imported = await CourseZipBundle.importCourse(File(path), _library!);
+      try {
+        await _library!.save([..._courses, imported]);
+        if (mounted) setState(() => _courses = [..._courses, imported]);
+      } catch (_) {
         for (final chapter in imported.chapters) {
           await _library!.deleteChapterFiles(chapter);
         }
+        rethrow;
       }
     } catch (_) {
       _error();

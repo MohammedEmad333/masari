@@ -77,8 +77,10 @@ class CourseZipBundle {
     final entries = <String, ArchiveFile>{};
     var expandedSize = 0;
     for (final entry in archive.files) {
+      final fileMatch = RegExp(r'^files/[0-9]+').firstMatch(entry.name);
+      final validFile = fileMatch != null && fileMatch.group(0) == entry.name;
       if (!entry.isFile ||
-          (entry.name != 'course.json' && !RegExp('^files/[0-9]+' + r'.hasMatch(entry.name)) ||
+          (entry.name != 'course.json' && !validFile) ||
           entries.containsKey(entry.name)) {
         throw const FormatException('Unsafe ZIP entry');
       }

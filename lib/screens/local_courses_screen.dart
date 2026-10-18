@@ -184,7 +184,10 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         ),
       );
       if (approved != true || !mounted) return;
-      final imported = await CourseZipBundle.importCourse(File(path), _library!);
+      final imported = await CourseZipBundle.importCourse(
+        File(path),
+        _library!,
+      );
       try {
         await _library!.save([..._courses, imported]);
         if (mounted) setState(() => _courses = [..._courses, imported]);

@@ -3,6 +3,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/course_zip_bundle.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/course_import_merger.dart';
+import '../services/course_file_hash_merger.dart';
 import 'package:flutter/services.dart';
 
 import '../services/course_share_codec.dart';
@@ -196,9 +197,17 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         File(path),
         _library!,
       );
-      final updated = existing == null
-          ? imported
-          : CourseImportMerger.mergeZip(existing, imported);
+      LocalCourse updated;
+      try {
+        updated = existing == null
+            ? imported
+            : await CourseFileHashMerger.merge(existing, imported);
+      } catch (_) {
+        for (final chapter in imported.chapters) {
+          await _library!.deleteChapterFiles(chapter);
+        }
+        rethrow;
+      }
       try {
         final nextCourses = existing == null
             ? [..._courses, updated]

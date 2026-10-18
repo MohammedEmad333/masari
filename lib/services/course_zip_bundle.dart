@@ -65,6 +65,78 @@ class CourseZipBundle {
     return output;
   }
 
+  /// Reads ZIP summary without copying attachments into app storage.
+  static Future<({String name, int chapters, int files, int links})>
+  previewCourse(File zip) async {
+    if (await zip.length() > maxArchiveBytes) {
+      throw const FormatException('ZIP exceeds size limit');
+    }
+    final archive = ZipDecoder().decodeBytes(await zip.readAsBytes());
+    if (archive.files.length > maxFiles + 1) {
+      throw const FormatException('Too many ZIP entries');
+    }
+    final entries = <String, ArchiveFile>{};
+    var expandedSize = 0;
+    for (final entry in archive.files) {
+      final fileMatch = RegExp(r'^files/[0-9]+').firstMatch(entry.name);
+      final validFile = fileMatch != null && fileMatch.group(0) == entry.name;
+      if (!entry.isFile ||
+          (entry.name != 'course.json' && !validFile) ||
+          entries.containsKey(entry.name)) {
+        throw const FormatException('Unsafe ZIP entry');
+      }
+      expandedSize += entry.size;
+      if (expandedSize > maxExpandedBytes) {
+        throw const FormatException('ZIP expands beyond safety limit');
+      }
+      entries[entry.name] = entry;
+    }
+    final manifest = entries['course.json'];
+    if (manifest == null || manifest.size > 1024 * 1024) {
+      throw const FormatException('Invalid ZIP manifest');
+    }
+    final decoded = jsonDecode(utf8.decode(manifest.readBytes() ?? <int>[]));
+    if (decoded is! Map ||
+        decoded['v'] != 1 ||
+        decoded['name'] is! String ||
+        (decoded['name'] as String).trim().isEmpty ||
+        decoded['chapters'] is! List) {
+      throw const FormatException('Invalid course metadata');
+    }
+    final chapters = decoded['chapters'] as List;
+    if (chapters.length > maxChapters) {
+      throw const FormatException('Too many chapters');
+    }
+    var files = 0;
+    var links = 0;
+    for (final chapter in chapters) {
+      if (chapter is! Map ||
+          chapter['name'] is! String ||
+          chapter['resources'] is! List) {
+        throw const FormatException('Invalid chapter');
+      }
+      for (final resource in chapter['resources'] as List) {
+        if (resource is! Map || resource['title'] is! String) {
+          throw const FormatException('Invalid material');
+        }
+        if (resource['file'] is String &&
+            entries.containsKey(resource['file'])) {
+          files++;
+        } else if (resource['url'] is String) {
+          links++;
+        } else {
+          throw const FormatException('Invalid material reference');
+        }
+      }
+    }
+    return (
+      name: decoded['name'] as String,
+      chapters: chapters.length,
+      files: files,
+      links: links,
+    );
+  }
+
   static Future<LocalCourse> importCourse(
     File zip,
     LocalCourseLibrary library,

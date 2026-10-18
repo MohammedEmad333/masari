@@ -206,6 +206,12 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
               ];
         await _library!.save(nextCourses);
         if (mounted) setState(() => _courses = nextCourses);
+      } catch (_) {
+        for (final chapter in imported.chapters) {
+          await _library!.deleteChapterFiles(chapter);
+        }
+        rethrow;
+      }
         if (existing != null) {
           final retained = {
             for (final chapter in updated.chapters)
@@ -214,17 +220,16 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           for (final chapter in imported.chapters) {
             for (final resource in chapter.materials) {
               if (!resource.isLink && !retained.contains(resource.id)) {
-                await _library!.deleteMaterial(resource);
+                try {
+                  await _library!.deleteMaterial(resource);
+                } catch (_) {
+                  // Cleanup is best-effort after metadata has been saved.
+                }
               }
             }
           }
         }
-      } catch (_) {
-        for (final chapter in imported.chapters) {
-          await _library!.deleteChapterFiles(chapter);
-        }
-        rethrow;
-      }
+
     } catch (_) {
       _error();
     }

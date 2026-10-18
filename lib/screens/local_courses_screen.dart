@@ -1,3 +1,4 @@
+import '../services/course_import_merger.dart';
 import 'package:flutter/services.dart';
 
 import '../services/course_share_codec.dart';
@@ -182,14 +183,23 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
     if (library == null || !mounted) return;
     try {
       final course = CourseShareCodec.decode(link, library);
+      final existing = CourseImportMerger.matching(_courses, course);
       final approved = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text(t('Import shared course?', 'استيراد المساق المشارك؟')),
+          title: Text(
+            existing == null
+                ? t('Import shared course?', 'استيراد المساق المشارك؟')
+                : t('Update existing course?', 'تحديث المساق الموجود؟'),
+          ),
           content: Text(
             t(
-              '${course.name}: ${course.chapters.length} chapters. Only web links will be imported; no local files.',
-              '${course.name}: ${course.chapters.length} فصول. سيتم استيراد الروابط فقط دون الملفات المحلية.',
+              existing == null
+                  ? '${course.name}: ${course.chapters.length} chapters. Only web links will be imported.'
+                  : '${course.name} already exists. Add new chapters and links, keeping all existing files and links.',
+              existing == null
+                  ? '${course.name}: ${course.chapters.length} فصول. سيتم استيراد الروابط فقط.'
+                  : 'مساق ${course.name} موجود. ستُضاف الفصول والروابط الجديدة دون حذف الملفات والروابط القديمة.',
             ),
           ),
           actions: [
@@ -205,7 +215,15 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         ),
       );
       if (approved == true && mounted) {
-        await _commit([..._courses, course]);
+        if (existing == null) {
+          await _commit([..._courses, course]);
+        } else {
+          final merged = CourseImportMerger.merge(existing, course);
+          await _commit([
+            for (final item in _courses)
+              if (item.id == existing.id) merged else item,
+          ]);
+        }
       }
     } catch (_) {
       _error();

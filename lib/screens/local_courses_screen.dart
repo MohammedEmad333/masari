@@ -195,10 +195,7 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
             child: ListView(
               shrinkWrap: true,
               children: [
-                Text(
-                  course.name,
-                  style: Theme.of(ctx).textTheme.titleLarge,
-                ),
+                Text(course.name, style: Theme.of(ctx).textTheme.titleLarge),
                 Text(
                   t(
                     '${course.chapters.length} chapters • $linkCount links',

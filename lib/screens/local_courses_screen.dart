@@ -193,18 +193,22 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
               child: ListView(
                 shrinkWrap: true,
                 children: [
-                  Text(t(
-                    'Only web links are included; local files are not transferred.',
-                    'تشمل المشاركة الروابط فقط، ولا تُنقل الملفات المحلية.',
-                  )),
+                  Text(
+                    t(
+                      'Only web links are included; local files are not transferred.',
+                      'تشمل المشاركة الروابط فقط، ولا تُنقل الملفات المحلية.',
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   for (final chapter in course.chapters)
                     ExpansionTile(
                       title: Text(chapter.name),
-                      subtitle: Text(t(
-                        '${chapter.materials.length} links',
-                        '${chapter.materials.length} روابط',
-                      )),
+                      subtitle: Text(
+                        t(
+                          '${chapter.materials.length} links',
+                          '${chapter.materials.length} روابط',
+                        ),
+                      ),
                       children: [
                         for (final item in chapter.materials)
                           ListTile(

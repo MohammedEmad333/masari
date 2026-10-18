@@ -186,10 +186,41 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(t('Import shared course?', 'استيراد المساق المشارك؟')),
-          content: Text(
-            t(
-              '${course.name}: ${course.chapters.length} chapters. Only web links will be imported; no local files.',
-              '${course.name}: ${course.chapters.length} فصول. سيتم استيراد الروابط فقط دون الملفات المحلية.',
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 400),
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  Text(t(
+                    'Only web links are included; local files are not transferred.',
+                    'تشمل المشاركة الروابط فقط، ولا تُنقل الملفات المحلية.',
+                  )),
+                  const SizedBox(height: 12),
+                  for (final chapter in course.chapters)
+                    ExpansionTile(
+                      title: Text(chapter.name),
+                      subtitle: Text(t(
+                        '${chapter.materials.length} links',
+                        '${chapter.materials.length} روابط',
+                      )),
+                      children: [
+                        for (final item in chapter.materials)
+                          ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.link),
+                            title: Text(item.title),
+                            subtitle: Text(
+                              item.value,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
           actions: [

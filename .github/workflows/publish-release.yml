@@ -38,7 +38,7 @@ jobs:
           VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          CURRENT_SHA="$(git ls-remote origin refs/heads/main | cut -f1)"
+          CURRENT_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')"
           if [ "$CURRENT_SHA" != "$VERIFIED_SHA" ]; then
             echo "Latest main moved since this build; skipping outdated APK."
             echo "publish=false" >> "$GITHUB_OUTPUT"

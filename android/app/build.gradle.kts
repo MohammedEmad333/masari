@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.moodle_reminder"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -23,14 +23,43 @@ android {
     defaultConfig {
         applicationId = "com.example.moodle_reminder"
         minSdk = 24
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    val playSigningRequested = System.getenv("PLAY_STORE_BUILD") == "true"
+    val playKeystorePath = System.getenv("PLAY_KEYSTORE_PATH")
+    val playStorePassword = System.getenv("PLAY_STORE_PASSWORD")
+    val playKeyAlias = System.getenv("PLAY_KEY_ALIAS")
+    val playKeyPassword = System.getenv("PLAY_KEY_PASSWORD")
+    val playSigningAvailable = listOf(
+        playKeystorePath, playStorePassword, playKeyAlias, playKeyPassword
+    ).all { !it.isNullOrBlank() }
+
+    if (playSigningRequested && !playSigningAvailable) {
+        throw GradleException("Missing Play signing environment variables")
+    }
+
+    if (playSigningAvailable) {
+        signingConfigs {
+            create("playRelease") {
+                storeFile = file(playKeystorePath!!)
+                storePassword = playStorePassword
+                keyAlias = playKeyAlias
+                keyPassword = playKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            // GitHub test APKs keep working; Play builds require upload signing.
+            signingConfig = if (playSigningAvailable) {
+                signingConfigs.getByName("playRelease")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

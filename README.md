@@ -26,11 +26,11 @@ The project is designed around privacy, offline usefulness, predictable reminder
 
 ## Latest release
 
-**Moodle Reminder v2.0.0** is the current stable release.
+**Moodle Reminder v2.1.0** is the current stable release.
 
-- Android APK: [`moodle-reminder-v2.0.0.apk`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.0.0/moodle-reminder-v2.0.0.apk)
-- SHA-256 checksum: [`moodle-reminder-v2.0.0.apk.sha256`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.0.0/moodle-reminder-v2.0.0.apk.sha256)
-- Release notes: [v2.0.0](https://github.com/MohammedEmad333/moodle-reminder/releases/tag/v2.0.0)
+- Android APK: [`moodle-reminder-v2.1.0.apk`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.1.0/moodle-reminder-v2.1.0.apk)
+- SHA-256 checksum: [`moodle-reminder-v2.1.0.apk.sha256`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.1.0/moodle-reminder-v2.1.0.apk.sha256)
+- Release notes: [v2.0.0](https://github.com/MohammedEmad333/moodle-reminder/releases/tag/v2.1.0)
 
 > For normal installs, use the APK attached to the latest GitHub Release rather than a temporary Actions artifact.
 
@@ -184,7 +184,7 @@ Release publishing is automated.
 3. Merge the release metadata to `main`.
 4. The release workflow verifies the source, builds the APK, generates its checksum, and publishes the GitHub Release.
 
-For the current app version `2.0.0+2`, the public tag is `v2.0.0`.
+For the current app version `2.1.0+3`, the public tag is `v2.1.0`.
 
 ## Project goals
 

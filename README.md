@@ -2,9 +2,9 @@
 
 <img src="docs/brand/moodle-reminder-banner.svg" alt="Moodle Reminder — never miss a Moodle deadline again" width="100%" />
 
-# Moodle Reminder
+# مساري | Masari
 
-**A privacy-friendly Flutter companion for Moodle deadlines, background calendar sync, and reliable local reminders.**
+**Masari (formerly Moodle Reminder)** — a privacy-friendly Flutter companion for Moodle deadlines, background calendar sync, and reliable local reminders.**
 
 [![Flutter CI](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/flutter-ci.yml)
 [![Release](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/release.yml/badge.svg)](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/release.yml)
@@ -20,7 +20,7 @@
 
 ## Overview
 
-Moodle Reminder turns Moodle's official private iCalendar (`.ics`) export into a focused deadline companion. It keeps an offline cache, refreshes deadlines in the background, schedules local reminders, and never asks for or stores a Moodle password.
+Masari turns Moodle's official private iCalendar (`.ics`) export into a focused deadline companion. It keeps an offline cache, refreshes deadlines in the background, schedules local reminders, and never asks for or stores a Moodle password.
 
 The project is designed around privacy, offline usefulness, predictable reminder behavior, and a clean separation between UI, state, parsing, storage, background work, and notifications.
 
@@ -188,7 +188,7 @@ For the current app version `2.1.0+3`, the public tag is `v2.1.0`.
 
 ## Project goals
 
-Moodle Reminder focuses on a small, reliable product surface rather than trying to replace Moodle itself:
+Masari focuses on a small, reliable product surface rather than trying to replace Moodle itself:
 
 - make upcoming work visible at a glance;
 - keep useful deadline data available offline;

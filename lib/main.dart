@@ -60,7 +60,7 @@ class MoodleReminderApp extends StatelessWidget {
       builder: (context, _) {
         return MaterialApp(
           navigatorKey: navigatorKey,
-          title: 'Moodle Reminder',
+          title: controller.locale.languageCode == 'ar' ? 'مساري' : 'Masari',
           debugShowCheckedModeBanner: false,
           locale: controller.locale,
           supportedLocales: const [Locale('en'), Locale('ar')],

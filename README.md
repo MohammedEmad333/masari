@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/brand/moodle-reminder-banner.svg" alt="Moodle Reminder — never miss a Moodle deadline again" width="100%" />
+<img src="android/app/src/main/res/drawable-nodpi/masari_launcher.webp" alt="Masari application icon" width="180" />
 
 # مساري | Masari
 
@@ -26,11 +26,11 @@ The project is designed around privacy, offline usefulness, predictable reminder
 
 ## Latest release
 
-**Moodle Reminder v2.1.0** is the current stable release.
+**Masari v2.2.0** is the planned release for the refreshed brand.
 
-- Android APK: [`moodle-reminder-v2.1.0.apk`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.1.0/moodle-reminder-v2.1.0.apk)
-- SHA-256 checksum: [`moodle-reminder-v2.1.0.apk.sha256`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.1.0/moodle-reminder-v2.1.0.apk.sha256)
-- Release notes: [v2.0.0](https://github.com/MohammedEmad333/moodle-reminder/releases/tag/v2.1.0)
+- Android APK: [`masari-v2.2.0.apk`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.2.0/masari-v2.2.0.apk)
+- SHA-256 checksum: [`masari-v2.2.0.apk.sha256`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.2.0/masari-v2.2.0.apk.sha256)
+- Release notes: [v2.2.0](https://github.com/MohammedEmad333/moodle-reminder/releases/tag/v2.2.0)
 
 > For normal installs, use the APK attached to the latest GitHub Release rather than a temporary Actions artifact.
 
@@ -184,7 +184,7 @@ Release publishing is automated.
 3. Merge the release metadata to `main`.
 4. The release workflow verifies the source, builds the APK, generates its checksum, and publishes the GitHub Release.
 
-For the current app version `2.1.0+3`, the public tag is `v2.1.0`.
+For app version `2.2.0+4`, the public tag is `v2.2.0`. The historical package and deep-link identifiers remain unchanged for upgrade compatibility.
 
 ## Project goals
 

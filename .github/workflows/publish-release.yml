@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: moodle-reminder-release-publish
+  group: masari-release-publish
   cancel-in-progress: false
 
 jobs:
@@ -72,11 +72,11 @@ jobs:
             exit 1
           fi
           TAG="v$APP_VERSION"
-          mv dist/app-release.apk "dist/moodle-reminder-$TAG.apk"
-          (cd dist && sha256sum "moodle-reminder-$TAG.apk" > SHA256SUMS.txt)
+          mv dist/app-release.apk "dist/masari-$TAG.apk"
+          (cd dist && sha256sum "masari-$TAG.apk" > "masari-$TAG.apk.sha256" && cp "masari-$TAG.apk.sha256" SHA256SUMS.txt)
           printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
-          printf 'apk=%s\n' "moodle-reminder-$TAG.apk" >> "$GITHUB_OUTPUT"
-          printf 'Moodle Reminder %s\n\nVerified Android APK built from main commit %s.\nFlutter CI run: https://github.com/%s/actions/runs/%s\n\nSHA-256 checksum is attached.\n' \
+          printf 'apk=%s\n' "masari-$TAG.apk" >> "$GITHUB_OUTPUT"
+          printf 'Masari %s\n\nVerified Android APK built from main commit %s.\nFlutter CI run: https://github.com/%s/actions/runs/%s\n\nSHA-256 checksum is attached.\n' \
             "$TAG" "$VERIFIED_SHA" "$GITHUB_REPOSITORY" \
             "${{ github.event.workflow_run.id }}" > dist/release-notes.md
 
@@ -92,15 +92,15 @@ jobs:
           set -euo pipefail
           # Existing version tags remain stable; the APK asset is refreshed.
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "dist/$APK" dist/SHA256SUMS.txt \
+            gh release upload "$TAG" "dist/$APK" "dist/$APK.sha256" dist/SHA256SUMS.txt \
               --clobber --repo "$GITHUB_REPOSITORY"
             gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "Moodle Reminder $TAG" \
+              --title "Masari $TAG" \
               --notes-file dist/release-notes.md
           else
-            gh release create "$TAG" "dist/$APK" dist/SHA256SUMS.txt \
+            gh release create "$TAG" "dist/$APK" "dist/$APK.sha256" dist/SHA256SUMS.txt \
               --target "$VERIFIED_SHA" \
-              --title "Moodle Reminder $TAG" \
+              --title "Masari $TAG" \
               --notes-file dist/release-notes.md \
               --latest --repo "$GITHUB_REPOSITORY"
           fi

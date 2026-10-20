@@ -1,7 +1,7 @@
 name: moodle_reminder
-description: A secure Moodle calendar companion with background sync and deadline reminders.
+description: Masari, a secure Moodle calendar companion with background sync and deadline reminders.
 publish_to: 'none'
-version: 2.1.0+3
+version: 2.2.0+4
 
 environment:
   sdk: '>=3.10.0 <4.0.0'

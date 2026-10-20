@@ -11,7 +11,7 @@ This project has a separate manually triggered workflow at **Actions → Google 
    - `PLAY_STORE_PASSWORD` — upload keystore password.
    - `PLAY_KEY_ALIAS` — upload key alias.
    - `PLAY_KEY_PASSWORD` — key password.
-4. Run **Actions → Google Play AAB → Run workflow** and download the signed `moodle-reminder-play-aab` artifact. It expires after 14 days. GitHub APK release artifacts are **not Play-ready** because the normal APK build uses debug signing.
+4. Run **Actions → Google Play AAB → Run workflow** and download the signed `masari-play-aab` artifact. It expires after 14 days. GitHub APK release artifacts are **not Play-ready** because the normal APK build uses debug signing.
 5. Upload AAB to **Internal testing** first; test fresh install, Moodle connection, push/local reminders, background sync, widgets, ZIP imports/exports, course QR links, RTL, notifications and Android 16 behavior.
 6. Prepare a publicly accessible privacy-policy URL, content rating, target audience, Data safety disclosure, app access instructions if necessary, ads declaration, screenshots, store icon (512 × 512), feature graphic (1024 × 500), title and descriptions. Verify every disclosure against the final implementation. Do not publish an unverified privacy claim.
 7. Review the **SCHEDULE_EXACT_ALARM** permission with Play Console and confirm the app's exact-reminder behavior; avoid restricted `USE_EXACT_ALARM` unless eligibility is established.
@@ -32,7 +32,7 @@ Place only the base64 result in GitHub Actions **Secrets and variables → Actio
 
 **Arabic short description:** تابع مواعيد مودل وواجباتك ونظّم مساقاتك مع تذكيرات ذكية.
 
-Moodle Reminder is an independent companion for Moodle's private calendar feed. It does not claim affiliation with or endorsement by the Moodle project or any university.
+Masari is an independent companion for Moodle's private calendar feed. It does not claim affiliation with or endorsement by the Moodle project or any university.
 
 ## Privacy-policy preparation
 

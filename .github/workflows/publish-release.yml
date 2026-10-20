@@ -1,0 +1,106 @@
+name: Publish Android release APK
+
+on:
+  workflow_run:
+    workflows: ["Flutter CI"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: moodle-reminder-release-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish verified APK to Releases
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Skip obsolete builds
+        id: latest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          CURRENT_SHA="$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')"
+          if [ "$CURRENT_SHA" != "$VERIFIED_SHA" ]; then
+            echo "Latest main moved since this build; skipping outdated APK."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download APK from successful Flutter CI
+        if: steps.latest.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --name moodle-reminder-release-apk --dir dist
+          test -s dist/app-release.apk
+
+      - name: Prepare versioned APK and checksum
+        if: steps.latest.outputs.publish == 'true'
+        id: version
+        shell: bash
+        env:
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          APP_VERSION="$(sed -nE 's/^version: ([0-9]+\.[0-9]+\.[0-9]+)\+.*/\1/p' pubspec.yaml | head -n1)"
+          if [[ ! "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid pubspec.yaml version" >&2
+            exit 1
+          fi
+          TAG="v$APP_VERSION"
+          mv dist/app-release.apk "dist/moodle-reminder-$TAG.apk"
+          (cd dist && sha256sum "moodle-reminder-$TAG.apk" > SHA256SUMS.txt)
+          printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
+          printf 'apk=%s\n' "moodle-reminder-$TAG.apk" >> "$GITHUB_OUTPUT"
+          printf 'Moodle Reminder %s\n\nVerified Android APK built from main commit %s.\nFlutter CI run: https://github.com/%s/actions/runs/%s\n\nSHA-256 checksum is attached.\n' \
+            "$TAG" "$VERIFIED_SHA" "$GITHUB_REPOSITORY" \
+            "${{ github.event.workflow_run.id }}" > dist/release-notes.md
+
+      - name: Publish APK to versioned GitHub Release
+        if: steps.latest.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          APK: ${{ steps.version.outputs.apk }}
+          VERIFIED_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Existing version tags remain stable; the APK asset is refreshed.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" "dist/$APK" dist/SHA256SUMS.txt \
+              --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "Moodle Reminder $TAG" \
+              --notes-file dist/release-notes.md
+          else
+            gh release create "$TAG" "dist/$APK" dist/SHA256SUMS.txt \
+              --target "$VERIFIED_SHA" \
+              --title "Moodle Reminder $TAG" \
+              --notes-file dist/release-notes.md \
+              --latest --repo "$GITHUB_REPOSITORY"
+          fi

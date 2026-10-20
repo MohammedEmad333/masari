@@ -1639,8 +1639,8 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const start = Color(0xFFF98012);
-    const end = Color(0xFF8A430D);
+    const start = Color(0xFF1379D6);
+    const end = Color(0xFF0A316F);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -1874,7 +1874,7 @@ class _DeadlineCalendar extends StatelessWidget {
                                       shape: BoxShape.circle,
                                       color: selected
                                           ? scheme.primary
-                                          : const Color(0xFFF98012),
+                                          : scheme.secondary,
                                     ),
                                   ),
                                 ),

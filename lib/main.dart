@@ -80,7 +80,7 @@ class MoodleReminderApp extends StatelessWidget {
 
   ThemeData _theme(Brightness brightness) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFFF98012),
+      seedColor: const Color(0xFF0D63C8),
       brightness: brightness,
     );
 

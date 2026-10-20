@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0
+
+- Renamed the application to **مساري / Masari** with a refreshed launcher icon and localized Android app labels.
+- Updated the widget and in-app branding while preserving the existing Android application ID and course-sharing links.
+- Improved the verified GitHub APK release pipeline and added checksums for signed Google Play AAB artifacts.
+- Prepared Android 16 (SDK 36) support and an opt-in signed Google Play bundle workflow.
+- Updated the notification dependency and GitHub Actions checkout tooling.
+
+
 ## 2.1.0
 
 - Added a local study library with courses, chapters, copied files, and educational links.

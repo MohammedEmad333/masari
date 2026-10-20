@@ -1410,7 +1410,7 @@ class _SetupState extends State<_Setup> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Moodle Reminder'),
+        title: Text(t('Masari', 'مساري')),
         actions: [
           TextButton(
             onPressed: () =>

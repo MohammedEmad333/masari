@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_title">Moodle Reminder</string>
+    <string name="app_name">Masari</string>
+    <string name="widget_title">Masari</string>
     <string name="widget_open">Tap to view your study tasks</string>
     <string name="widget_no_upcoming">No upcoming tasks · Tap to open</string>
 </resources>

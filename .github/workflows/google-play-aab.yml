@@ -71,7 +71,7 @@ jobs:
       - name: Upload Play bundle
         uses: actions/upload-artifact@v7
         with:
-          name: moodle-reminder-play-aab
+          name: masari-play-aab
           path: |
             build/app/outputs/bundle/release/app-release.aab
             build/app/outputs/bundle/release/app-release.aab.sha256

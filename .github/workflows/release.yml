@@ -1,12 +1,8 @@
-name: Release
+name: Manual Release
 
+# Main branch releases are normally published after verified Flutter CI
+# by publish-release.yml. This remains a manual recovery workflow.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'pubspec.yaml'
-      - 'CHANGELOG.md'
-      - '.github/workflows/release.yml'
   workflow_dispatch:
 
 permissions:
@@ -71,9 +67,9 @@ jobs:
         run: |
           mkdir -p release-assets
           cp build/app/outputs/flutter-apk/app-release.apk \
-            "release-assets/moodle-reminder-${{ steps.version.outputs.tag }}.apk"
-          sha256sum "release-assets/moodle-reminder-${{ steps.version.outputs.tag }}.apk" \
-            > "release-assets/moodle-reminder-${{ steps.version.outputs.tag }}.apk.sha256"
+            "release-assets/masari-${{ steps.version.outputs.tag }}.apk"
+          (cd release-assets && sha256sum "masari-${{ steps.version.outputs.tag }}.apk" \
+            > "masari-${{ steps.version.outputs.tag }}.apk.sha256")
 
       - name: Prepare release notes
         shell: bash
@@ -105,6 +101,6 @@ jobs:
             gh release create "$TAG" \
               release-assets/* \
               --target "$GITHUB_SHA" \
-              --title "Moodle Reminder $TAG" \
+              --title "Masari $TAG" \
               --notes-file release-notes.md
           fi

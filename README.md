@@ -4,7 +4,7 @@
 
 # مساري | Masari
 
-**Masari (formerly Moodle Reminder)** — a privacy-friendly Flutter companion for Moodle deadlines, background calendar sync, and reliable local reminders.**
+**Masari (formerly Moodle Reminder)** — a privacy-friendly Flutter companion for Moodle deadlines, background calendar sync, and reliable local reminders.
 
 [![Flutter CI](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/flutter-ci.yml)
 [![Release](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/release.yml/badge.svg)](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/release.yml)

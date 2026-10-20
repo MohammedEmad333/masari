@@ -1,0 +1,70 @@
+name: Google Play AAB
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-play-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Validate store configuration
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          for value in PLAY_UPLOAD_KEYSTORE_BASE64 PLAY_STORE_PASSWORD PLAY_KEY_ALIAS PLAY_KEY_PASSWORD; do
+            if [[ -z "${!value}" ]]; then
+              echo "::error::Missing GitHub Actions secret: $value"
+              exit 1
+            fi
+          done
+          if grep -q 'applicationId = "com.example.moodle_reminder"' android/app/build.gradle.kts; then
+            echo "::error::Choose your permanent Play package ID before publishing."
+            exit 1
+          fi
+      - name: Install dependencies and verify
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+      - name: Decode upload key
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+        shell: bash
+        run: |
+          umask 077
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload-keystore.jks"
+          test -s "$RUNNER_TEMP/upload-keystore.jks"
+      - name: Build signed Android App Bundle
+        env:
+          PLAY_STORE_BUILD: 'true'
+          PLAY_KEYSTORE_PATH: ${{ runner.temp }}/upload-keystore.jks
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        run: flutter build appbundle --release
+      - name: Upload Play bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: moodle-reminder-play-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14

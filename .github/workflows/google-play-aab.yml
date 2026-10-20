@@ -61,10 +61,19 @@ jobs:
           PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
           PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
         run: flutter build appbundle --release
+      - name: Generate and verify bundle checksum
+        shell: bash
+        run: |
+          cd build/app/outputs/bundle/release
+          test -s app-release.aab
+          sha256sum app-release.aab > app-release.aab.sha256
+          sha256sum --check app-release.aab.sha256
       - name: Upload Play bundle
         uses: actions/upload-artifact@v7
         with:
           name: moodle-reminder-play-aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/bundle/release/app-release.aab.sha256
           if-no-files-found: error
           retention-days: 14

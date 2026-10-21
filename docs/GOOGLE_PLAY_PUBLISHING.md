@@ -4,8 +4,8 @@
 
 - **Google Play application ID:** `com.mohammedemad333.masari` (selected when `PLAY_STORE_BUILD=true`).
 - **Legacy GitHub APK application ID:** `com.example.moodle_reminder` (used for normal APK builds).
-- The Google Play Console app has been created by the developer with the Masari ID.
-- The Kotlin namespace remains `com.example.moodle_reminder`. It identifies the compiled Android classes, **not** the app ID used by Play; the manifest's relative activity and widget provider names continue to resolve against that namespace.
+- The Google Play Console app has been created by the developer with the Masari ID (reported on 2026-10-21).
+- The Kotlin namespace remains `com.example.moodle_reminder`. It identifies the compiled Android classes, **not** the app ID used by Play; the manifest names the existing native activity and widget provider with fully-qualified class names to work under both application IDs.
 - Both variants use the same Dart app and features, but Android treats them as **separate apps**. The Play edition will not automatically import data from the old APK, and both may be installed together. Do not rename the registered Play app ID after the first upload.
 - Existing `moodlereminder://course` sharing links and method channels are retained for compatibility.
 
@@ -21,7 +21,7 @@ This project has a separate manually triggered workflow at **Actions → Google 
    - `PLAY_STORE_PASSWORD` — upload keystore password.
    - `PLAY_KEY_ALIAS` — upload key alias.
    - `PLAY_KEY_PASSWORD` — key password.
-4. From the repository's `main` branch, run **Actions → Google Play AAB → Run workflow** and download the signed `masari-play-aab` artifact (AAB and SHA-256). It expires after 14 days. Ordinary GitHub APK release artifacts use the legacy ID and debug signing and are **not Play-ready**. The upload artifact is not published automatically to Play Console.
+4. From the repository's `main` branch, run **Actions → Google Play AAB → Run workflow** and download the signed `masari-play-aab` artifact (AAB and SHA-256). It expires after 14 days. Ordinary GitHub APK release artifacts use the legacy ID and debug signing and are **not Play-ready**. The upload artifact is not published automatically to Play Console. Standard Flutter CI also smoke-tests a Play-identity AAB using a throwaway test key; **that test build is not an upload candidate** and is never uploaded as an artifact.
 5. Upload AAB to **Internal testing** first; test fresh install, Moodle connection, push/local reminders, background sync, widgets, ZIP imports/exports, course QR links, RTL, notifications and Android 16 behavior.
 6. Prepare a publicly accessible privacy-policy URL, content rating, target audience, Data safety disclosure, app access instructions if necessary, ads declaration, screenshots, store icon (512 × 512), feature graphic (1024 × 500), title and descriptions. Verify every disclosure against the final implementation. Do not publish an unverified privacy claim.
 7. Review the **SCHEDULE_EXACT_ALARM** permission with Play Console and confirm the app's exact-reminder behavior; avoid restricted `USE_EXACT_ALARM` unless eligibility is established.

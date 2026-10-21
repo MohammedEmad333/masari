@@ -26,13 +26,13 @@ The project is designed around privacy, offline usefulness, predictable reminder
 
 ## Latest release
 
-**Masari v2.2.0** is the planned release for the refreshed brand.
+**Masari v2.2.1 (build 5)** is prepared for verified, consistently signed distribution.
 
-- Android APK: [`masari-v2.2.0.apk`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.2.0/masari-v2.2.0.apk)
-- SHA-256 checksum: [`masari-v2.2.0.apk.sha256`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.2.0/masari-v2.2.0.apk.sha256)
-- Release notes: [v2.2.0](https://github.com/MohammedEmad333/moodle-reminder/releases/tag/v2.2.0)
+- GitHub release APK: [`masari-v2.2.1.apk`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.2.1/masari-v2.2.1.apk) (available only after green `main` CI and successful signed publishing).
+- Google Play release: run the manual **Google Play AAB** workflow; it uses the *same existing upload-key secrets*.
+- Store application ID: `com.mohammedemad333.masari`.
 
-> For normal installs, use the APK attached to the latest GitHub Release rather than a temporary Actions artifact.
+> **Important migration warning:** Earlier GitHub APKs used `com.example.moodle_reminder` and a temporary debug signing key. The new APK will not replace that installation or move its local data. Keep your original app installed until your records are safely backed up. Google Play App Signing may use a different signing certificate from the upload key, so prefer **Play Internal Testing** when testing eventual Play upgrades.
 
 ## Highlights
 

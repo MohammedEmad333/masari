@@ -99,7 +99,8 @@ jobs:
           test -s "$APK"
           TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           "$TOOLS/apksigner" verify "$APK"
-          "$TOOLS/aapt" dump badging "$APK" | grep -Fq "package: name='com.mohammedemad333.masari'"
+          "$TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/masari-apk-badging.txt"
+          grep -Fq "package: name='com.mohammedemad333.masari'" "$RUNNER_TEMP/masari-apk-badging.txt"
 
       - name: Prepare signed APK and checksum
         if: steps.latest.outputs.publish == 'true'

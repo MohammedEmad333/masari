@@ -3,7 +3,8 @@ import 'package:moodle_reminder/services/sync_feedback.dart';
 
 void main() {
   test('Moodle calendar failure is translated for Arabic users', () {
-    const error = 'Could not sync Moodle. Check your connection and calendar URL.';
+    const error =
+        'Could not sync Moodle. Check your connection and calendar URL.';
 
     expect(
       SyncFeedback.errorMessage(error, arabic: true),
@@ -23,10 +24,7 @@ void main() {
   });
 
   test('unexpected server errors remain intact for troubleshooting', () {
-    expect(
-      SyncFeedback.errorMessage('HTTP 403', arabic: true),
-      'HTTP 403',
-    );
+    expect(SyncFeedback.errorMessage('HTTP 403', arabic: true), 'HTTP 403');
   });
 
   test('offline hint checks cached deadlines, not last sync timestamp', () {

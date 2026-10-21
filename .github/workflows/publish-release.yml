@@ -16,13 +16,13 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish verified APK to Releases
+    name: Build and publish verified signed Masari APK
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.head_branch == 'main' &&
           github.event.workflow_run.head_repository.full_name == github.repository }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - name: Checkout verified commit
         uses: actions/checkout@v7
@@ -46,19 +46,62 @@ jobs:
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Download APK from successful Flutter CI
+
+      - name: Set up Java 17
+        if: steps.latest.outputs.publish == 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        if: steps.latest.outputs.publish == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+
+      - name: Check signing configuration
         if: steps.latest.outputs.publish == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ github.event.workflow_run.id }}
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        shell: bash
         run: |
           set -euo pipefail
-          mkdir -p dist
-          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
-            --name moodle-reminder-release-apk --dir dist
-          test -s dist/app-release.apk
+          for name in PLAY_UPLOAD_KEYSTORE_BASE64 PLAY_STORE_PASSWORD PLAY_KEY_ALIAS PLAY_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing signing secret: $name"
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/masari-upload.jks"
+          test -s "$RUNNER_TEMP/masari-upload.jks"
 
-      - name: Prepare versioned APK and checksum
+      - name: Build official signed Masari APK
+        if: steps.latest.outputs.publish == 'true'
+        env:
+          PLAY_STORE_BUILD: 'true'
+          PLAY_KEYSTORE_PATH: ${{ runner.temp }}/masari-upload.jks
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          flutter build apk --release
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$TOOLS/apksigner" verify "$APK"
+          "$TOOLS/aapt" dump badging "$APK" | grep -Fq "package: name='com.mohammedemad333.masari'"
+
+      - name: Prepare signed APK and checksum
         if: steps.latest.outputs.publish == 'true'
         id: version
         shell: bash
@@ -72,15 +115,16 @@ jobs:
             exit 1
           fi
           TAG="v$APP_VERSION"
-          mv dist/app-release.apk "dist/masari-$TAG.apk"
-          (cd dist && sha256sum "masari-$TAG.apk" > "masari-$TAG.apk.sha256" && cp "masari-$TAG.apk.sha256" SHA256SUMS.txt)
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/masari-$TAG.apk"
+          (cd dist && sha256sum "masari-$TAG.apk" > "masari-$TAG.apk.sha256")
           printf 'tag=%s\n' "$TAG" >> "$GITHUB_OUTPUT"
           printf 'apk=%s\n' "masari-$TAG.apk" >> "$GITHUB_OUTPUT"
-          printf 'Masari %s\n\nVerified Android APK built from main commit %s.\nFlutter CI run: https://github.com/%s/actions/runs/%s\n\nSHA-256 checksum is attached.\n' \
+          printf 'Masari %s\n\nSigned Android package: com.mohammedemad333.masari\nVerified main commit: %s\nFlutter CI: https://github.com/%s/actions/runs/%s\n\nThis cannot update earlier com.example.moodle_reminder installations. Google Play may re-sign bundles with a different app-signing certificate; use Play Internal Testing for the store installation.\n' \
             "$TAG" "$VERIFIED_SHA" "$GITHUB_REPOSITORY" \
             "${{ github.event.workflow_run.id }}" > dist/release-notes.md
 
-      - name: Publish APK to versioned GitHub Release
+      - name: Publish immutable signed APK release
         if: steps.latest.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -90,17 +134,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Existing version tags remain stable; the APK asset is refreshed.
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$TAG" "dist/$APK" "dist/$APK.sha256" dist/SHA256SUMS.txt \
-              --clobber --repo "$GITHUB_REPOSITORY"
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "Masari $TAG" \
-              --notes-file dist/release-notes.md
-          else
-            gh release create "$TAG" "dist/$APK" "dist/$APK.sha256" dist/SHA256SUMS.txt \
-              --target "$VERIFIED_SHA" \
-              --title "Masari $TAG" \
-              --notes-file dist/release-notes.md \
-              --latest --repo "$GITHUB_REPOSITORY"
+            echo "Release $TAG already exists. Refusing to overwrite its APK/signature."
+            exit 0
           fi
+          gh release create "$TAG" "dist/$APK" "dist/$APK.sha256" \
+            --target "$VERIFIED_SHA" \
+            --title "Masari $TAG" \
+            --notes-file dist/release-notes.md \
+            --latest --repo "$GITHUB_REPOSITORY"

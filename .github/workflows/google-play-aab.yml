@@ -35,8 +35,14 @@ jobs:
               exit 1
             fi
           done
-          if grep -q 'applicationId = "com.example.moodle_reminder"' android/app/build.gradle.kts; then
-            echo "::error::Choose your permanent Play package ID before publishing."
+          # This workflow must build the app registered in Google Play Console.
+          # GitHub release APKs deliberately keep the legacy application ID.
+          if ! grep -Fq '"com.mohammedemad333.masari"' android/app/build.gradle.kts; then
+            echo "::error::Expected Masari Google Play application ID is missing."
+            exit 1
+          fi
+          if ! grep -Fq 'val playStoreBuild = System.getenv("PLAY_STORE_BUILD") == "true"' android/app/build.gradle.kts; then
+            echo "::error::Play build identity selector is missing."
             exit 1
           fi
       - name: Install dependencies and verify

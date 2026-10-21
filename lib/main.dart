@@ -28,12 +28,12 @@ void showIncomingCourse(String link, AppController controller) {
   );
 }
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init(requestPermissions: false);
-  await initializeDateFormatting();
-  await BackgroundSyncService.initialize();
 
+  // Draw the first Flutter frame before invoking optional Android plugins.
+  // A notification/WorkManager failure must not leave users on the splash
+  // screen with no UI or recovery path.
   final controller = AppController(CalendarRepository());
   runApp(MoodleReminderApp(controller: controller));
   courseChannel.setMethodCallHandler((call) async {
@@ -41,11 +41,48 @@ Future<void> main() async {
       showIncomingCourse(call.arguments as String, controller);
     }
   });
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(_consumePendingCourseLink(controller));
+  });
+  unawaited(_bootstrap(controller));
+}
+
+Future<void> _consumePendingCourseLink(AppController controller) async {
+  try {
     final link = await courseChannel.invokeMethod<String>('consumeLink');
     if (link != null) showIncomingCourse(link, controller);
-  });
-  unawaited(controller.initialize());
+  } catch (error) {
+    // Sharing is optional; it must not prevent the home screen from loading.
+    debugPrint('Unable to read an incoming course link: $error');
+  }
+}
+
+Future<void> _bootstrap(AppController controller) async {
+  controller.clearStartupError();
+  try {
+    await initializeDateFormatting();
+    await controller.initialize();
+  } catch (error, stackTrace) {
+    debugPrint('Masari failed to load saved data: $error\n$stackTrace');
+    controller.reportStartupError();
+  }
+
+  // Run these separately from the UI and saved-data initialization. Failures
+  // are diagnostic only; the app can still display its calendar and tasks.
+  unawaited(_initializeOptionalServices());
+}
+
+Future<void> _initializeOptionalServices() async {
+  try {
+    await NotificationService.init(requestPermissions: false);
+  } catch (error) {
+    debugPrint('Notification initialization failed: $error');
+  }
+  try {
+    await BackgroundSyncService.initialize();
+  } catch (error) {
+    debugPrint('Background synchronization setup failed: $error');
+  }
 }
 
 class MoodleReminderApp extends StatelessWidget {
@@ -72,7 +109,9 @@ class MoodleReminderApp extends StatelessWidget {
           themeMode: controller.themeMode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
-          home: HomeShell(controller: controller),
+          home: controller.startupError == null
+              ? HomeShell(controller: controller)
+              : _StartupFailure(controller: controller),
         );
       },
     );
@@ -93,6 +132,52 @@ class MoodleReminderApp extends StatelessWidget {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+}
+
+class _StartupFailure extends StatelessWidget {
+  const _StartupFailure({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final arabic = controller.locale.languageCode == 'ar';
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  arabic
+                      ? 'تعذّر تحميل بيانات مساري.'
+                      : 'Masari could not load your saved data.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  arabic
+                      ? 'لم يتم حذف بياناتك. حاول مرة أخرى.'
+                      : 'Your data has not been deleted. Please try again.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => unawaited(_bootstrap(controller)),
+                  child: Text(arabic ? 'إعادة المحاولة' : 'Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

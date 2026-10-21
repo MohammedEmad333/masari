@@ -33,6 +33,20 @@ class AppController extends ChangeNotifier {
   bool busy = false;
   bool _syncInProgress = false;
   bool initialized = false;
+  String? startupError;
+
+  void reportStartupError() {
+    initialized = false;
+    startupError = 'Unable to load saved data';
+    notifyListeners();
+  }
+
+  void clearStartupError() {
+    startupError = null;
+    initialized = false;
+    notifyListeners();
+  }
+
   bool calendarConnected = false;
   bool apiConnected = false;
   bool offlineMode = false;
@@ -95,14 +109,17 @@ class AppController extends ChangeNotifier {
         apiConnected ||
         sessionDeadlines.isNotEmpty ||
         manualDeadlines.isNotEmpty) {
-      await NotificationService.init(requestPermissions: true);
-      if (calendarConnected || apiConnected) {
-        // A failed network refresh must not discard reminders restored from
-        // persisted manual, API and session deadline caches.
-        if (!await sync(silent: true)) await _rescheduleNotifications();
-      } else {
-        // Manual-only and session-only users still need restored reminders.
-        await _rescheduleNotifications();
+      try {
+        await NotificationService.init(requestPermissions: true);
+        if (calendarConnected || apiConnected) {
+          // Keep reminders from cached sources when network sync fails.
+          if (!await sync(silent: true)) await _rescheduleNotifications();
+        } else {
+          await _rescheduleNotifications();
+        }
+      } catch (exception) {
+        // Android reminder permissions and scheduling are optional.
+        debugPrint('Could not initialize reminders: $exception');
       }
     }
   }

@@ -24,7 +24,7 @@ jobs:
   verify:
     name: Analyze, test and build release APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -68,3 +68,26 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Create CI-only signing key for Google Play smoke test
+        shell: bash
+        run: |
+          keytool -genkeypair -noprompt \
+            -keystore "$RUNNER_TEMP/masari-ci-upload.jks" \
+            -storetype JKS \
+            -storepass masari-ci-only -keypass masari-ci-only \
+            -alias ci -keyalg RSA -keysize 2048 -validity 30 \
+            -dname "CN=Masari CI, OU=Testing, O=Masari, C=US"
+
+      - name: Smoke-test Masari Play AAB (temporary key, never publish)
+        env:
+          PLAY_STORE_BUILD: 'true'
+          PLAY_KEYSTORE_PATH: ${{ runner.temp }}/masari-ci-upload.jks
+          PLAY_STORE_PASSWORD: masari-ci-only
+          PLAY_KEY_ALIAS: ci
+          PLAY_KEY_PASSWORD: masari-ci-only
+        run: |
+          flutter build appbundle --release
+          test -s build/app/outputs/bundle/release/app-release.aab
+          unzip -t build/app/outputs/bundle/release/app-release.aab >/dev/null
+          jarsigner -verify build/app/outputs/bundle/release/app-release.aab

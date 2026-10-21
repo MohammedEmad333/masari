@@ -362,9 +362,10 @@ class AppController extends ChangeNotifier {
     // tasks must keep their state and individual reminder preferences.
     final calendarKeys = deadlines.map((item) => item.stableKey).toSet();
     final retainedCompleted = completedIds.difference(calendarKeys);
-    final retainedTaskOffsets = Map<String, List<int>>.from(
-      taskReminderOffsets,
-    )..removeWhere((key, _) => calendarKeys.contains(key));
+    final retainedTaskOffsets = <String, List<int>>{
+      for (final entry in taskReminderOffsets.entries)
+        if (!calendarKeys.contains(entry.key)) entry.key: entry.value,
+    };
 
     await _repository.clearCalendarUrl();
     await _repository.clearAdditionalCalendarUrls();

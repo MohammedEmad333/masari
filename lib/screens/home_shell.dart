@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
+import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
@@ -133,7 +134,11 @@ class _HomeShellState extends State<HomeShell> {
         content: Text(
           ok
               ? t('Moodle calendar synced.', 'تمت مزامنة تقويم Moodle.')
-              : widget.controller.error ?? t('Sync failed.', 'فشلت المزامنة.'),
+              : SyncFeedback.errorMessage(
+                  widget.controller.error ??
+                      t('Sync failed.', 'فشلت المزامنة.'),
+                  arabic: _ar,
+                ),
         ),
       ),
     );
@@ -280,17 +285,14 @@ class _HomeShellState extends State<HomeShell> {
               color: Theme.of(context).colorScheme.errorContainer,
               child: ListTile(
                 leading: const Icon(Icons.error_outline_rounded),
-                title: Text(controller.error!),
+                title: Text(
+                  SyncFeedback.errorMessage(controller.error!, arabic: _ar),
+                ),
                 subtitle: Text(
-                  controller.lastSync == null
-                      ? t(
-                          'No offline calendar available yet.',
-                          'لا توجد بيانات تقويم محفوظة بعد.',
-                        )
-                      : t(
-                          'Saved deadlines remain available offline.',
-                          'تبقى المواعيد المحفوظة متاحة دون إنترنت.',
-                        ),
+                  SyncFeedback.offlineHint(
+                    hasSavedDeadlines: controller.allDeadlines.isNotEmpty,
+                    arabic: _ar,
+                  ),
                 ),
                 trailing: IconButton(
                   tooltip: t('Retry synchronization', 'إعادة محاولة المزامنة'),
@@ -422,11 +424,16 @@ class _HomeShellState extends State<HomeShell> {
           onChanged: (value) => setState(() => _searchQuery = value),
         ),
         const SizedBox(height: 10),
+        Text(
+          t('Filter by course', 'تصفية حسب المساق'),
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           key: ValueKey(selectedCourse),
           initialValue: selectedCourse ?? '',
-          decoration: InputDecoration(
-            labelText: t('Filter by course', 'تصفية حسب المساق'),
+          decoration: const InputDecoration(
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
           items: [
             DropdownMenuItem(
@@ -1486,7 +1493,7 @@ class _SetupState extends State<_Setup> {
           if (widget.controller.error != null) ...[
             const SizedBox(height: 10),
             Text(
-              widget.controller.error!,
+              SyncFeedback.errorMessage(widget.controller.error!, arabic: _ar),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],

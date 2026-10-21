@@ -7,7 +7,9 @@
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:icon="@drawable/masari_launcher">
+        android:icon="@drawable/masari_launcher"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name="com.example.moodle_reminder.MainActivity"
             android:exported="true"

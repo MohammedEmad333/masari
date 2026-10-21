@@ -37,6 +37,8 @@ class _HomeShellState extends State<HomeShell> {
   bool get _ar => widget.controller.locale.languageCode == 'ar';
   String t(String en, String ar) => _ar ? ar : en;
   String get _localeName => _ar ? 'ar' : 'en';
+  bool get _canSync =>
+      widget.controller.calendarConnected || widget.controller.apiConnected;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +64,7 @@ class _HomeShellState extends State<HomeShell> {
         actions: [
           IconButton(
             tooltip: t('Sync now', 'مزامنة الآن'),
-            onPressed: controller.busy ? null : _sync,
+            onPressed: controller.busy || !_canSync ? null : _sync,
             icon: controller.busy
                 ? const SizedBox.square(
                     dimension: 20,
@@ -892,7 +894,7 @@ class _HomeShellState extends State<HomeShell> {
                 leading: const Icon(Icons.sync_rounded),
                 title: Text(t('Sync now', 'مزامنة الآن')),
                 subtitle: Text(_lastSyncText()),
-                onTap: controller.busy ? null : _sync,
+                onTap: controller.busy || !_canSync ? null : _sync,
               ),
               const Divider(height: 1),
               ListTile(
@@ -1503,6 +1505,12 @@ class _SetupState extends State<_Setup> {
                   )
                 : const Icon(Icons.lock_open_rounded),
             label: Text(t('Connect securely', 'اتصال آمن')),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: widget.controller.enableOfflineMode,
+            icon: const Icon(Icons.offline_bolt_outlined),
+            label: Text(t('Continue without Moodle', 'المتابعة بدون Moodle')),
           ),
           const SizedBox(height: 24),
           const Divider(),

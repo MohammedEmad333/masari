@@ -10,8 +10,7 @@ class SyncFeedback {
         'تعذّرت مزامنة Moodle. تحقّق من اتصال الإنترنت ورابط التقويم.',
       'Could not sync Moodle API. Check your connection.' =>
         'تعذّرت مزامنة Moodle API. تحقّق من الاتصال وبيانات الدخول.',
-      'Add your Moodle calendar URL first.' =>
-        'أضف رابط تقويم Moodle أولاً.',
+      'Add your Moodle calendar URL first.' => 'أضف رابط تقويم Moodle أولاً.',
       'Could not connect the first Moodle calendar.' =>
         'تعذّر الاتصال بأول تقويم Moodle. تحقّق من الرابط.',
       _ => raw,

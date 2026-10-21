@@ -35,8 +35,13 @@ void main() {
     expect(gradle, contains('namespace = "com.example.moodle_reminder"'));
     expect(activity, startsWith('package com.example.moodle_reminder'));
     expect(provider, startsWith('package com.example.moodle_reminder'));
-    final manifest = readProjectFile('android/app/src/main/AndroidManifest.xml');
+    final manifest = readProjectFile(
+      'android/app/src/main/AndroidManifest.xml',
+    );
     expect(manifest, contains('com.example.moodle_reminder.MainActivity'));
-    expect(manifest, contains('com.example.moodle_reminder.MoodleWidgetProvider'));
+    expect(
+      manifest,
+      contains('com.example.moodle_reminder.MoodleWidgetProvider'),
+    );
   });
 }

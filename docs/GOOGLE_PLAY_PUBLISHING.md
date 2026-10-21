@@ -44,6 +44,22 @@ Place only the base64 result in GitHub Actions **Secrets and variables → Actio
 
 Masari is an independent companion for Moodle's private calendar feed. It does not claim affiliation with or endorsement by the Moodle project or any university.
 
+## Android backup and device transfer
+
+The default `flutter_secure_storage` store holds private Moodle iCalendar URLs
+and API tokens encrypted with a device-bound Android KeyStore key. Restoring
+those encrypted values without the original device key can make the app fail to
+decrypt them. The Android backup policies at
+`android/app/src/main/res/xml/backup_rules.xml` (Android 11 and older) and
+`data_extraction_rules.xml` (Android 12+) **exclude only the
+FlutterSecureStorage preferences** from cloud backup and device-to-device
+transfer, preserving eligibility of other app data for backup. Users must
+re-enter their private Moodle links and optional API token after moving to
+a new device.
+
+Before any public release, verify fresh install, restored install, and
+device-to-device transfer on real Android hardware.
+
 ## Privacy-policy preparation
 
 Before publishing, write a public policy describing: private iCalendar tokens stored securely on device; deadline metadata cached locally; external Moodle server requests and optional Moodle web services; local notifications/background refresh; file imports and course sharing; whether analytics, crash reports or other SDKs transmit data; deletion and contact instructions. Audit all dependencies and Android components before completing the Google Play Data safety form.

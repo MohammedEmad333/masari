@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Keep local user data eligible for backup, but never restore encrypted tokens. -->
+        <exclude domain="sharedpref" path="FlutterSecureStorage" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="FlutterSecureStorage" />
+    </device-transfer>
+</data-extraction-rules>

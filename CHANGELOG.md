@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.1
+
+- Incremented Android version and build number to **2.2.1+5**.
+- Fixed startup black-screen risks and made failed initialization recoverable.
+- Preserved manual, Moodle API and session reminders during background sync; improved offline planning and widget updates.
+- Improved Arabic Moodle sync error feedback and RTL course filtering.
+- Signed official Android APK releases with the existing Google Play upload secrets, instead of per-run debug keys.
+- Explicitly separated legacy CI smoke artifacts from installable official releases.
+- Preserved the legacy package and its data during transition to the registered Play package `com.mohammedemad333.masari`.
+
 ## 2.2.0
 
 - Renamed the application to **مساري / Masari** with a refreshed launcher icon and localized Android app labels.

@@ -35,6 +35,7 @@ class CalendarRepository {
   static const _completedIdsKey = 'completed_deadline_ids';
   static const _themeModeKey = 'theme_mode';
   static const _localeKey = 'locale';
+  static const _offlineModeKey = 'offline_study_mode_v1';
 
   final http.Client _client;
   final FlutterSecureStorage _secureStorage;
@@ -75,6 +76,10 @@ class CalendarRepository {
 
   Future<void> clearCalendarUrl() async {
     await _secureStorage.delete(key: _secureCalendarUrlKey);
+  }
+
+  Future<void> clearAdditionalCalendarUrls() async {
+    await _secureStorage.delete(key: _calendarSourcesKey);
   }
 
   /// Additional feeds are stored securely because Moodle export URLs can
@@ -367,6 +372,16 @@ class CalendarRepository {
   Future<void> saveThemeMode(String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeModeKey, value);
+  }
+
+  Future<bool> loadOfflineMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_offlineModeKey) ?? false;
+  }
+
+  Future<void> saveOfflineMode(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_offlineModeKey, value);
   }
 
   Future<String> loadLocale() async {

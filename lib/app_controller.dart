@@ -35,8 +35,13 @@ class AppController extends ChangeNotifier {
   bool initialized = false;
   bool calendarConnected = false;
   bool apiConnected = false;
+  bool offlineMode = false;
   bool get hasConnection =>
-      calendarConnected || apiConnected || sessionDeadlines.isNotEmpty;
+      calendarConnected ||
+      apiConnected ||
+      sessionDeadlines.isNotEmpty ||
+      manualDeadlines.isNotEmpty ||
+      offlineMode;
   String? error;
   ThemeMode themeMode = ThemeMode.system;
   Locale locale = const Locale('en');
@@ -65,6 +70,7 @@ class AppController extends ChangeNotifier {
       _repository.loadAdditionalCalendarUrls(),
       _repository.loadCachedApiDeadlines(),
       _repository.loadSessionDeadlines(),
+      _repository.loadOfflineMode(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -79,14 +85,25 @@ class AppController extends ChangeNotifier {
     additionalCalendarUrls = results[9] as List<String>;
     apiDeadlines = results[10] as List<Deadline>;
     sessionDeadlines = results[11] as List<Deadline>;
+    offlineMode = results[12] as bool;
     apiConnected = await _hasApiCredentials();
     initialized = true;
     await _publishWidget();
     notifyListeners();
 
-    if (hasConnection) {
+    if (calendarConnected ||
+        apiConnected ||
+        sessionDeadlines.isNotEmpty ||
+        manualDeadlines.isNotEmpty) {
       await NotificationService.init(requestPermissions: true);
-      if (calendarConnected || apiConnected) await sync(silent: true);
+      if (calendarConnected || apiConnected) {
+        // A failed network refresh must not discard reminders restored from
+        // persisted manual, API and session deadline caches.
+        if (!await sync(silent: true)) await _rescheduleNotifications();
+      } else {
+        // Manual-only and session-only users still need restored reminders.
+        await _rescheduleNotifications();
+      }
     }
   }
 
@@ -164,6 +181,7 @@ class AppController extends ChangeNotifier {
       apiDeadlines = const [];
       await _repository.clearCachedApiDeadlines();
     }
+    if (apiConnected) await NotificationService.init(requestPermissions: true);
     await _rescheduleNotifications();
     await _publishWidget();
     notifyListeners();
@@ -214,6 +232,16 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> addCalendarSource(String url) async {
+    if (!calendarConnected) {
+      // An offline-only user has no primary feed yet. Connect the first one
+      // rather than saving an additional URL that would never be synced.
+      if (!await connect(url)) {
+        throw CalendarSyncException(
+          error ?? 'Could not connect the first Moodle calendar.',
+        );
+      }
+      return;
+    }
     await _repository.addAdditionalCalendarUrl(url);
     additionalCalendarUrls = await _repository.loadAdditionalCalendarUrls();
     notifyListeners();
@@ -249,7 +277,11 @@ class AppController extends ChangeNotifier {
   Future<void> addManualDeadline(Deadline deadline) async {
     manualDeadlines = [...manualDeadlines, deadline];
     await _repository.saveManualDeadlines(manualDeadlines);
+    // A manual-only user never visits calendar/API onboarding; request Android
+    // notification permissions before the first scheduled alert.
+    await NotificationService.init(requestPermissions: true);
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 
@@ -263,6 +295,7 @@ class AppController extends ChangeNotifier {
     await _repository.saveCompletedIds(completedIds);
     await _repository.saveTaskReminderOffsets(taskReminderOffsets);
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 
@@ -275,6 +308,7 @@ class AppController extends ChangeNotifier {
     }
     await _repository.saveCompletedIds(completedIds);
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 
@@ -300,6 +334,12 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> enableOfflineMode() async {
+    await _repository.saveOfflineMode(true);
+    offlineMode = true;
+    notifyListeners();
+  }
+
   Future<void> setThemeMode(ThemeMode value) async {
     themeMode = value;
     await _repository.saveThemeMode(value.name);
@@ -315,15 +355,29 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> disconnect() async {
+    // Disconnect only the calendar sources. Completed manual, API and session
+    // tasks must keep their state and individual reminder preferences.
+    final calendarKeys = deadlines.map((item) => item.stableKey).toSet();
+    final retainedCompleted = completedIds.difference(calendarKeys);
+    final retainedTaskOffsets = <String, List<int>>{
+      for (final entry in taskReminderOffsets.entries)
+        if (!calendarKeys.contains(entry.key)) entry.key: entry.value,
+    };
+
     await _repository.clearCalendarUrl();
+    await _repository.clearAdditionalCalendarUrls();
     await _repository.clearCachedCalendarData();
+    await _repository.saveCompletedIds(retainedCompleted);
+    await _repository.saveTaskReminderOffsets(retainedTaskOffsets);
     deadlines = const [];
-    completedIds = {};
-    taskReminderOffsets = {};
+    additionalCalendarUrls = const [];
+    completedIds = retainedCompleted;
+    taskReminderOffsets = retainedTaskOffsets;
     lastSync = null;
     calendarConnected = false;
     error = null;
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 

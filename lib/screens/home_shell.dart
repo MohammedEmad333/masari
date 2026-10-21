@@ -135,9 +135,10 @@ class _HomeShellState extends State<HomeShell> {
           ok
               ? t('Moodle calendar synced.', 'تمت مزامنة تقويم Moodle.')
               : SyncFeedback.errorMessage(
-                    widget.controller.error ?? t('Sync failed.', 'فشلت المزامنة.'),
-                    arabic: _ar,
-                  ),
+                  widget.controller.error ??
+                      t('Sync failed.', 'فشلت المزامنة.'),
+                  arabic: _ar,
+                ),
         ),
       ),
     );
@@ -284,7 +285,9 @@ class _HomeShellState extends State<HomeShell> {
               color: Theme.of(context).colorScheme.errorContainer,
               child: ListTile(
                 leading: const Icon(Icons.error_outline_rounded),
-                title: Text(SyncFeedback.errorMessage(controller.error!, arabic: _ar)),
+                title: Text(
+                  SyncFeedback.errorMessage(controller.error!, arabic: _ar),
+                ),
                 subtitle: Text(
                   SyncFeedback.offlineHint(
                     hasSavedDeadlines: controller.allDeadlines.isNotEmpty,

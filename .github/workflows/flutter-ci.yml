@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Analyze, test and build release APK
+    name: Analyze, test and smoke-build Android
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -58,13 +58,17 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build release APK
+      # The legacy-ID APK uses an ephemeral debug signature and is only for
+      # verifying compilation. Never install it over an existing Masari app.
+      - name: Smoke-build legacy APK (not for distribution)
+        env:
+          LEGACY_CI_BUILD: 'true'
         run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: moodle-reminder-release-apk
+          name: masari-legacy-ci-smoke-apk-not-for-updates
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14

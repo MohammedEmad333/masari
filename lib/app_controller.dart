@@ -87,9 +87,16 @@ class AppController extends ChangeNotifier {
     await _publishWidget();
     notifyListeners();
 
-    if (hasConnection) {
+    if (hasConnection || manualDeadlines.isNotEmpty) {
       await NotificationService.init(requestPermissions: true);
-      if (calendarConnected || apiConnected) await sync(silent: true);
+      if (calendarConnected || apiConnected) {
+        // A failed network refresh must not discard reminders restored from
+        // persisted manual, API and session deadline caches.
+        if (!await sync(silent: true)) await _rescheduleNotifications();
+      } else {
+        // Manual-only and session-only users still need restored reminders.
+        await _rescheduleNotifications();
+      }
     }
   }
 
@@ -167,6 +174,7 @@ class AppController extends ChangeNotifier {
       apiDeadlines = const [];
       await _repository.clearCachedApiDeadlines();
     }
+    if (apiConnected) await NotificationService.init(requestPermissions: true);
     await _rescheduleNotifications();
     await _publishWidget();
     notifyListeners();
@@ -252,7 +260,11 @@ class AppController extends ChangeNotifier {
   Future<void> addManualDeadline(Deadline deadline) async {
     manualDeadlines = [...manualDeadlines, deadline];
     await _repository.saveManualDeadlines(manualDeadlines);
+    // A manual-only user never visits calendar/API onboarding; request Android
+    // notification permissions before the first scheduled alert.
+    await NotificationService.init(requestPermissions: true);
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 
@@ -266,6 +278,7 @@ class AppController extends ChangeNotifier {
     await _repository.saveCompletedIds(completedIds);
     await _repository.saveTaskReminderOffsets(taskReminderOffsets);
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 
@@ -278,6 +291,7 @@ class AppController extends ChangeNotifier {
     }
     await _repository.saveCompletedIds(completedIds);
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 
@@ -327,6 +341,7 @@ class AppController extends ChangeNotifier {
     calendarConnected = false;
     error = null;
     await _rescheduleNotifications();
+    await _publishWidget();
     notifyListeners();
   }
 

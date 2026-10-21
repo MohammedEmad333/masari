@@ -14,9 +14,10 @@ concurrency:
 
 jobs:
   release:
-    name: Build and publish GitHub Release
+    name: Build and publish signed Masari GitHub Release
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -59,8 +60,42 @@ jobs:
           flutter analyze
           flutter test
 
-      - name: Build release APK
-        run: flutter build apk --release
+      - name: Prepare stable signing certificate
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in PLAY_UPLOAD_KEYSTORE_BASE64 PLAY_STORE_PASSWORD PLAY_KEY_ALIAS PLAY_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing signing secret: $name"
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/masari-upload.jks"
+          test -s "$RUNNER_TEMP/masari-upload.jks"
+
+      - name: Build signed official APK
+        env:
+          PLAY_STORE_BUILD: 'true'
+          PLAY_KEYSTORE_PATH: ${{ runner.temp }}/masari-upload.jks
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk --release
+          APK="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$APK"
+          TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$TOOLS/apksigner" verify "$APK"
+          "$TOOLS/aapt" dump badging "$APK" > "$RUNNER_TEMP/masari-apk-badging.txt"
+          grep -Fq "package: name='com.mohammedemad333.masari'" "$RUNNER_TEMP/masari-apk-badging.txt"
 
       - name: Prepare release assets
         shell: bash
@@ -95,8 +130,8 @@ jobs:
         shell: bash
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; refreshing assets."
-            gh release upload "$TAG" release-assets/* --clobber
+            echo "Release $TAG already exists; refusing to replace its signature."
+            exit 0
           else
             gh release create "$TAG" \
               release-assets/* \

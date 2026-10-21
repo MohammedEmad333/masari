@@ -6,13 +6,13 @@
 
 **Masari (formerly Moodle Reminder)** — a privacy-friendly Flutter companion for Moodle deadlines, background calendar sync, and reliable local reminders.
 
-[![Flutter CI](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/flutter-ci.yml)
-[![Release](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/release.yml/badge.svg)](https://github.com/MohammedEmad333/moodle-reminder/actions/workflows/release.yml)
-[![Latest release](https://img.shields.io/github/v/release/MohammedEmad333/moodle-reminder?display_name=tag)](https://github.com/MohammedEmad333/moodle-reminder/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-Android-3DDC84)](https://github.com/MohammedEmad333/moodle-reminder/releases/latest)
+[![Flutter CI](https://github.com/MohammedEmad333/masari/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/MohammedEmad333/masari/actions/workflows/flutter-ci.yml)
+[![Release](https://github.com/MohammedEmad333/masari/actions/workflows/release.yml/badge.svg)](https://github.com/MohammedEmad333/masari/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/MohammedEmad333/masari?display_name=tag)](https://github.com/MohammedEmad333/masari/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Android-3DDC84)](https://github.com/MohammedEmad333/masari/releases/latest)
 [![Flutter](https://img.shields.io/badge/Flutter-3.47.6-02569B?logo=flutter)](https://flutter.dev/)
 
-[**Download latest APK**](https://github.com/MohammedEmad333/moodle-reminder/releases/latest) · [**View releases**](https://github.com/MohammedEmad333/moodle-reminder/releases) · [**Changelog**](CHANGELOG.md)
+[**Download latest APK**](https://github.com/MohammedEmad333/masari/releases/latest) · [**View releases**](https://github.com/MohammedEmad333/masari/releases) · [**Changelog**](CHANGELOG.md)
 
 </div>
 
@@ -26,9 +26,9 @@ The project is designed around privacy, offline usefulness, predictable reminder
 
 ## Latest release
 
-**Masari v2.2.1 (build 5)** is prepared for verified, consistently signed distribution.
+**Masari v2.2.1 (build 5)** is available as a verified, consistently signed GitHub APK.
 
-- GitHub release APK: [`masari-v2.2.1.apk`](https://github.com/MohammedEmad333/moodle-reminder/releases/download/v2.2.1/masari-v2.2.1.apk) (available only after green `main` CI and successful signed publishing).
+- GitHub release APK: [`masari-v2.2.1.apk`](https://github.com/MohammedEmad333/masari/releases/download/v2.2.1/masari-v2.2.1.apk).
 - Google Play release: run the manual **Google Play AAB** workflow; it uses the *same existing upload-key secrets*.
 - Store application ID: `com.mohammedemad333.masari`.
 
@@ -74,7 +74,7 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting and the supported sec
 
 ### 2. Install the app
 
-Download the latest Android APK from the [Releases page](https://github.com/MohammedEmad333/moodle-reminder/releases/latest).
+Download the latest Android APK from the [Releases page](https://github.com/MohammedEmad333/masari/releases/latest).
 
 If you want to verify the downloaded file, compare its SHA-256 digest with the `.sha256` file attached to the same release.
 

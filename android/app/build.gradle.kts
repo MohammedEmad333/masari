@@ -20,15 +20,23 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    // Keep GitHub APKs compatible with existing installations. The official
+    // Play Store build uses the new, permanently registered application ID.
+    val playStoreBuild = System.getenv("PLAY_STORE_BUILD") == "true"
+
     defaultConfig {
-        applicationId = "com.example.moodle_reminder"
+        applicationId = if (playStoreBuild) {
+            "com.mohammedemad333.masari"
+        } else {
+            "com.example.moodle_reminder"
+        }
         minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    val playSigningRequested = System.getenv("PLAY_STORE_BUILD") == "true"
+    val playSigningRequested = playStoreBuild
     val playKeystorePath = System.getenv("PLAY_KEYSTORE_PATH")
     val playStorePassword = System.getenv("PLAY_STORE_PASSWORD")
     val playKeyAlias = System.getenv("PLAY_KEY_ALIAS")
@@ -41,7 +49,7 @@ android {
         throw GradleException("Missing Play signing environment variables")
     }
 
-    if (playSigningAvailable) {
+    if (playStoreBuild && playSigningAvailable) {
         signingConfigs {
             create("playRelease") {
                 storeFile = file(playKeystorePath!!)
@@ -55,7 +63,7 @@ android {
     buildTypes {
         release {
             // GitHub test APKs keep working; Play builds require upload signing.
-            signingConfig = if (playSigningAvailable) {
+            signingConfig = if (playStoreBuild) {
                 signingConfigs.getByName("playRelease")
             } else {
                 signingConfigs.getByName("debug")

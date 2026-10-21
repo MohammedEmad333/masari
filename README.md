@@ -134,6 +134,13 @@ Moodle Reminder uses:
 - `SCHEDULE_EXACT_ALARM` — request precise alarm access where applicable.
 - `RECEIVE_BOOT_COMPLETED` — allow reminder scheduling to recover after device reboot.
 
+## Android distribution identities
+
+- GitHub release APK: legacy `com.example.moodle_reminder` application ID.
+- Google Play signed AAB: registered `com.mohammedemad333.masari` application ID, selected by `PLAY_STORE_BUILD=true`.
+- These are separate Android installations with separate application data; the normal APK is not an update to the Play edition or vice versa. The GitHub APK signing key may also vary between CI builds, so matching IDs alone do not guarantee an in-place update.
+- The native Kotlin namespace and existing `moodlereminder://course` share links remain unchanged for compatibility. See [Google Play publishing](docs/GOOGLE_PLAY_PUBLISHING.md) for signing and upload instructions.
+
 ## Development
 
 ### Requirements

@@ -1,21 +1,31 @@
 # Google Play publishing checklist
 
+## Google Play identity
+
+- **Google Play application ID:** `com.mohammedemad333.masari` (selected when `PLAY_STORE_BUILD=true`).
+- **Legacy GitHub APK application ID:** `com.example.moodle_reminder` (used for normal APK builds).
+- The Google Play Console app has been created by the developer with the Masari ID (reported on 2026-10-21).
+- The Kotlin namespace remains `com.example.moodle_reminder`. It identifies the compiled Android classes, **not** the app ID used by Play; the manifest names the existing native activity and widget provider with fully-qualified class names to work under both application IDs.
+- Both variants use the same Dart app and features, but Android treats them as **separate apps**. The Play edition will not automatically import data from the old APK, and both may be installed together. Do not rename the registered Play app ID after the first upload.
+- Existing `moodlereminder://course` sharing links and method channels are retained for compatibility.
+
+
 This project has a separate manually triggered workflow at **Actions → Google Play AAB**. It never uploads to the Play Store automatically.
 
 ## Blockers to finish before the first Play upload
 
-1. **Choose a permanent unique application ID.** Replace `com.example.moodle_reminder` in `android/app/build.gradle.kts` and adjust Android Kotlin package paths/namespace and activity/widget names together. Confirm ownership and avoid changing it after the app is published. The workflow deliberately rejects the sample ID.
-2. Create a Google Play Console app under the account that will own the release. Enroll in **Play App Signing**.
+1. **Package identity prepared:** Play builds select `com.mohammedemad333.masari`; legacy APKs keep their existing ID. Confirm the Play Console app uses the same ID before first upload. The Play workflow checks that the registered ID remains in Gradle.
+2. The developer has created a Google Play Console app. Before upload, finish **Play App Signing** enrollment in that app.
 3. Generate and retain a private **upload keystore** in a secure backup; never commit the keystore or its passwords. Add GitHub Actions secrets:
    - `PLAY_UPLOAD_KEYSTORE_BASE64` — base64-encoded full `.jks` bytes, without line breaks.
    - `PLAY_STORE_PASSWORD` — upload keystore password.
    - `PLAY_KEY_ALIAS` — upload key alias.
    - `PLAY_KEY_PASSWORD` — key password.
-4. Run **Actions → Google Play AAB → Run workflow** and download the signed `masari-play-aab` artifact. It expires after 14 days. GitHub APK release artifacts are **not Play-ready** because the normal APK build uses debug signing.
+4. From the repository's `main` branch, run **Actions → Google Play AAB → Run workflow** and download the signed `masari-play-aab` artifact (AAB and SHA-256). It expires after 14 days. Ordinary GitHub APK release artifacts use the legacy ID and debug signing and are **not Play-ready**. The upload artifact is not published automatically to Play Console. Standard Flutter CI also smoke-tests a Play-identity AAB using a throwaway test key; **that test build is not an upload candidate** and is never uploaded as an artifact.
 5. Upload AAB to **Internal testing** first; test fresh install, Moodle connection, push/local reminders, background sync, widgets, ZIP imports/exports, course QR links, RTL, notifications and Android 16 behavior.
 6. Prepare a publicly accessible privacy-policy URL, content rating, target audience, Data safety disclosure, app access instructions if necessary, ads declaration, screenshots, store icon (512 × 512), feature graphic (1024 × 500), title and descriptions. Verify every disclosure against the final implementation. Do not publish an unverified privacy claim.
 7. Review the **SCHEDULE_EXACT_ALARM** permission with Play Console and confirm the app's exact-reminder behavior; avoid restricted `USE_EXACT_ALARM` unless eligibility is established.
-8. Check Play Console's account-specific testing eligibility and production access requirements before rollout. Review the final AAB's target SDK (36), signing certificate and version code. Increase `pubspec.yaml` build number for each Play upload.
+8. Check Play Console's account-specific testing eligibility and production access requirements before rollout. Review the final AAB's target SDK (36), **application ID `com.mohammedemad333.masari`**, signing certificate, and version code (currently `4` from `2.2.0+4`). Increase `pubspec.yaml` build number for each subsequent Play upload.
 
 ## Local upload-key generation (keep private)
 
@@ -48,4 +58,4 @@ flutter test
 flutter build appbundle --release
 ```
 
-The last command **without the Play secrets** produces a debug-signed test artifact; use the dedicated GitHub workflow for a Play upload bundle.
+The last command **without Play environment variables** produces a debug-signed, legacy-ID test artifact; use the dedicated GitHub workflow to produce a Play-signed bundle with the registered application ID. Never send or commit signing keys or passwords.

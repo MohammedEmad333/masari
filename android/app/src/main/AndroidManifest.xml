@@ -9,7 +9,7 @@
         android:name="${applicationName}"
         android:icon="@drawable/masari_launcher">
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.moodle_reminder.MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
@@ -47,7 +47,7 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".MoodleWidgetProvider" android:exported="true">
+        <receiver android:name="com.example.moodle_reminder.MoodleWidgetProvider" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

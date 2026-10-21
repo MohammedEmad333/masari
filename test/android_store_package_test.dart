@@ -16,9 +16,7 @@ void main() {
   });
 
   test('Play publishing workflow opts into the signed Store build', () {
-    final workflow = readProjectFile(
-      '.github/workflows/google-play-aab.yml',
-    );
+    final workflow = readProjectFile('.github/workflows/google-play-aab.yml');
 
     expect(workflow, contains("PLAY_STORE_BUILD: 'true'"));
     expect(workflow, contains('flutter build appbundle --release'));

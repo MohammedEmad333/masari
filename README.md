@@ -136,10 +136,13 @@ Moodle Reminder uses:
 
 ## Android distribution identities
 
-- GitHub release APK: legacy `com.example.moodle_reminder` application ID.
-- Google Play signed AAB: registered `com.mohammedemad333.masari` application ID, selected by `PLAY_STORE_BUILD=true`.
-- These are separate Android installations with separate application data; the normal APK is not an update to the Play edition or vice versa. The GitHub APK signing key may also vary between CI builds, so matching IDs alone do not guarantee an in-place update.
-- The native Kotlin namespace and existing `moodlereminder://course` share links remain unchanged for compatibility. See [Google Play publishing](docs/GOOGLE_PLAY_PUBLISHING.md) for signing and upload instructions.
+- **Official APK from GitHub Releases:** `com.mohammedemad333.masari`, using the stored Play **upload** key; signing is stable across these official GitHub builds.
+- **Google Play AAB:** the same registered app ID, signed with the upload key. Google Play may re-sign installed APKs with a different **app-signing** key.
+- **Flutter CI APK artifact:** legacy `com.example.moodle_reminder` with a temporary debug signature, intended **only for smoke tests**. Do not use it for updating an installed app.
+- Existing legacy installations and new Masari installations are **two different Android applications**. App data does not move across package IDs automatically. Do not uninstall your old installation before backing up local data.
+- The Kotlin source namespace and existing `moodlereminder://course` sharing scheme are preserved for compatibility.
+
+See [Google Play publishing](docs/GOOGLE_PLAY_PUBLISHING.md) for signing and upload instructions.
 
 ## Development
 
@@ -158,7 +161,7 @@ flutter pub get
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
-flutter build apk --release
+flutter build apk --release # legacy test APK only; never publish
 ```
 
 ### Run locally

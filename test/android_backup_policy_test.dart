@@ -17,10 +17,7 @@ void main() {
     ).readAsStringSync();
     expect(policy, contains('<cloud-backup>'));
     expect(policy, contains('<device-transfer>'));
-    expect(
-      'path="FlutterSecureStorage"'.allMatches(policy).length,
-      2,
-    );
+    expect('path="FlutterSecureStorage"'.allMatches(policy).length, 2);
   });
 
   test('Android manifest references both backup exclusion policies', () {

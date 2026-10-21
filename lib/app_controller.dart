@@ -235,6 +235,16 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> addCalendarSource(String url) async {
+    if (!calendarConnected) {
+      // An offline-only user has no primary feed yet. Connect the first one
+      // rather than saving an additional URL that would never be synced.
+      if (!await connect(url)) {
+        throw CalendarSyncException(
+          error ?? 'Could not connect the first Moodle calendar.',
+        );
+      }
+      return;
+    }
     await _repository.addAdditionalCalendarUrl(url);
     additionalCalendarUrls = await _repository.loadAdditionalCalendarUrls();
     notifyListeners();

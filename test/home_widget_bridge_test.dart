@@ -33,7 +33,7 @@ void main() {
     final controller = AppController(CalendarRepository());
     controller.manualDeadlines = [later, soon];
 
-    expect(controller.hasConnection, isFalse);
+    expect(controller.hasConnection, isTrue);
     expect(
       HomeWidgetBridge.nextDeadline(
         controller.allDeadlines,

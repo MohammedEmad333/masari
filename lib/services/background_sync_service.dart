@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'calendar_repository.dart';
+import 'deadline_collection.dart';
 import 'notification_service.dart';
 
 const _backgroundTaskName = 'moodle-calendar-sync';
@@ -18,7 +19,16 @@ void callbackDispatcher() {
       await repository.migrateLegacyStorage();
       if (await repository.loadCalendarUrl() == null) return true;
 
-      final deadlines = await repository.sync();
+      final calendar = await repository.sync();
+      // scheduleAll cancels all existing alarms before rescheduling.
+      // Include every persisted deadline source or the six-hour worker would
+      // inadvertently erase manual, API-only and session-based reminders.
+      final deadlines = DeadlineCollection.combine(
+        calendar: calendar,
+        api: await repository.loadCachedApiDeadlines(),
+        session: await repository.loadSessionDeadlines(),
+        manual: await repository.loadManualDeadlines(),
+      );
       final offsets = await repository.loadReminderOffsets();
       final completed = await repository.loadCompletedIds();
       final perTask = await repository.loadTaskReminderOffsets();

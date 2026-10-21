@@ -7,7 +7,7 @@ import 'services/notification_service.dart';
 import 'services/home_widget_bridge.dart';
 import 'services/moodle_api_credentials_store.dart';
 import 'services/moodle_api_client.dart';
-import 'services/moodle_deadline_merger.dart';
+import 'services/deadline_collection.dart';
 
 class AppController extends ChangeNotifier {
   AppController(this._repository);
@@ -20,15 +20,12 @@ class AppController extends ChangeNotifier {
   List<Deadline> sessionDeadlines = const [];
   List<String> additionalCalendarUrls = const [];
 
-  List<Deadline> get allDeadlines =>
-      [
-        ...MoodleDeadlineMerger.merge(deadlines, apiDeadlines),
-        ...sessionDeadlines,
-        ...manualDeadlines,
-      ]..sort((a, b) {
-        final priority = b.priority.compareTo(a.priority);
-        return priority != 0 ? priority : a.due.compareTo(b.due);
-      });
+  List<Deadline> get allDeadlines => DeadlineCollection.combine(
+    calendar: deadlines,
+    api: apiDeadlines,
+    session: sessionDeadlines,
+    manual: manualDeadlines,
+  );
   Set<String> completedIds = {};
   List<int> reminderOffsets = const [24, 6, 1];
   Map<String, List<int>> taskReminderOffsets = {};

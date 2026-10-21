@@ -38,8 +38,13 @@ class AppController extends ChangeNotifier {
   bool initialized = false;
   bool calendarConnected = false;
   bool apiConnected = false;
+  bool offlineMode = false;
   bool get hasConnection =>
-      calendarConnected || apiConnected || sessionDeadlines.isNotEmpty;
+      calendarConnected ||
+      apiConnected ||
+      sessionDeadlines.isNotEmpty ||
+      manualDeadlines.isNotEmpty ||
+      offlineMode;
   String? error;
   ThemeMode themeMode = ThemeMode.system;
   Locale locale = const Locale('en');
@@ -68,6 +73,7 @@ class AppController extends ChangeNotifier {
       _repository.loadAdditionalCalendarUrls(),
       _repository.loadCachedApiDeadlines(),
       _repository.loadSessionDeadlines(),
+      _repository.loadOfflineMode(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -82,12 +88,16 @@ class AppController extends ChangeNotifier {
     additionalCalendarUrls = results[9] as List<String>;
     apiDeadlines = results[10] as List<Deadline>;
     sessionDeadlines = results[11] as List<Deadline>;
+    offlineMode = results[12] as bool;
     apiConnected = await _hasApiCredentials();
     initialized = true;
     await _publishWidget();
     notifyListeners();
 
-    if (hasConnection || manualDeadlines.isNotEmpty) {
+    if (calendarConnected ||
+        apiConnected ||
+        sessionDeadlines.isNotEmpty ||
+        manualDeadlines.isNotEmpty) {
       await NotificationService.init(requestPermissions: true);
       if (calendarConnected || apiConnected) {
         // A failed network refresh must not discard reminders restored from
@@ -314,6 +324,12 @@ class AppController extends ChangeNotifier {
     }
     await _repository.saveTaskReminderOffsets(taskReminderOffsets);
     await _rescheduleNotifications();
+    notifyListeners();
+  }
+
+  Future<void> enableOfflineMode() async {
+    await _repository.saveOfflineMode(true);
+    offlineMode = true;
     notifyListeners();
   }
 

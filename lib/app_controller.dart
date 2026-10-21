@@ -358,11 +358,23 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> disconnect() async {
+    // Disconnect only the calendar sources. Completed manual, API and session
+    // tasks must keep their state and individual reminder preferences.
+    final calendarKeys = deadlines.map((item) => item.stableKey).toSet();
+    final retainedCompleted = completedIds.difference(calendarKeys);
+    final retainedTaskOffsets = Map<String, List<int>>.from(
+      taskReminderOffsets,
+    )..removeWhere((key, _) => calendarKeys.contains(key));
+
     await _repository.clearCalendarUrl();
+    await _repository.clearAdditionalCalendarUrls();
     await _repository.clearCachedCalendarData();
+    await _repository.saveCompletedIds(retainedCompleted);
+    await _repository.saveTaskReminderOffsets(retainedTaskOffsets);
     deadlines = const [];
-    completedIds = {};
-    taskReminderOffsets = {};
+    additionalCalendarUrls = const [];
+    completedIds = retainedCompleted;
+    taskReminderOffsets = retainedTaskOffsets;
     lastSync = null;
     calendarConnected = false;
     error = null;

@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:moodle_reminder/app_controller.dart';
+import 'package:moodle_reminder/services/calendar_repository.dart';
 import 'package:moodle_reminder/models/deadline.dart';
 import 'package:moodle_reminder/services/home_widget_bridge.dart';
 
@@ -24,6 +26,37 @@ void main() {
     expect(
       HomeWidgetBridge.nextDeadline([later, past, soon], {}, now)?.uid,
       'soon',
+    );
+  });
+
+  test('widget selects manual-only tasks without an iCalendar connection', () {
+    final controller = AppController(CalendarRepository());
+    controller.manualDeadlines = [later, soon];
+
+    expect(controller.hasConnection, isFalse);
+    expect(
+      HomeWidgetBridge.nextDeadline(
+        controller.allDeadlines,
+        controller.completedIds,
+        now,
+      )?.uid,
+      'soon',
+    );
+  });
+
+  test('widget ignores completed API tasks and retains manual tasks', () {
+    final controller = AppController(CalendarRepository());
+    controller.apiDeadlines = [soon];
+    controller.manualDeadlines = [later];
+    controller.completedIds = {'soon'};
+
+    expect(
+      HomeWidgetBridge.nextDeadline(
+        controller.allDeadlines,
+        controller.completedIds,
+        now,
+      )?.uid,
+      'later',
     );
   });
 

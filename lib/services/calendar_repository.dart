@@ -78,6 +78,10 @@ class CalendarRepository {
     await _secureStorage.delete(key: _secureCalendarUrlKey);
   }
 
+  Future<void> clearAdditionalCalendarUrls() async {
+    await _secureStorage.delete(key: _calendarSourcesKey);
+  }
+
   /// Additional feeds are stored securely because Moodle export URLs can
   /// contain access tokens. The original feed remains the primary source.
   Future<List<String>> loadAdditionalCalendarUrls() async {

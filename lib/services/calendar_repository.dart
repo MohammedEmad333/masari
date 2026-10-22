@@ -39,6 +39,7 @@ class CalendarRepository {
 
   final http.Client _client;
   final FlutterSecureStorage _secureStorage;
+  String? lastSyncWarning;
 
   Future<void> migrateLegacyStorage() async {
     final prefs = await SharedPreferences.getInstance();
@@ -243,18 +244,38 @@ class CalendarRepository {
     } else {
       additional = await loadAdditionalCalendarUrls();
     }
+    lastSyncWarning = null;
+    // A failed optional feed must not prevent the primary feed from updating.
+    // Retain cached events for an unavailable feed until it works again.
+    final previous = await loadCachedDeadlines();
     final sources = <String, List<Deadline>>{'': await _fetchCalendar(url)};
+    var failedCount = 0;
     for (final extra in additional.toSet()) {
       if (extra == url) continue;
-      _validateUrl(extra);
-      // Stable source identities must not embed secret calendar tokens.
-      final sourceId = extra.codeUnits
-          .fold<int>(0, (hash, code) => ((hash * 31) + code) & 0x7fffffff)
-          .toRadixString(16);
-      sources['feed-$sourceId'] = await _fetchCalendar(extra);
+      try {
+        _validateUrl(extra);
+        // Stable source identities must not embed secret calendar tokens.
+        final sourceId = extra.codeUnits
+            .fold<int>(0, (hash, code) => ((hash * 31) + code) & 0x7fffffff)
+            .toRadixString(16);
+        sources['feed-$sourceId'] = await _fetchCalendar(extra);
+      } catch (_) {
+        failedCount++;
+      }
     }
-    // Commit only once all feeds have been downloaded and parsed.
-    final upcoming = CalendarSourceMerger.merge(sources);
+    final refreshed = CalendarSourceMerger.merge(sources);
+    final upcoming = failedCount == 0
+        ? refreshed
+        : <Deadline>[
+            ...{
+              for (final deadline in previous) deadline.stableKey: deadline,
+              for (final deadline in refreshed) deadline.stableKey: deadline,
+            }.values,
+          ]..sort((a, b) => a.due.compareTo(b.due));
+    if (failedCount > 0) {
+      lastSyncWarning = '$failedCount additional calendar(s) could not sync. '
+          'Previously saved deadlines were kept.';
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _cacheKey,

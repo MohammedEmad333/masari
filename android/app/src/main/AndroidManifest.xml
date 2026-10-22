@@ -7,7 +7,7 @@
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:icon="@drawable/masari_launcher"
+        android:icon="@drawable/masari_launcher_clean"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules">
         <activity

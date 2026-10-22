@@ -129,7 +129,12 @@ class _HomeShellState extends State<HomeShell> {
       SnackBar(
         content: Text(
           ok
-              ? t('Moodle calendar synced.', 'تمت مزامنة تقويم Moodle.')
+              ? widget.controller.syncWarning != null
+                    ? t(
+                        'Some calendars could not sync; saved events were kept.',
+                        'تعذّرت مزامنة بعض التقويمات، واحتفظنا بالمواعيد المحفوظة.',
+                      )
+                    : t('Moodle calendar synced.', 'تمت مزامنة تقويم Moodle.')
               : SyncFeedback.errorMessage(
                   widget.controller.error ??
                       t('Sync failed.', 'فشلت المزامنة.'),

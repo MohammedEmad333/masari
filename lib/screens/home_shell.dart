@@ -731,9 +731,9 @@ class _HomeShellState extends State<HomeShell> {
               widget.controller.error ?? t('Invalid URL', 'رابط غير صالح'),
               arabic: _ar,
             );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       field.dispose();
     }
@@ -1281,10 +1281,8 @@ class _SetupState extends State<_Setup> {
     }
     final url = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => MoodleCalendarBrowser(
-          server: _server.text.trim(),
-          arabic: _ar,
-        ),
+        builder: (_) =>
+            MoodleCalendarBrowser(server: _server.text.trim(), arabic: _ar),
       ),
     );
     if (!mounted || url == null) return;
@@ -1318,9 +1316,9 @@ class _SetupState extends State<_Setup> {
           Text(
             t('Connect your Moodle calendar', 'اربط تقويم Moodle'),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w900,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 12),
           Text(
@@ -1354,16 +1352,16 @@ class _SetupState extends State<_Setup> {
           if (widget.controller.error != null) ...[
             const SizedBox(height: 10),
             Text(
-              SyncFeedback.errorMessage(
-                widget.controller.error!,
-                arabic: _ar,
-              ),
+              SyncFeedback.errorMessage(widget.controller.error!, arabic: _ar),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
           const SizedBox(height: 24),
           Text(
-            t('Or connect using university sign-in', 'أو اربط عبر دخول الجامعة'),
+            t(
+              'Or connect using university sign-in',
+              'أو اربط عبر دخول الجامعة',
+            ),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -1372,7 +1370,10 @@ class _SetupState extends State<_Setup> {
             keyboardType: TextInputType.url,
             autocorrect: false,
             decoration: InputDecoration(
-              labelText: t('University Moodle HTTPS site', 'موقع Moodle الجامعي HTTPS'),
+              labelText: t(
+                'University Moodle HTTPS site',
+                'موقع Moodle الجامعي HTTPS',
+              ),
               hintText: 'https://moodle.university.edu',
             ),
           ),
@@ -1381,7 +1382,10 @@ class _SetupState extends State<_Setup> {
             onPressed: widget.controller.busy ? null : _getCalendarFromLogin,
             icon: const Icon(Icons.login_rounded),
             label: Text(
-              t('Sign in and fetch calendar link', 'تسجيل الدخول وجلب رابط التقويم'),
+              t(
+                'Sign in and fetch calendar link',
+                'تسجيل الدخول وجلب رابط التقويم',
+              ),
             ),
           ),
           const SizedBox(height: 14),

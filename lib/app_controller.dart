@@ -416,6 +416,21 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Called explicitly from Settings when Android permissions or timezone
+  /// settings changed. Never clears the user's saved tasks.
+  Future<bool> repairReminders() async {
+    try {
+      await NotificationService.init(requestPermissions: true);
+      final enabled = await NotificationService.notificationsEnabled();
+      if (enabled == false) return false;
+      await _rescheduleNotifications();
+      return true;
+    } catch (error) {
+      debugPrint('Could not restore deadline reminders: $error');
+      return false;
+    }
+  }
+
   Future<void> _rescheduleNotifications() {
     return NotificationService.scheduleAll(
       allDeadlines,

@@ -281,7 +281,7 @@ class CalendarRepository {
     if (!calendarBody.startsWith('BEGIN:VCALENDAR') ||
         !calendarBody.endsWith('END:VCALENDAR')) {
       final looksLikeLogin = RegExp(
-        r'<(?:!doctype\\s+html|html|form)\\b',
+        r'<(?:!doctype\s+html|html|form)\b',
         caseSensitive: false,
       ).hasMatch(calendarBody);
       throw CalendarSyncException(

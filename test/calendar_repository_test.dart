@@ -216,7 +216,7 @@ void main() {
     client.close();
   });
 
-  test('failed additional calendar keeps cached deadlines and refreshes primary', () async {
+  test('failed extra feed keeps cached deadlines', () async {
     final prefs = await SharedPreferences.getInstance();
     final cached = Deadline(
       uid: 'cached-extra',

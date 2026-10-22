@@ -12,6 +12,8 @@ import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
+import 'moodle_calendar_browser.dart';
+import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -1219,6 +1221,7 @@ class _Setup extends StatefulWidget {
 
 class _SetupState extends State<_Setup> {
   final _url = TextEditingController();
+  final _server = TextEditingController();
 
   bool get _ar => widget.controller.locale.languageCode == 'ar';
   String t(String en, String ar) => _ar ? ar : en;
@@ -1226,7 +1229,36 @@ class _SetupState extends State<_Setup> {
   @override
   void dispose() {
     _url.dispose();
+    _server.dispose();
     super.dispose();
+  }
+
+  Future<void> _getCalendarFromLogin() async {
+    if (MoodleBrowserLogin.universityLoginUrl(_server.text) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'Enter the Moodle site HTTPS address (not the calendar token).',
+              'أدخل رابط موقع Moodle الآمن، وليس رابط التقويم.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+    final url = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => MoodleCalendarBrowser(
+          server: _server.text.trim(),
+          arabic: _ar,
+        ),
+      ),
+    );
+    if (!mounted || url == null) return;
+    _url.text = url;
+    final saved = await widget.controller.connect(url);
+    if (!saved && mounted) setState(() {});
   }
 
   @override
@@ -1297,6 +1329,29 @@ class _SetupState extends State<_Setup> {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
+          const SizedBox(height: 24),
+          Text(
+            t('Or connect using university sign-in', 'أو اربط عبر دخول الجامعة'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _server,
+            keyboardType: TextInputType.url,
+            autocorrect: false,
+            decoration: InputDecoration(
+              labelText: t('University Moodle HTTPS site', 'موقع Moodle الجامعي HTTPS'),
+              hintText: 'https://moodle.university.edu',
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: widget.controller.busy ? null : _getCalendarFromLogin,
+            icon: const Icon(Icons.login_rounded),
+            label: Text(
+              t('Sign in and fetch calendar link', 'تسجيل الدخول وجلب رابط التقويم'),
+            ),
+          ),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: widget.controller.busy

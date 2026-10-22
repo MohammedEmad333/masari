@@ -26,11 +26,11 @@ The project is designed around privacy, offline usefulness, predictable reminder
 
 ## Latest release
 
-**Masari v2.2.1 (build 5)** is available as a verified, consistently signed GitHub APK.
+**Download the latest official signed APK** from [GitHub Releases](https://github.com/MohammedEmad333/masari/releases/latest). Only published release APKs are intended for installation; Flutter CI smoke builds are for tests and are not distributed.
 
-- GitHub release APK: [`masari-v2.2.1.apk`](https://github.com/MohammedEmad333/masari/releases/download/v2.2.1/masari-v2.2.1.apk).
+- Official Android application ID: `com.mohammedemad333.masari`.
 - Google Play release: run the manual **Google Play AAB** workflow; it uses the *same existing upload-key secrets*.
-- Store application ID: `com.mohammedemad333.masari`.
+- To update an existing official Masari installation, install a newer signed GitHub Release built with the same key.
 
 > **Important migration warning:** Earlier GitHub APKs used `com.example.moodle_reminder` and a temporary debug signing key. The new APK will not replace that installation or move its local data. Keep your original app installed until your records are safely backed up. Google Play App Signing may use a different signing certificate from the upload key, so prefer **Play Internal Testing** when testing eventual Play upgrades.
 

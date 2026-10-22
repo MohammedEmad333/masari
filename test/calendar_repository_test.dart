@@ -216,6 +216,37 @@ void main() {
     client.close();
   });
 
+  test('failed additional calendar keeps cached deadlines and refreshes primary', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = Deadline(
+      uid: 'cached-extra',
+      title: 'Previously downloaded assignment',
+      due: DateTime.utc(2030, 5, 3),
+    );
+    await prefs.setString('deadline_cache_v2', jsonEncode([cached.toJson()]));
+    final client = MockClient((request) async {
+      if (request.url.host == 'secondary.example') {
+        return http.Response('Unavailable', 503);
+      }
+      return http.Response(
+        'BEGIN:VCALENDAR\\nBEGIN:VEVENT\\nUID:primary-1\\n'
+        'SUMMARY:Primary deadline\\nDTSTART:20300504T100000Z\\n'
+        'END:VEVENT\\nEND:VCALENDAR',
+        200,
+      );
+    });
+    final repository = CalendarRepository(client: client);
+    final deadlines = await repository.sync(
+      calendarUrl: 'https://primary.example/calendar.ics',
+      additionalCalendarUrls: ['https://secondary.example/calendar.ics'],
+    );
+    expect(deadlines.length, 2);
+    expect(deadlines.any((value) => value.uid == 'cached-extra'), isTrue);
+    expect(deadlines.any((value) => value.uid == 'primary-1'), isTrue);
+    expect(repository.lastSyncWarning, isNotNull);
+    client.close();
+  });
+
   test('additional calendar rejects non-HTTP URLs before storage', () async {
     final repository = CalendarRepository();
     await expectLater(

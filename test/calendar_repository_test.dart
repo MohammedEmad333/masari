@@ -222,9 +222,9 @@ void main() {
         return http.Response('Unavailable', 503);
       }
       return http.Response(
-        'BEGIN:VCALENDAR\\nBEGIN:VEVENT\\nUID:primary-1\\n'
-        'SUMMARY:Primary deadline\\nDTSTART:20300504T100000Z\\n'
-        'END:VEVENT\\nEND:VCALENDAR',
+        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:primary-1\n'
+        'SUMMARY:Primary deadline\nDTSTART:20300504T100000Z\n'
+        'END:VEVENT\nEND:VCALENDAR',
         200,
       );
     });

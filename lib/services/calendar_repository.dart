@@ -276,8 +276,7 @@ class CalendarRepository {
     final upcoming = retained.values.toList();
     upcoming.sort((a, b) => a.due.compareTo(b.due));
     if (failedCount > 0) {
-      lastSyncWarning = '$failedCount additional calendar(s) could not sync. '
-          'Previously saved deadlines were kept.';
+      lastSyncWarning = 'Additional calendars failed: $failedCount';
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(

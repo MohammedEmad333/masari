@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -266,9 +268,27 @@ class CalendarRepository {
   }
 
   Future<List<Deadline>> _fetchCalendar(String url) async {
-    final response = await _client
-        .get(Uri.parse(url), headers: const {'Accept': 'text/calendar,*/*'})
-        .timeout(const Duration(seconds: 20));
+    late final http.Response response;
+    try {
+      response = await _client
+          .get(
+            Uri.parse(url),
+            headers: const {'Accept': 'text/calendar, text/plain, */*'},
+          )
+          .timeout(const Duration(seconds: 20));
+    } on TimeoutException {
+      throw const CalendarSyncException(
+        'Moodle calendar download timed out. Please retry.',
+      );
+    } on SocketException {
+      throw const CalendarSyncException(
+        'Could not reach the Moodle server. Check connectivity or DNS.',
+      );
+    } on http.ClientException {
+      throw const CalendarSyncException(
+        'Could not download the Moodle calendar. Check your connection.',
+      );
+    }
     if (response.statusCode != 200) {
       throw CalendarSyncException(
         'Moodle returned HTTP ${response.statusCode}. Check the calendar URL.',
@@ -292,7 +312,8 @@ class CalendarRepository {
         );
       }
       throw const CalendarSyncException(
-        'The URL did not return a valid iCalendar feed.',
+        'Moodle returned HTTP 200 but no iCalendar data. '
+        'The export may require browser login.',
       );
     }
     return IcsParser.parse(calendarBody).toList();

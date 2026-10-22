@@ -668,6 +668,26 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  Future<void> _repairReminders() async {
+    final restored = await widget.controller.repairReminders();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          restored
+              ? t(
+                  'Reminders rescheduled. Check Android battery restrictions if alerts remain delayed.',
+                  'أُعيدت جدولة التنبيهات. افحص قيود البطارية إذا بقيت متأخرة.',
+                )
+              : t(
+                  'Enable notifications in Android settings and try again.',
+                  'اسمح بإشعارات مساري من إعدادات Android ثم حاول مجددًا.',
+                ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _editCalendarUrl() async {
     final current = await widget.controller.calendarUrlForEditing();
     if (!mounted) return;
@@ -841,6 +861,18 @@ class _HomeShellState extends State<HomeShell> {
                 leading: const Icon(Icons.notifications_active_outlined),
                 title: Text(t('Test notification', 'اختبار الإشعار')),
                 onTap: NotificationService.showTest,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: Text(t('Repair reminders', 'إصلاح التنبيهات')),
+                subtitle: Text(
+                  t(
+                    'Check permissions and reschedule upcoming alerts',
+                    'فحص الصلاحيات وإعادة جدولة المواعيد القادمة',
+                  ),
+                ),
+                onTap: _repairReminders,
               ),
               const Divider(height: 1),
               ListTile(

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.3
+
+- Improved Moodle iCalendar feed validation and errors for HTML/login responses.
+- Applied the clean Masari launcher icon without black corners.
+- Removed downloadable legacy smoke APK from Flutter CI so users install only stable-signed official GitHub Releases.
+- Prepared official version 2.2.3 (build 7) for publishing after verified main CI.
+
 ## 2.2.2
 
 - Simplified Moodle connection to a secure iCalendar URL, with assisted university sign-in and on-device link capture where supported.

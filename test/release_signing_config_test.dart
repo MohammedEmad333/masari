@@ -26,13 +26,14 @@ void main() {
       '.github/workflows/publish-release.yml',
     ).readAsStringSync();
 
-    expect(ci, contains('masari-legacy-ci-smoke-apk-not-for-updates'));
+    expect(ci, isNot(contains('actions/upload-artifact@')));
+    expect(ci, contains('Smoke-build legacy APK (not for distribution)'));
     expect(publish, isNot(contains('moodle-reminder-release-apk')));
     expect(publish, isNot(contains('--clobber')));
   });
 
   test('next Masari release increments its Android version code', () {
     final yaml = File('pubspec.yaml').readAsStringSync();
-    expect(yaml, contains('version: 2.2.2+6'));
+    expect(yaml, contains('version: 2.2.3+7'));
   });
 }

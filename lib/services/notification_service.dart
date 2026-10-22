@@ -1,4 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:flutter/services.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -28,6 +30,17 @@ class NotificationService {
   static Future<void> init({bool requestPermissions = true}) async {
     if (!_initialized) {
       tzdata.initializeTimeZones();
+      try {
+        final timezone = await FlutterTimezone.getLocalTimezone();
+        tz.setLocalLocation(tz.getLocation(timezone.identifier));
+      } catch (error) {
+        // Never silently schedule the wrong local time.
+        // UTC is safe only when the system clock itself uses UTC.
+        if (DateTime.now().timeZoneOffset != Duration.zero) {
+          throw StateError('Unable to load device timezone: $error');
+        }
+        tz.setLocalLocation(tz.UTC);
+      }
       const settings = InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(),
@@ -43,12 +56,26 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >();
     await android?.requestNotificationsPermission();
-    await android?.requestExactAlarmsPermission();
+    // Exact alarms are optional. Denial must not prevent inexact reminders.
+    try {
+      await android?.requestExactAlarmsPermission();
+    } on PlatformException {
+      // Continue with AndroidScheduleMode.inexactAllowWhileIdle.
+    }
     await _plugin
         .resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin
         >()
         ?.requestPermissions(alert: true, badge: true, sound: true);
+  }
+
+  static Future<bool?> notificationsEnabled() async {
+    await init(requestPermissions: false);
+    return _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.areNotificationsEnabled();
   }
 
   static Future<void> scheduleAll(
@@ -58,23 +85,22 @@ class NotificationService {
     Map<String, List<int>> taskReminderOffsets = const {},
   }) async {
     await init(requestPermissions: false);
-    await _plugin.cancelAll();
 
     final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
     final canScheduleExact = await android?.canScheduleExactNotifications();
-    final scheduleMode = canScheduleExact == false
-        ? AndroidScheduleMode.inexactAllowWhileIdle
-        : AndroidScheduleMode.exactAllowWhileIdle;
+    final scheduleMode = canScheduleExact == true
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
 
     final now = DateTime.now();
+    final pending = <_ScheduledReminder>[];
     for (final deadline in deadlines) {
       if (deadline.isPast || completedIds.contains(deadline.stableKey)) {
         continue;
       }
-
       for (final hours in offsetsForDeadline(
         deadline,
         reminderOffsetsHours,
@@ -82,27 +108,43 @@ class NotificationService {
       )) {
         final fireAt = deadline.due.subtract(Duration(hours: hours));
         if (!fireAt.isAfter(now)) continue;
-
-        await _scheduleOne(
-          id: _stableId('${deadline.stableKey}|before|$hours'),
-          title: 'Due soon: ${deadline.title}',
-          body: _body(deadline, _offsetLabel(hours)),
-          when: fireAt,
-          payload: deadline.stableKey,
-          scheduleMode: scheduleMode,
+        pending.add(
+          _ScheduledReminder(
+            id: _stableId('${deadline.stableKey}|before|$hours'),
+            title: 'Due soon: ${deadline.title}',
+            body: _body(deadline, _offsetLabel(hours)),
+            when: fireAt,
+            payload: deadline.stableKey,
+          ),
         );
       }
-
       if (deadline.due.isAfter(now)) {
-        await _scheduleOne(
-          id: _stableId('${deadline.stableKey}|due'),
-          title: 'Deadline now: ${deadline.title}',
-          body: _body(deadline, 'Due now'),
-          when: deadline.due,
-          payload: deadline.stableKey,
-          scheduleMode: scheduleMode,
+        pending.add(
+          _ScheduledReminder(
+            id: _stableId('${deadline.stableKey}|due'),
+            title: 'Deadline now: ${deadline.title}',
+            body: _body(deadline, 'Due now'),
+            when: deadline.due,
+            payload: deadline.stableKey,
+          ),
         );
       }
+    }
+
+    // Schedule upcoming notifications first; Android has a finite pending
+    // notification capacity and an overflowing list should not erase the
+    // soonest alerts.
+    pending.sort((a, b) => a.when.compareTo(b.when));
+    await _plugin.cancelAll();
+    for (final reminder in pending.take(400)) {
+      await _scheduleOne(
+        id: reminder.id,
+        title: reminder.title,
+        body: reminder.body,
+        when: reminder.when,
+        payload: reminder.payload,
+        scheduleMode: scheduleMode,
+      );
     }
   }
 
@@ -114,15 +156,21 @@ class NotificationService {
     required String payload,
     required AndroidScheduleMode scheduleMode,
   }) async {
-    await _plugin.zonedSchedule(
+    Future<void> schedule(AndroidScheduleMode mode) => _plugin.zonedSchedule(
       id: id,
       title: title,
       body: body,
       scheduledDate: tz.TZDateTime.from(when, tz.local),
       notificationDetails: _details,
       payload: payload,
-      androidScheduleMode: scheduleMode,
+      androidScheduleMode: mode,
     );
+    try {
+      await schedule(scheduleMode);
+    } on PlatformException {
+      if (scheduleMode == AndroidScheduleMode.inexactAllowWhileIdle) rethrow;
+      await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
+    }
   }
 
   static String _body(Deadline deadline, String prefix) {
@@ -158,4 +206,20 @@ class NotificationService {
       notificationDetails: _details,
     );
   }
+}
+
+class _ScheduledReminder {
+  const _ScheduledReminder({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.when,
+    required this.payload,
+  });
+
+  final int id;
+  final String title;
+  final String body;
+  final DateTime when;
+  final String payload;
 }

@@ -277,7 +277,8 @@ class CalendarRepository {
     // Some Moodle installations return a UTF-8 BOM before the ICS header.
     // Strip only the BOM and outer whitespace, never relax the requirement
     // that the response contains a complete calendar.
-    final calendarBody = response.body.replaceFirst('\uFEFF', '').trim();
+    final responseText = response.body.replaceFirst('\uFEFF', '');
+    final calendarBody = responseText.trim();
     if (!calendarBody.startsWith('BEGIN:VCALENDAR') ||
         !calendarBody.endsWith('END:VCALENDAR')) {
       final looksLikeLogin = RegExp(

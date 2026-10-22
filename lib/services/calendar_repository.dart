@@ -264,14 +264,17 @@ class CalendarRepository {
       }
     }
     final refreshed = CalendarSourceMerger.merge(sources);
-    final upcoming = failedCount == 0
-        ? refreshed
-        : <Deadline>[
-            ...{
-              for (final deadline in previous) deadline.stableKey: deadline,
-              for (final deadline in refreshed) deadline.stableKey: deadline,
-            }.values,
-          ]..sort((a, b) => a.due.compareTo(b.due));
+    final retained = <String, Deadline>{};
+    if (failedCount > 0) {
+      for (final deadline in previous) {
+        retained[deadline.stableKey] = deadline;
+      }
+    }
+    for (final deadline in refreshed) {
+      retained[deadline.stableKey] = deadline;
+    }
+    final upcoming = retained.values.toList();
+    upcoming.sort((a, b) => a.due.compareTo(b.due));
     if (failedCount > 0) {
       lastSyncWarning = '$failedCount additional calendar(s) could not sync. '
           'Previously saved deadlines were kept.';

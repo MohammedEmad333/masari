@@ -311,10 +311,9 @@ class CalendarRepository {
           'Use the private calendar subscription URL, not a login or export page.',
         );
       }
-      throw CalendarSyncException(
-        'The server did not send iCalendar data (HTTP 200, '
-        'content-type: ${response.headers['content-type'] ?? 'unknown'}). '
-        'Check whether the export link works without browser login.',
+      throw const CalendarSyncException(
+        'Moodle returned HTTP 200 but no iCalendar data. '
+        'The export may require browser login.',
       );
     }
     return IcsParser.parse(calendarBody).toList();

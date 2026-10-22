@@ -124,27 +124,45 @@ class AppController extends ChangeNotifier {
     }
   }
 
-  Future<bool> connect(String url) async {
+  /// Validate and download the new feed before replacing the stored token or
+  /// cached deadlines. An invalid URL must leave the previous calendar intact.
+  Future<bool> updateCalendarUrl(String url) async {
+    if (busy) return false;
     busy = true;
     error = null;
     notifyListeners();
 
     try {
-      await _repository.saveCalendarUrl(url);
-      await NotificationService.init(requestPermissions: true);
+      final updated = await _repository.sync(
+        calendarUrl: url,
+        additionalCalendarUrls: additionalCalendarUrls,
+      );
+      deadlines = updated;
       calendarConnected = true;
-      await _syncInternal();
+      lastSync = await _repository.loadLastSync();
+      try {
+        await NotificationService.init(requestPermissions: true);
+        await _rescheduleNotifications();
+      } catch (exception) {
+        debugPrint('Calendar saved, but reminders need attention: $exception');
+      }
+      await _publishWidget();
+      notifyListeners();
       return true;
     } catch (exception) {
       error = _message(exception);
-      await _repository.clearCalendarUrl();
-      calendarConnected = false;
       return false;
     } finally {
       busy = false;
       notifyListeners();
     }
   }
+
+  Future<bool> connect(String url) => updateCalendarUrl(url);
+
+  /// The complete URL contains a private token. Read it only after an
+  /// explicit user action (editing the connected feed).
+  Future<String?> calendarUrlForEditing() => _repository.loadCalendarUrl();
 
   Future<bool> sync({bool silent = false}) async {
     if (!(calendarConnected || apiConnected) || busy || _syncInProgress) {

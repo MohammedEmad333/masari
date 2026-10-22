@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,8 +11,26 @@ import 'package:moodle_reminder/services/calendar_repository.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+  final saved = <String, String>{};
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    saved.clear();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          final args = Map<String, dynamic>.from(call.arguments as Map);
+          final key = args['key'] as String?;
+          if (call.method == 'read') return saved[key];
+          if (call.method == 'write') saved[key!] = args['value'] as String;
+          if (call.method == 'delete') saved.remove(key);
+          return null;
+        });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
   });
 
   test(
@@ -190,29 +209,34 @@ void main() {
     expect(deadline.priority, 1);
   });
 
-  test('failed additional feed does not overwrite primary cache', () async {
+  test('failed extra feed keeps cached deadlines', () async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('deadline_cache_v2', 'preserved-cache');
-    await prefs.setString('last_sync_at', '2030-01-01T00:00:00');
-    final requested = <String>[];
+    final cached = Deadline(
+      uid: 'cached-extra',
+      title: 'Previously downloaded assignment',
+      due: DateTime.utc(2030, 5, 3),
+    );
+    await prefs.setString('deadline_cache_v2', jsonEncode([cached.toJson()]));
     final client = MockClient((request) async {
-      requested.add(request.url.host);
       if (request.url.host == 'secondary.example') {
-        return http.Response('Service unavailable', 503);
+        return http.Response('Unavailable', 503);
       }
-      return http.Response('BEGIN:VCALENDAR\\nEND:VCALENDAR', 200);
+      return http.Response(
+        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:primary-1\n'
+        'SUMMARY:Primary deadline\nDTSTART:20300504T100000Z\n'
+        'END:VEVENT\nEND:VCALENDAR',
+        200,
+      );
     });
     final repository = CalendarRepository(client: client);
-    await expectLater(
-      repository.sync(
-        calendarUrl: 'https://primary.example/calendar.ics',
-        additionalCalendarUrls: ['https://secondary.example/calendar.ics'],
-      ),
-      throwsA(isA<CalendarSyncException>()),
+    final deadlines = await repository.sync(
+      calendarUrl: 'https://primary.example/calendar.ics',
+      additionalCalendarUrls: ['https://secondary.example/calendar.ics'],
     );
-    expect(requested, ['primary.example', 'secondary.example']);
-    expect(prefs.getString('deadline_cache_v2'), 'preserved-cache');
-    expect(prefs.getString('last_sync_at'), '2030-01-01T00:00:00');
+    expect(deadlines.length, 2);
+    expect(deadlines.any((value) => value.uid == 'cached-extra'), isTrue);
+    expect(deadlines.any((value) => value.uid == 'primary-1'), isTrue);
+    expect(repository.lastSyncWarning, isNotNull);
     client.close();
   });
 

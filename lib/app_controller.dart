@@ -13,6 +13,7 @@ class AppController extends ChangeNotifier {
   AppController(this._repository);
 
   final CalendarRepository _repository;
+  String? get syncWarning => _repository.lastSyncWarning;
 
   List<Deadline> deadlines = const [];
   List<Deadline> manualDeadlines = const [];

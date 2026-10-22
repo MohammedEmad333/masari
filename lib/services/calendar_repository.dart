@@ -282,14 +282,17 @@ class CalendarRepository {
     if (!calendarBody.startsWith('BEGIN:VCALENDAR') ||
         !calendarBody.endsWith('END:VCALENDAR')) {
       final looksLikeLogin = RegExp(
-        r'<(?:!doctype\s+html|html|form)\b',
+        r'<(?:!doctype\\s+html|html|form)\\b',
         caseSensitive: false,
       ).hasMatch(calendarBody);
-      throw CalendarSyncException(
-        looksLikeLogin
-            ? 'Moodle returned an HTML page instead of an iCalendar feed. '
-                'Use the private calendar subscription URL, not a login or export page.'
-            : 'The URL did not return a valid iCalendar feed.',
+      if (looksLikeLogin) {
+        throw const CalendarSyncException(
+          'Moodle returned an HTML page instead of an iCalendar feed. '
+          'Use the private calendar subscription URL, not a login or export page.',
+        );
+      }
+      throw const CalendarSyncException(
+        'The URL did not return a valid iCalendar feed.',
       );
     }
     return IcsParser.parse(calendarBody).toList();

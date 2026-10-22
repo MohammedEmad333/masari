@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.4
+
+- Allow primary Moodle calendar refresh to succeed when an additional feed is unavailable, while retaining previously cached deadlines and showing a partial-sync warning.
+- Distinguish connection, timeout, HTTP and non-iCalendar responses to improve troubleshooting of private Moodle calendar links.
+- Build a separately versioned, officially signed Android APK after successful main-branch CI, with application ID `com.mohammedemad333.masari`.
+
 ## 2.2.3
 
 - Improved Moodle iCalendar feed validation and errors for HTML/login responses.

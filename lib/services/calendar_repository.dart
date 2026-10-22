@@ -274,9 +274,23 @@ class CalendarRepository {
         'Moodle returned HTTP ${response.statusCode}. Check the calendar URL.',
       );
     }
-    final calendarBody = response.body.trim();
+    // Some Moodle installations return a UTF-8 BOM before the ICS header.
+    // Strip only the BOM and outer whitespace, never relax the requirement
+    // that the response contains a complete calendar.
+    final responseText = response.body.replaceFirst('\uFEFF', '');
+    final calendarBody = responseText.trim();
     if (!calendarBody.startsWith('BEGIN:VCALENDAR') ||
         !calendarBody.endsWith('END:VCALENDAR')) {
+      final looksLikeLogin = RegExp(
+        r'<(?:!doctype\\s+html|html|form)\\b',
+        caseSensitive: false,
+      ).hasMatch(calendarBody);
+      if (looksLikeLogin) {
+        throw const CalendarSyncException(
+          'Moodle returned an HTML page instead of an iCalendar feed. '
+          'Use the private calendar subscription URL, not a login or export page.',
+        );
+      }
       throw const CalendarSyncException(
         'The URL did not return a valid iCalendar feed.',
       );

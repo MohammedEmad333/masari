@@ -149,10 +149,12 @@ class _MoodleCalendarBrowserState extends State<MoodleCalendarBrowser> {
       """);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = t(
-          'Generate a calendar URL in Moodle, then select Capture URL.',
-          'أنشئ رابط التقويم داخل Moodle ثم اضغط التقاط الرابط.',
-        ));
+        setState(
+          () => _error = t(
+            'Generate a calendar URL in Moodle, then select Capture URL.',
+            'أنشئ رابط التقويم داخل Moodle ثم اضغط التقاط الرابط.',
+          ),
+        );
       }
     }
   }
@@ -160,7 +162,9 @@ class _MoodleCalendarBrowserState extends State<MoodleCalendarBrowser> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(t('Moodle calendar sign-in', 'دخول تقويم Moodle'))),
+      appBar: AppBar(
+        title: Text(t('Moodle calendar sign-in', 'دخول تقويم Moodle')),
+      ),
       body: SafeArea(
         child: Column(
           children: [

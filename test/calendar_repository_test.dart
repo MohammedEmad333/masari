@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,8 +11,26 @@ import 'package:moodle_reminder/services/calendar_repository.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+  final saved = <String, String>{};
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    saved.clear();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          final args = Map<String, dynamic>.from(call.arguments as Map);
+          final key = args['key'] as String?;
+          if (call.method == 'read') return saved[key];
+          if (call.method == 'write') saved[key!] = args['value'] as String;
+          if (call.method == 'delete') saved.remove(key);
+          return null;
+        });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
   });
 
   test(
@@ -188,32 +207,6 @@ void main() {
       'due': '2030-01-01T10:00:00.000',
     });
     expect(deadline.priority, 1);
-  });
-
-  test('failed additional feed does not overwrite primary cache', () async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('deadline_cache_v2', 'preserved-cache');
-    await prefs.setString('last_sync_at', '2030-01-01T00:00:00');
-    final requested = <String>[];
-    final client = MockClient((request) async {
-      requested.add(request.url.host);
-      if (request.url.host == 'secondary.example') {
-        return http.Response('Service unavailable', 503);
-      }
-      return http.Response('BEGIN:VCALENDAR\\nEND:VCALENDAR', 200);
-    });
-    final repository = CalendarRepository(client: client);
-    await expectLater(
-      repository.sync(
-        calendarUrl: 'https://primary.example/calendar.ics',
-        additionalCalendarUrls: ['https://secondary.example/calendar.ics'],
-      ),
-      throwsA(isA<CalendarSyncException>()),
-    );
-    expect(requested, ['primary.example', 'secondary.example']);
-    expect(prefs.getString('deadline_cache_v2'), 'preserved-cache');
-    expect(prefs.getString('last_sync_at'), '2030-01-01T00:00:00');
-    client.close();
   });
 
   test('failed extra feed keeps cached deadlines', () async {

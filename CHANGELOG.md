@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.2
+
+- Simplified Moodle connection to a secure iCalendar URL, with assisted university sign-in and on-device link capture where supported.
+- Added safe editing of the private calendar URL; invalid replacements preserve the saved feed and deadlines.
+- Added a reminder-repair control and platform timezone configuration with inexact alarm fallback and bounded scheduling.
+- Kept manual tasks and existing offline caches intact.
+
 ## 2.2.1
 
 - Incremented Android version and build number to **2.2.1+5**.

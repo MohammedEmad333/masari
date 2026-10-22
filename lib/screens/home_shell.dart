@@ -1,11 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../services/moodle_api_credentials_store.dart';
-import '../services/moodle_api_client.dart';
-import '../services/moodle_browser_login.dart';
-import '../services/moodle_compatibility_checker.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,8 +12,9 @@ import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
+import 'moodle_calendar_browser.dart';
+import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
-import 'moodle_session_pilot_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -672,102 +668,75 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
-  Future<void> _configureMoodleApi() async {
-    final serverField = TextEditingController();
-    final tokenField = TextEditingController();
-    final store = MoodleApiCredentialsStore(const FlutterSecureStorage());
+  Future<void> _repairReminders() async {
+    final restored = await widget.controller.repairReminders();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          restored
+              ? t(
+                  'Reminders rescheduled. Check Android battery restrictions if alerts remain delayed.',
+                  'أُعيدت جدولة التنبيهات. افحص قيود البطارية إذا بقيت متأخرة.',
+                )
+              : t(
+                  'Enable notifications in Android settings and try again.',
+                  'اسمح بإشعارات مساري من إعدادات Android ثم حاول مجددًا.',
+                ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _editCalendarUrl() async {
+    final current = await widget.controller.calendarUrlForEditing();
+    if (!mounted) return;
+    final field = TextEditingController(text: current ?? '');
     try {
-      final saved = await store.load();
-      if (!mounted) return;
-      serverField.text = saved?.server.toString() ?? '';
-      final submit = await showDialog<bool>(
+      final next = await showDialog<String>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text(t('Optional Moodle API', 'واجهة Moodle API الاختيارية')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: serverField,
-                keyboardType: TextInputType.url,
-                decoration: InputDecoration(
-                  labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن'),
-                ),
+          title: Text(t('Edit calendar URL', 'تعديل رابط التقويم')),
+          content: TextField(
+            controller: field,
+            keyboardType: TextInputType.url,
+            autocorrect: false,
+            enableSuggestions: false,
+            decoration: InputDecoration(
+              labelText: t('Private iCalendar URL', 'رابط التقويم الخاص'),
+              helperText: t(
+                'The old link stays active until the new one is verified.',
+                'يبقى الرابط السابق فعّالًا حتى التحقق من الجديد.',
               ),
-              TextField(
-                controller: tokenField,
-                obscureText: true,
-                enableSuggestions: false,
-                autocorrect: false,
-                decoration: InputDecoration(
-                  labelText: t('Web Services token', 'رمز خدمات الويب'),
-                ),
-              ),
-              Text(
-                t(
-                  'Credentials are only saved after a successful test.',
-                  'تُحفظ البيانات بعد نجاح اختبار الاتصال فقط.',
-                ),
-              ),
-            ],
+            ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(t('Cancel', 'إلغاء')),
             ),
             FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(t('Test and save', 'اختبار وحفظ')),
+              onPressed: () => Navigator.pop(dialogContext, field.text.trim()),
+              child: Text(t('Verify and save', 'تحقق واحفظ')),
             ),
           ],
         ),
       );
-      if (submit != true || !mounted) return;
-      final api = MoodleApiClient(
-        baseUrl: Uri.parse(serverField.text.trim()),
-        token: tokenField.text.trim(),
-      );
-      try {
-        await api.siteInfo();
-        await store.save(server: api.baseUrl, token: tokenField.text);
-        await widget.controller.refreshApiConnection();
-        await widget.controller.sync();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t('Moodle API connected', 'تم الاتصال بـ Moodle API'),
-            ),
-          ),
-        );
-      } finally {
-        api.close();
-      }
-    } catch (_) {
+      if (next == null || next == current) return;
+      final ok = await widget.controller.updateCalendarUrl(next);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t('Moodle API connection failed', 'فشل الاتصال بـ Moodle API'),
-          ),
-        ),
-      );
+      final message = ok
+          ? t('Calendar URL updated.', 'تم تحديث رابط التقويم.')
+          : SyncFeedback.errorMessage(
+              widget.controller.error ?? t('Invalid URL', 'رابط غير صالح'),
+              arabic: _ar,
+            );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
-      serverField.dispose();
-      tokenField.dispose();
+      field.dispose();
     }
-  }
-
-  Future<void> _removeMoodleApi() async {
-    await MoodleApiCredentialsStore(const FlutterSecureStorage()).clear();
-    await widget.controller.refreshApiConnection();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(t('Moodle API disconnected', 'تم فصل Moodle API')),
-      ),
-    );
   }
 
   Widget _settings() {
@@ -778,24 +747,21 @@ class _HomeShellState extends State<HomeShell> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
         _settingsCard(
-          t('Moodle Web Services (optional)', 'خدمات Moodle (اختياري)'),
+          t('Moodle calendar', 'تقويم Moodle'),
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 t(
-                  'iCalendar will continue working independently.',
-                  'ستستمر مزامنة iCalendar بشكل مستقل.',
+                  'Your private calendar link is stored securely on this device.',
+                  'رابط التقويم الخاص محفوظ بشكل آمن على جهازك.',
                 ),
               ),
+              const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: _configureMoodleApi,
-                icon: const Icon(Icons.verified_user_outlined),
-                label: Text(t('Test and connect API', 'اختبار وربط API')),
-              ),
-              TextButton(
-                onPressed: _removeMoodleApi,
-                child: Text(t('Disconnect API', 'فصل API')),
+                onPressed: controller.busy ? null : _editCalendarUrl,
+                icon: const Icon(Icons.edit_calendar_outlined),
+                label: Text(t('Edit calendar URL', 'تعديل رابط التقويم')),
               ),
             ],
           ),
@@ -895,6 +861,18 @@ class _HomeShellState extends State<HomeShell> {
                 leading: const Icon(Icons.notifications_active_outlined),
                 title: Text(t('Test notification', 'اختبار الإشعار')),
                 onTap: NotificationService.showTest,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: Text(t('Repair reminders', 'إصلاح التنبيهات')),
+                subtitle: Text(
+                  t(
+                    'Check permissions and reschedule upcoming alerts',
+                    'فحص الصلاحيات وإعادة جدولة المواعيد القادمة',
+                  ),
+                ),
+                onTap: _repairReminders,
               ),
               const Divider(height: 1),
               ListTile(
@@ -1275,144 +1253,42 @@ class _Setup extends StatefulWidget {
 
 class _SetupState extends State<_Setup> {
   final _url = TextEditingController();
-  final _apiServer = TextEditingController();
-  final _apiToken = TextEditingController();
-  bool _apiBusy = false;
-  bool _checkingCompatibility = false;
-  MoodleCompatibilityResult? _compatibility;
+  final _server = TextEditingController();
+
   bool get _ar => widget.controller.locale.languageCode == 'ar';
   String t(String en, String ar) => _ar ? ar : en;
 
   @override
   void dispose() {
     _url.dispose();
-    _apiServer.dispose();
-    _apiToken.dispose();
+    _server.dispose();
     super.dispose();
   }
 
-  Future<void> _openSessionPilot() async {
-    if (MoodleBrowserLogin.universityLoginUrl(_apiServer.text) == null) {
+  Future<void> _getCalendarFromLogin() async {
+    if (MoodleBrowserLogin.universityLoginUrl(_server.text) == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             t(
-              'Enter a valid HTTPS Moodle server URL first.',
-              'أدخل رابط خادم Moodle الآمن أولًا.',
+              'Enter the Moodle site HTTPS address (not the calendar token).',
+              'أدخل رابط موقع Moodle الآمن، وليس رابط التقويم.',
             ),
           ),
         ),
       );
       return;
     }
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MoodleSessionPilotScreen(
-          moodleServer: _apiServer.text.trim(),
-          isArabic: _ar,
-          onImport: widget.controller.importSessionDeadlines,
-        ),
+    final url = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) =>
+            MoodleCalendarBrowser(server: _server.text.trim(), arabic: _ar),
       ),
     );
-  }
-
-  Future<void> _checkUniversityCompatibility() async {
-    setState(() {
-      _checkingCompatibility = true;
-      _compatibility = null;
-    });
-    final checker = MoodleCompatibilityChecker();
-    try {
-      final result = await checker.check(_apiServer.text);
-      if (!mounted) return;
-      setState(() => _compatibility = result);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(
-              'Enter a valid HTTPS Moodle server URL.',
-              'أدخل رابط خادم Moodle صالحًا باستخدام HTTPS.',
-            ),
-          ),
-        ),
-      );
-    } finally {
-      checker.close();
-      if (mounted) setState(() => _checkingCompatibility = false);
-    }
-  }
-
-  Future<void> _openUniversityLogin() async {
-    final login = MoodleBrowserLogin.universityLoginUrl(_apiServer.text);
-    if (login == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(
-              'Enter a valid HTTPS university Moodle URL.',
-              'أدخل رابط Moodle الجامعي الآمن HTTPS.',
-            ),
-          ),
-        ),
-      );
-      return;
-    }
-    final opened = await launchUrl(login, mode: LaunchMode.externalApplication);
-    if (!mounted) return;
-    if (!opened) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(t('Could not open browser.', 'تعذّر فتح المتصفح.')),
-        ),
-      );
-    }
-  }
-
-  Future<void> _connectApi() async {
-    setState(() => _apiBusy = true);
-    try {
-      final server = Uri.parse(_apiServer.text.trim());
-      final api = MoodleApiClient(
-        baseUrl: server,
-        token: _apiToken.text.trim(),
-      );
-      try {
-        final info = await api.siteInfo();
-        final userId = (info['userid'] as num?)?.toInt();
-        if (userId == null) {
-          throw const MoodleApiException('Moodle user ID is unavailable');
-        }
-        final courses = await api.courses(userId);
-        final courseIds = courses
-            .map((course) => (course['id'] as num?)?.toInt())
-            .whereType<int>()
-            .toList();
-        await api.assignments(courseIds);
-        await MoodleApiCredentialsStore(
-          const FlutterSecureStorage(),
-        ).save(server: server, token: _apiToken.text.trim());
-      } finally {
-        api.close();
-      }
-      await widget.controller.refreshApiConnection();
-      await widget.controller.sync();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(
-              'Moodle API connection failed or assignments unavailable.',
-              'فشل اتصال Moodle API أو تعذّر جلب الواجبات.',
-            ),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _apiBusy = false);
-    }
+    if (!mounted || url == null) return;
+    _url.text = url;
+    final saved = await widget.controller.connect(url);
+    if (!saved && mounted) setState(() {});
   }
 
   @override
@@ -1432,44 +1308,27 @@ class _SetupState extends State<_Setup> {
         padding: const EdgeInsets.all(20),
         children: [
           Icon(
-            Icons.notifications_active_rounded,
+            Icons.event_available_rounded,
             size: 64,
             color: Theme.of(context).colorScheme.primary,
           ),
           const SizedBox(height: 16),
           Text(
-            t(
-              'Never miss another Moodle deadline',
-              'لا تفوّت موعد Moodle بعد الآن',
-            ),
+            t('Connect your Moodle calendar', 'اربط تقويم Moodle'),
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             t(
-              'Connect Moodle once. Your private calendar URL stays in secure device storage.',
-              'اربط Moodle مرة واحدة. يبقى رابط التقويم الخاص محفوظًا في التخزين الآمن للجهاز.',
+              'Open Moodle Calendar, choose Export calendar, then Get calendar URL. Paste the subscription link below.',
+              'افتح تقويم Moodle، اختر تصدير التقويم ثم الحصول على رابط التقويم، والصقه أدناه.',
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          ...[
-            t('Open Moodle Calendar', 'افتح تقويم Moodle'),
-            t('Choose Export calendar', 'اختر تصدير التقويم'),
-            t(
-              'Copy the generated calendar URL',
-              'انسخ رابط التقويم الذي تم إنشاؤه',
-            ),
-          ].asMap().entries.map(
-            (entry) => ListTile(
-              leading: CircleAvatar(child: Text('${entry.key + 1}')),
-              title: Text(entry.value),
-            ),
-          ),
-          const SizedBox(height: 12),
           TextField(
             controller: _url,
             keyboardType: TextInputType.url,
@@ -1497,6 +1356,38 @@ class _SetupState extends State<_Setup> {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
+          const SizedBox(height: 24),
+          Text(
+            t(
+              'Or connect using university sign-in',
+              'أو اربط عبر دخول الجامعة',
+            ),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _server,
+            keyboardType: TextInputType.url,
+            autocorrect: false,
+            decoration: InputDecoration(
+              labelText: t(
+                'University Moodle HTTPS site',
+                'موقع Moodle الجامعي HTTPS',
+              ),
+              hintText: 'https://moodle.university.edu',
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: widget.controller.busy ? null : _getCalendarFromLogin,
+            icon: const Icon(Icons.login_rounded),
+            label: Text(
+              t(
+                'Sign in and fetch calendar link',
+                'تسجيل الدخول وجلب رابط التقويم',
+              ),
+            ),
+          ),
           const SizedBox(height: 14),
           FilledButton.icon(
             onPressed: widget.controller.busy
@@ -1512,120 +1403,6 @@ class _SetupState extends State<_Setup> {
                   )
                 : const Icon(Icons.lock_open_rounded),
             label: Text(t('Connect securely', 'اتصال آمن')),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: widget.controller.enableOfflineMode,
-            icon: const Icon(Icons.offline_bolt_outlined),
-            label: Text(t('Continue without Moodle', 'المتابعة بدون Moodle')),
-          ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 12),
-          Text(
-            t(
-              'Or connect using Moodle Web Services',
-              'أو اتصل باستخدام خدمات Moodle',
-            ),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _apiServer,
-            keyboardType: TextInputType.url,
-            decoration: InputDecoration(
-              labelText: t('Moodle HTTPS URL', 'رابط Moodle الآمن'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _checkingCompatibility
-                ? null
-                : _checkUniversityCompatibility,
-            icon: const Icon(Icons.fact_check_outlined),
-            label: Text(
-              t('Check university compatibility', 'فحص توافق الجامعة'),
-            ),
-          ),
-          if (_checkingCompatibility) const LinearProgressIndicator(),
-          if (_compatibility != null) ...[
-            Text(
-              _compatibility!.loginReachable
-                  ? t(
-                      'Moodle login page responded.',
-                      'استجابت صفحة تسجيل الدخول إلى Moodle.',
-                    )
-                  : t(
-                      'Login page could not be verified.',
-                      'تعذّر التحقق من صفحة تسجيل الدخول.',
-                    ),
-            ),
-            Text(
-              _compatibility!.apiEndpointReachable
-                  ? t(
-                      'Web Services endpoint responded; API access is not confirmed.',
-                      'استجابت نقطة خدمات الويب؛ صلاحية API غير مؤكدة.',
-                    )
-                  : t(
-                      'Web Services endpoint could not be verified.',
-                      'تعذّر التحقق من نقطة خدمات الويب.',
-                    ),
-            ),
-            Text(
-              t(
-                'Token issuance and assignment permissions require an authorized account test.',
-                'إصدار الرموز وصلاحيات الواجبات يحتاجان اختبارًا بحساب مصرح به.',
-              ),
-            ),
-          ],
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _openSessionPilot,
-            icon: const Icon(Icons.science_outlined),
-            label: Text(
-              t(
-                'Try experimental university session',
-                'جرّب جلسة الجامعة التجريبية',
-              ),
-            ),
-          ),
-          Text(
-            t(
-              'Experimental sign-in opens Moodle inside an isolated browser. You can import deadlines manually; it does not save your university password.',
-              'يفتح تسجيل الدخول التجريبي Moodle داخل متصفح منفصل. يمكنك استيراد المواعيد يدويًا ولا يحفظ كلمة مرور الجامعة.',
-            ),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _openUniversityLogin,
-            icon: const Icon(Icons.open_in_browser_rounded),
-            label: Text(
-              t(
-                'Open university login in browser',
-                'افتح تسجيل دخول الجامعة في المتصفح',
-              ),
-            ),
-          ),
-          Text(
-            t(
-              'Browser sign-in does not connect this app. API access still requires a supported university authorization flow or a Web Services token.',
-              'تسجيل الدخول في المتصفح لا يربط التطبيق. يتطلب الوصول للواجبات تفويضًا مدعومًا من الجامعة أو رمز خدمات الويب.',
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _apiToken,
-            obscureText: true,
-            enableSuggestions: false,
-            autocorrect: false,
-            decoration: InputDecoration(
-              labelText: t('Web Services token', 'رمز خدمات الويب'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: _apiBusy || widget.controller.busy ? null : _connectApi,
-            child: Text(t('Test and connect API', 'اختبار وربط API')),
           ),
         ],
       ),

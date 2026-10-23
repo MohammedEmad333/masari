@@ -52,12 +52,6 @@ jobs:
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
-      - name: Show formatting patch for localization updates
-        if: failure()
-        run: |
-          dart format lib/app_controller.dart lib/screens/home_shell.dart lib/screens/local_courses_screen.dart lib/screens/moodle_calendar_browser.dart lib/screens/moodle_session_pilot_screen.dart lib/services/background_sync_service.dart lib/services/home_widget_bridge.dart lib/services/ics_parser.dart lib/services/notification_service.dart lib/services/notification_text.dart lib/services/sync_feedback.dart test/app_language_reminders_test.dart test/language_coverage_test.dart test/notification_config_test.dart test/notification_text_test.dart test/release_signing_config_test.dart
-          git diff --no-ext-diff -- lib/app_controller.dart lib/screens/home_shell.dart lib/screens/local_courses_screen.dart lib/screens/moodle_calendar_browser.dart lib/screens/moodle_session_pilot_screen.dart lib/services/background_sync_service.dart lib/services/home_widget_bridge.dart lib/services/ics_parser.dart lib/services/notification_service.dart lib/services/notification_text.dart lib/services/sync_feedback.dart test/app_language_reminders_test.dart test/language_coverage_test.dart test/notification_config_test.dart test/notification_text_test.dart test/release_signing_config_test.dart
-
       - name: Analyze
         run: flutter analyze
 

@@ -149,9 +149,7 @@ void main() {
     });
     final repository = CalendarRepository(client: client);
     await expectLater(
-      repository.sync(
-        calendarUrl: 'https://moodle.example/calendar.ics',
-      ),
+      repository.sync(calendarUrl: 'https://moodle.example/calendar.ics'),
       throwsA(
         isA<CalendarSyncException>().having(
           (exception) => exception.message,

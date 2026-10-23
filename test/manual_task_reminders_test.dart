@@ -24,10 +24,10 @@ void main() {
       due: due,
       reminderMinutesBefore: -1,
     );
-    expect(
-      upcomingReminderTimes(short, [24, 6, 1], {}, now: now),
-      [now.add(const Duration(minutes: 10)), due],
-    );
+    expect(upcomingReminderTimes(short, [24, 6, 1], {}, now: now), [
+      now.add(const Duration(minutes: 10)),
+      due,
+    ]);
     expect(upcomingReminderTimes(noAlerts, [1], {}, now: now), isEmpty);
   });
 
@@ -70,7 +70,10 @@ void main() {
     );
     expect(controller.manualDeadlines.length, 1);
     expect(controller.reminderSchedulingFailed, isTrue);
-    expect((await repository.loadManualDeadlines()).single.title, 'Initial title');
+    expect(
+      (await repository.loadManualDeadlines()).single.title,
+      'Initial title',
+    );
 
     await controller.saveManualDeadline(
       Deadline(
@@ -81,8 +84,14 @@ void main() {
       ),
     );
     expect(controller.manualDeadlines.length, 1);
-    expect((await repository.loadManualDeadlines()).single.title, 'Updated title');
-    expect((await repository.loadManualDeadlines()).single.reminderMinutesBefore, 15);
+    expect(
+      (await repository.loadManualDeadlines()).single.title,
+      'Updated title',
+    );
+    expect(
+      (await repository.loadManualDeadlines()).single.reminderMinutesBefore,
+      15,
+    );
     controller.dispose();
   });
 }

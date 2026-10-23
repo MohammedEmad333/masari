@@ -52,6 +52,13 @@ jobs:
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
+      # Temporary development diagnostic; removed before merging.
+      - name: Show Dart formatter patch
+        if: failure()
+        run: |
+          dart format lib/screens/home_shell.dart test/calendar_repository_test.dart
+          git diff --no-ext-diff -- lib/screens/home_shell.dart test/calendar_repository_test.dart
+
       - name: Analyze
         run: flutter analyze
 

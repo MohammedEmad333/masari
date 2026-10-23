@@ -1,12 +1,10 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:flutter/services.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
 
 import '../models/deadline.dart';
 import 'ics_parser.dart';
 import 'reminder_policy.dart';
+import 'reminder_schedule_time.dart';
 
 class NotificationService {
   NotificationService._();
@@ -29,20 +27,8 @@ class NotificationService {
 
   static Future<void> init({bool requestPermissions = true}) async {
     if (!_initialized) {
-      tzdata.initializeTimeZones();
-      try {
-        final timezone = await FlutterTimezone.getLocalTimezone();
-        tz.setLocalLocation(tz.getLocation(timezone.identifier));
-      } catch (error) {
-        // Never silently schedule the wrong local time.
-        // UTC is safe only when the system clock itself uses UTC.
-        if (DateTime.now().timeZoneOffset != Duration.zero) {
-          throw StateError('Unable to load device timezone: $error');
-        }
-        tz.setLocalLocation(tz.UTC);
-      }
       const settings = InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        android: AndroidInitializationSettings('masari_notification'),
         iOS: DarwinInitializationSettings(),
       );
       await _plugin.initialize(settings: settings);
@@ -166,7 +152,7 @@ class NotificationService {
       id: id,
       title: title,
       body: body,
-      scheduledDate: tz.TZDateTime.from(when, tz.local),
+      scheduledDate: reminderScheduledInstant(when),
       notificationDetails: _details,
       payload: payload,
       androidScheduleMode: mode,

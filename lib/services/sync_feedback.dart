@@ -24,9 +24,13 @@ class SyncFeedback {
     if (raw.startsWith('Moodle returned an empty calendar response')) {
       return 'أرجع خادم Moodle استجابة فارغة بدلاً من بيانات التقويم.';
     }
-    // HTTP error codes are language-neutral diagnostics; keep them visible.
-    if (RegExp(r'^HTTP \\d{3}
-      final status = RegExp(r'HTTP (\\d{3})').firstMatch(raw)?.group(1);
+    // Standalone HTTP status codes are language-neutral diagnostics.
+    final trimmed = raw.trim();
+    if (trimmed.startsWith('HTTP ') && trimmed.length == 8) {
+      return trimmed;
+    }
+    if (raw.startsWith('Moodle returned HTTP ')) {
+      final status = RegExp(r'HTTP ([0-9]{3})').firstMatch(raw)?.group(1);
       return status == null
           ? 'تعذّر تنزيل التقويم من خادم Moodle.'
           : 'تعذّر تنزيل التقويم من خادم Moodle (HTTP $status).';

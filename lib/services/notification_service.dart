@@ -28,6 +28,26 @@ class NotificationService {
         iOS: const DarwinNotificationDetails(),
       );
 
+  // Android keeps notification channel labels separately from the app locale.
+  // Re-registering the stable channel ID updates its user-visible name without
+  // changing user-selected alert settings or scheduled notification IDs.
+  static Future<void> _updateChannelLocale({required bool arabic}) async {
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await android?.createNotificationChannel(
+      AndroidNotificationChannel(
+        'deadlines_v2',
+        arabic ? 'تذكيرات المواعيد' : 'Deadline reminders',
+        description: arabic
+            ? 'تذكيرات المهام والواجبات والاختبارات القادمة في مساري'
+            : 'Upcoming Masari task and assignment reminders',
+        importance: Importance.high,
+      ),
+    );
+  }
+
   static Future<void> init({bool requestPermissions = true}) async {
     if (!_initialized) {
       const settings = InitializationSettings(
@@ -75,6 +95,7 @@ class NotificationService {
     bool arabic = false,
   }) async {
     await init(requestPermissions: false);
+    await _updateChannelLocale(arabic: arabic);
 
     final android = _plugin
         .resolvePlatformSpecificImplementation<
@@ -224,6 +245,7 @@ class NotificationService {
 
   static Future<void> showTest({bool arabic = false}) async {
     await init(requestPermissions: true);
+    await _updateChannelLocale(arabic: arabic);
     if (await notificationsEnabled() == false) {
       throw StateError('Android notifications are disabled');
     }

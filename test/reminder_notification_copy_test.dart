@@ -69,7 +69,7 @@ void main() {
     );
     expect(
       ReminderNotificationCopy.offsetHours(2, arabic: true),
-      'ساعتان متبقيان',
+      'ساعتان متبقيتان',
     );
     expect(
       ReminderNotificationCopy.offsetHours(24, arabic: true),

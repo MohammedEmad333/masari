@@ -73,7 +73,7 @@ void main() {
     );
     expect(
       ReminderNotificationCopy.offsetHours(24, arabic: true),
-      'يوم واحدة متبقية',
+      'يوم واحد متبقٍ',
     );
   });
 

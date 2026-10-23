@@ -15,34 +15,37 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('switching app language saves selection and updates pending reminders', () async {
-    final repository = CalendarRepository();
-    var schedulingCalls = 0;
-    final controller = AppController(
-      repository,
-      reminderScheduler: () async {
-        schedulingCalls++;
-      },
-    );
-    controller.manualDeadlines = [
-      Deadline(
-        uid: 'manual-1',
-        title: 'واجب جامعي',
-        due: DateTime(2030, 10, 23, 20),
-      ),
-    ];
+  test(
+    'switching app language saves selection and updates pending reminders',
+    () async {
+      final repository = CalendarRepository();
+      var schedulingCalls = 0;
+      final controller = AppController(
+        repository,
+        reminderScheduler: () async {
+          schedulingCalls++;
+        },
+      );
+      controller.manualDeadlines = [
+        Deadline(
+          uid: 'manual-1',
+          title: 'واجب جامعي',
+          due: DateTime(2030, 10, 23, 20),
+        ),
+      ];
 
-    await controller.setLocale(const Locale('ar'));
-    expect(controller.locale.languageCode, 'ar');
-    expect(await repository.loadLocale(), 'ar');
-    expect(schedulingCalls, 1);
+      await controller.setLocale(const Locale('ar'));
+      expect(controller.locale.languageCode, 'ar');
+      expect(await repository.loadLocale(), 'ar');
+      expect(schedulingCalls, 1);
 
-    await controller.setLocale(const Locale('en'));
-    expect(controller.locale.languageCode, 'en');
-    expect(await repository.loadLocale(), 'en');
-    expect(schedulingCalls, 2);
-    controller.dispose();
-  });
+      await controller.setLocale(const Locale('en'));
+      expect(controller.locale.languageCode, 'en');
+      expect(await repository.loadLocale(), 'en');
+      expect(schedulingCalls, 2);
+      controller.dispose();
+    },
+  );
 
   test('sync troubleshooting stays Arabic for known Moodle errors', () {
     expect(
@@ -80,19 +83,24 @@ void main() {
   });
 
   test('outdated user-facing product name is absent from key app screens', () {
-    final service =
-        File('lib/services/notification_service.dart').readAsStringSync();
-    final localCourses =
-        File('lib/screens/local_courses_screen.dart').readAsStringSync();
+    final service = File(
+      'lib/services/notification_service.dart',
+    ).readAsStringSync();
+    final localCourses = File(
+      'lib/screens/local_courses_screen.dart',
+    ).readAsStringSync();
     expect(service, isNot(contains('Moodle Reminder can alert')));
     expect(localCourses, isNot(contains('using Moodle Reminder')));
     expect(service, contains('ReminderNotificationCopy.getTestBody'));
   });
 
   test('background syncing and widgets receive the selected app language', () {
-    final background =
-        File('lib/services/background_sync_service.dart').readAsStringSync();
-    final bridge = File('lib/services/home_widget_bridge.dart').readAsStringSync();
+    final background = File(
+      'lib/services/background_sync_service.dart',
+    ).readAsStringSync();
+    final bridge = File(
+      'lib/services/home_widget_bridge.dart',
+    ).readAsStringSync();
     final native = File(
       'android/app/src/main/kotlin/com/example/moodle_reminder/MoodleWidgetProvider.kt',
     ).readAsStringSync();

@@ -76,9 +76,9 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
             setState(() {
               _busy = false;
               _error = t(
-                  'Unable to load Moodle. Check the connection and retry.',
-                  'تعذّر تحميل Moodle. تحقّق من الاتصال ثم حاول مجددًا.',
-                );
+                'Unable to load Moodle. Check the connection and retry.',
+                'تعذّر تحميل Moodle. تحقّق من الاتصال ثم حاول مجددًا.',
+              );
             });
           },
         ),

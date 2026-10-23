@@ -40,6 +40,7 @@ void main() {
     expect(kotlin, contains('Locale.forLanguageTag(language)'));
     expect(chooser, contains('مشاركة المساق'));
     expect(shareScreen, contains("'language': widget.arabic ? 'ar' : 'en'"));
+    expect(shareScreen, isNot(contains('Moodle Reminder')));
   });
 
   test('web view errors are localized rather than raw system messages', () {

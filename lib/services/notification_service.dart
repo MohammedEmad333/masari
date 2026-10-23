@@ -2,7 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/services.dart';
 
 import '../models/deadline.dart';
-import 'ics_parser.dart';
+import 'reminder_notification_copy.dart';
 import 'reminder_policy.dart';
 import 'reminder_schedule_time.dart';
 
@@ -13,17 +13,20 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
 
-  static const _details = NotificationDetails(
-    android: AndroidNotificationDetails(
-      'deadlines_v2',
-      'Deadline reminders',
-      channelDescription: 'Upcoming Moodle assignment, quiz and exam reminders',
-      importance: Importance.high,
-      priority: Priority.high,
-      category: AndroidNotificationCategory.reminder,
-    ),
-    iOS: DarwinNotificationDetails(),
-  );
+  static NotificationDetails _detailsFor({required bool arabic}) =>
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'deadlines_v2',
+          arabic ? 'تذكيرات المواعيد' : 'Deadline reminders',
+          channelDescription: arabic
+              ? 'تنبيهات المهام والواجبات والاختبارات القادمة في مساري'
+              : 'Upcoming Masari task, assignment, quiz and exam reminders',
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.reminder,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      );
 
   static Future<void> init({bool requestPermissions = true}) async {
     if (!_initialized) {
@@ -69,6 +72,7 @@ class NotificationService {
     required List<int> reminderOffsetsHours,
     Set<String> completedIds = const {},
     Map<String, List<int>> taskReminderOffsets = const {},
+    bool arabic = false,
   }) async {
     await init(requestPermissions: false);
 
@@ -103,8 +107,18 @@ class NotificationService {
           pending.add(
             _ScheduledReminder(
               id: _stableId('${deadline.stableKey}|before-min|$minutesBefore'),
-              title: 'Due soon: ${deadline.title}',
-              body: _body(deadline, _minuteOffsetLabel(minutesBefore)),
+              title: ReminderNotificationCopy.upcomingTitle(
+                deadline,
+                arabic: arabic,
+              ),
+              body: ReminderNotificationCopy.body(
+                deadline,
+                ReminderNotificationCopy.offsetMinutes(
+                  minutesBefore,
+                  arabic: arabic,
+                ),
+                arabic: arabic,
+              ),
               when: fireAt,
               payload: deadline.stableKey,
             ),
@@ -122,7 +136,11 @@ class NotificationService {
             _ScheduledReminder(
               id: _stableId('${deadline.stableKey}|before|$hours'),
               title: 'Due soon: ${deadline.title}',
-              body: _body(deadline, _offsetLabel(hours)),
+              body: ReminderNotificationCopy.body(
+                deadline,
+                ReminderNotificationCopy.offsetHours(hours, arabic: arabic),
+                arabic: arabic,
+              ),
               when: fireAt,
               payload: deadline.stableKey,
             ),
@@ -133,8 +151,15 @@ class NotificationService {
         pending.add(
           _ScheduledReminder(
             id: _stableId('${deadline.stableKey}|due'),
-            title: 'Deadline now: ${deadline.title}',
-            body: _body(deadline, 'Due now'),
+            title: ReminderNotificationCopy.dueTitle(
+              deadline,
+              arabic: arabic,
+            ),
+            body: ReminderNotificationCopy.body(
+              deadline,
+              ReminderNotificationCopy.dueNow(arabic: arabic),
+              arabic: arabic,
+            ),
             when: deadline.due,
             payload: deadline.stableKey,
           ),
@@ -155,6 +180,7 @@ class NotificationService {
         when: reminder.when,
         payload: reminder.payload,
         scheduleMode: scheduleMode,
+        arabic: arabic,
       );
     }
   }
@@ -166,13 +192,14 @@ class NotificationService {
     required DateTime when,
     required String payload,
     required AndroidScheduleMode scheduleMode,
+    required bool arabic,
   }) async {
     Future<void> schedule(AndroidScheduleMode mode) => _plugin.zonedSchedule(
       id: id,
       title: title,
       body: body,
       scheduledDate: reminderScheduledInstant(when),
-      notificationDetails: _details,
+      notificationDetails: _detailsFor(arabic: arabic),
       payload: payload,
       androidScheduleMode: mode,
     );
@@ -182,24 +209,6 @@ class NotificationService {
       if (scheduleMode == AndroidScheduleMode.inexactAllowWhileIdle) rethrow;
       await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
     }
-  }
-
-  static String _body(Deadline deadline, String prefix) {
-    final course = deadline.course.isEmpty ? '' : '${deadline.course} • ';
-    return '$prefix • $course${formatDue(deadline.due)}';
-  }
-
-  static String _offsetLabel(int hours) {
-    if (hours % 24 == 0) {
-      final days = hours ~/ 24;
-      return '$days ${days == 1 ? 'day' : 'days'} remaining';
-    }
-    return '$hours ${hours == 1 ? 'hour' : 'hours'} remaining';
-  }
-
-  static String _minuteOffsetLabel(int minutes) {
-    if (minutes % 60 == 0) return _offsetLabel(minutes ~/ 60);
-    return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} remaining';
   }
 
   static int _stableId(String value) {
@@ -213,15 +222,15 @@ class NotificationService {
     return hash;
   }
 
-  static Future<void> showTest() async {
+  static Future<void> showTest({bool arabic = false}) async {
     await init(requestPermissions: true);
     if (await notificationsEnabled() == false) {
       throw StateError('Android notifications are disabled');
     }
     await _plugin.show(
       id: 2147483000,
-      title: 'Notifications are ready ✅',
-      body: 'Moodle Reminder can alert you before upcoming deadlines.',
+      title: ReminderNotificationCopy.getTestTitle(arabic: arabic),
+      body: ReminderNotificationCopy.getTestBody(arabic: arabic),
       notificationDetails: _details,
     );
   }

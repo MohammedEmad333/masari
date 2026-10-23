@@ -55,7 +55,10 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
-    await android?.requestNotificationsPermission();
+    // Do not re-request a permission Android has already granted.
+    if (await android?.areNotificationsEnabled() != true) {
+      await android?.requestNotificationsPermission();
+    }
     // Exact alarms are optional. Do not request the special OS access while
     // initializing notifications: MIUI can reject that flow even when normal
     // notifications are enabled. scheduleAll uses an inexact fallback.
@@ -87,8 +90,14 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
-    final canScheduleExact = await android?.canScheduleExactNotifications();
-    final scheduleMode = canScheduleExact == true
+    var canScheduleExact = false;
+    try {
+      canScheduleExact =
+          await android?.canScheduleExactNotifications() ?? false;
+    } catch (_) {
+      // OEM-specific failures must not block inexact reminder scheduling.
+    }
+    final scheduleMode = canScheduleExact
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
 
@@ -196,6 +205,9 @@ class NotificationService {
 
   static Future<void> showTest() async {
     await init(requestPermissions: true);
+    if (await notificationsEnabled() == false) {
+      throw StateError('Android notifications are disabled');
+    }
     await _plugin.show(
       id: 2147483000,
       title: 'Notifications are ready ✅',

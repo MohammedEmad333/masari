@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.8
+
+- Fix Android notification initialization by replacing the old launcher mipmap reference with a dedicated white notification drawable, retained in release builds.
+- Decouple immediate test notifications from device timezone-plugin lookups.
+- Schedule one-shot reminder instants using UTC; preserve their absolute timestamps even if an Android OEM reports an unrecognized timezone alias.
+- Add regression tests for UTC alarm conversion and release notification resources.
+
 ## 2.2.7
 
 - Fix the misleading permission-denied message shown when Android reminders fail to initialize or schedule despite notification access being enabled.

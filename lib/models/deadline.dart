@@ -24,6 +24,7 @@ class Deadline {
   final String status;
   final int sequence;
   final int priority;
+
   /// Null: global settings, -1: no alerts, positive: minutes before due.
   final int? reminderMinutesBefore;
   final DateTime? lastModified;

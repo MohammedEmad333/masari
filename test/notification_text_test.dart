@@ -16,8 +16,14 @@ void main() {
   );
 
   test('Arabic reminders translate fixed copy and keep user task names', () {
-    expect(NotificationText.dueSoon(task, arabic: true), 'اقترب موعد: تجربة الإشعارات');
-    expect(NotificationText.dueNow(task, arabic: true), 'حان موعد: تجربة الإشعارات');
+    expect(
+      NotificationText.dueSoon(task, arabic: true),
+      'اقترب موعد: تجربة الإشعارات',
+    );
+    expect(
+      NotificationText.dueNow(task, arabic: true),
+      'حان موعد: تجربة الإشعارات',
+    );
     expect(NotificationText.remainingMinutes(5, arabic: true), 'تبقّى 5 دقائق');
     expect(NotificationText.remainingHours(6, arabic: true), 'تبقّى 6 ساعات');
     expect(NotificationText.testTitle(arabic: true), 'إشعارات مساري جاهزة');
@@ -35,11 +41,26 @@ void main() {
   });
 
   test('English reminders remain English while Moodle names are unchanged', () {
-    expect(NotificationText.dueSoon(task, arabic: false), 'Due soon: تجربة الإشعارات');
-    expect(NotificationText.remainingMinutes(5, arabic: false), '5 minutes remaining');
-    expect(NotificationText.remainingHours(1, arabic: false), '1 hour remaining');
-    expect(NotificationText.testTitle(arabic: false), 'Masari notifications are ready');
-    expect(NotificationText.testBody(arabic: false), isNot(contains('Moodle Reminder')));
+    expect(
+      NotificationText.dueSoon(task, arabic: false),
+      'Due soon: تجربة الإشعارات',
+    );
+    expect(
+      NotificationText.remainingMinutes(5, arabic: false),
+      '5 minutes remaining',
+    );
+    expect(
+      NotificationText.remainingHours(1, arabic: false),
+      '1 hour remaining',
+    );
+    expect(
+      NotificationText.testTitle(arabic: false),
+      'Masari notifications are ready',
+    );
+    expect(
+      NotificationText.testBody(arabic: false),
+      isNot(contains('Moodle Reminder')),
+    );
     final english = formatDue(due);
     final arabic = formatDue(due, arabic: true);
     expect(english, isNot(arabic));

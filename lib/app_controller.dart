@@ -339,13 +339,37 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addManualDeadline(Deadline deadline) async {
-    manualDeadlines = [...manualDeadlines, deadline];
-    await _repository.saveManualDeadlines(manualDeadlines);
-    // A manual-only user never visits calendar/API onboarding; request Android
-    // notification permissions before the first scheduled alert.
-    await NotificationService.init(requestPermissions: true);
-    await _rescheduleNotifications();
+  Future<void> addManualDeadline(Deadline deadline) {
+    return saveManualDeadline(deadline);
+  }
+
+  /// Persist first: a notification scheduling failure must never create a
+  /// duplicate task when a user retries saving the same dialog.
+  Future<void> saveManualDeadline(Deadline deadline) async {
+    final next = [...manualDeadlines];
+    final index = next.indexWhere(
+      (task) => task.stableKey == deadline.stableKey,
+    );
+    if (index == -1) {
+      next.add(deadline);
+    } else {
+      next[index] = deadline;
+    }
+    await _repository.saveManualDeadlines(next);
+    manualDeadlines = next;
+    reminderSchedulingFailed = false;
+    notifyListeners();
+    try {
+      if (_notificationInitializer == null) {
+        await NotificationService.init(requestPermissions: true);
+      } else {
+        await _notificationInitializer();
+      }
+      await _rescheduleNotifications();
+    } catch (error) {
+      reminderSchedulingFailed = true;
+      debugPrint('Manual task saved; reminder scheduling needs attention.');
+    }
     await _publishWidget();
     notifyListeners();
   }
@@ -359,7 +383,13 @@ class AppController extends ChangeNotifier {
     await _repository.saveManualDeadlines(manualDeadlines);
     await _repository.saveCompletedIds(completedIds);
     await _repository.saveTaskReminderOffsets(taskReminderOffsets);
-    await _rescheduleNotifications();
+    try {
+      await _rescheduleNotifications();
+      reminderSchedulingFailed = false;
+    } catch (_) {
+      reminderSchedulingFailed = true;
+      debugPrint('Manual task deleted; reminder rescheduling needs repair.');
+    }
     await _publishWidget();
     notifyListeners();
   }

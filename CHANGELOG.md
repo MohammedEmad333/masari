@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.9
+
+- Replace the manual task dialog with independent date and time pickers, optional notes, priority, and clear form validation.
+- Provide 5, 15, and 30 minute reminders alongside 1, 6, and 24 hour options, a global default, and a no-notifications choice.
+- Show task-specific reminder settings in the details sheet and allow editing or deleting saved manual tasks.
+- Save or update manual tasks by stable ID before scheduling Android reminders, avoiding duplicate tasks after scheduling errors.
+- Preserve existing tasks with backwards-compatible reminder settings and add regression tests.
+
 ## 2.2.8
 
 - Fix Android notification initialization by replacing the old launcher mipmap reference with a dedicated white notification drawable, retained in release builds.

@@ -93,22 +93,41 @@ class NotificationService {
       if (deadline.isPast || completedIds.contains(deadline.stableKey)) {
         continue;
       }
-      for (final hours in offsetsForDeadline(
-        deadline,
-        reminderOffsetsHours,
-        taskReminderOffsets,
-      )) {
-        final fireAt = deadline.due.subtract(Duration(hours: hours));
-        if (!fireAt.isAfter(now)) continue;
-        pending.add(
-          _ScheduledReminder(
-            id: _stableId('${deadline.stableKey}|before|$hours'),
-            title: 'Due soon: ${deadline.title}',
-            body: _body(deadline, _offsetLabel(hours)),
-            when: fireAt,
-            payload: deadline.stableKey,
-          ),
-        );
+      // Manual tasks may specify a short reminder (5/15/30 minutes);
+      // existing Moodle and older manual tasks keep global hour offsets.
+      final minutesBefore = deadline.reminderMinutesBefore;
+      if (minutesBefore == -1) continue;
+      if (minutesBefore != null) {
+        final fireAt = deadline.due.subtract(Duration(minutes: minutesBefore));
+        if (minutesBefore > 0 && fireAt.isAfter(now)) {
+          pending.add(
+            _ScheduledReminder(
+              id: _stableId('${deadline.stableKey}|before-min|$minutesBefore'),
+              title: 'Due soon: ${deadline.title}',
+              body: _body(deadline, _minuteOffsetLabel(minutesBefore)),
+              when: fireAt,
+              payload: deadline.stableKey,
+            ),
+          );
+        }
+      } else {
+        for (final hours in offsetsForDeadline(
+          deadline,
+          reminderOffsetsHours,
+          taskReminderOffsets,
+        )) {
+          final fireAt = deadline.due.subtract(Duration(hours: hours));
+          if (!fireAt.isAfter(now)) continue;
+          pending.add(
+            _ScheduledReminder(
+              id: _stableId('${deadline.stableKey}|before|$hours'),
+              title: 'Due soon: ${deadline.title}',
+              body: _body(deadline, _offsetLabel(hours)),
+              when: fireAt,
+              payload: deadline.stableKey,
+            ),
+          );
+        }
       }
       if (deadline.due.isAfter(now)) {
         pending.add(
@@ -176,6 +195,11 @@ class NotificationService {
       return '$days ${days == 1 ? 'day' : 'days'} remaining';
     }
     return '$hours ${hours == 1 ? 'hour' : 'hours'} remaining';
+  }
+
+  static String _minuteOffsetLabel(int minutes) {
+    if (minutes % 60 == 0) return _offsetLabel(minutes ~/ 60);
+    return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} remaining';
   }
 
   static int _stableId(String value) {

@@ -18,11 +18,20 @@ List<DateTime> upcomingReminderTimes(
   Map<String, List<int>> overrides, {
   required DateTime now,
 }) {
-  if (!deadline.due.isAfter(now)) return const [];
-  return [
-    for (final hours in offsetsForDeadline(deadline, defaults, overrides))
-      if (deadline.due.subtract(Duration(hours: hours)).isAfter(now))
-        deadline.due.subtract(Duration(hours: hours)),
-    deadline.due,
-  ];
+  if (!deadline.due.isAfter(now) || deadline.reminderMinutesBefore == -1) {
+    return const [];
+  }
+  final minutes = deadline.reminderMinutesBefore;
+  final early = minutes != null
+      ? <DateTime>[
+          if (minutes > 0 &&
+              deadline.due.subtract(Duration(minutes: minutes)).isAfter(now))
+            deadline.due.subtract(Duration(minutes: minutes)),
+        ]
+      : <DateTime>[
+          for (final hours in offsetsForDeadline(deadline, defaults, overrides))
+            if (deadline.due.subtract(Duration(hours: hours)).isAfter(now))
+              deadline.due.subtract(Duration(hours: hours)),
+        ];
+  return [...early, deadline.due];
 }

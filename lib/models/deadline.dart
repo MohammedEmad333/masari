@@ -10,6 +10,7 @@ class Deadline {
     this.status = '',
     this.sequence = 0,
     this.priority = 1,
+    this.reminderMinutesBefore,
     this.lastModified,
   });
 
@@ -23,6 +24,9 @@ class Deadline {
   final String status;
   final int sequence;
   final int priority;
+
+  /// Null: global settings, -1: no alerts, positive: minutes before due.
+  final int? reminderMinutesBefore;
   final DateTime? lastModified;
 
   double get hoursRemaining => due.difference(DateTime.now()).inMinutes / 60;
@@ -57,6 +61,7 @@ class Deadline {
     'status': status,
     'sequence': sequence,
     'priority': priority,
+    'reminderMinutesBefore': reminderMinutesBefore,
     'lastModified': lastModified?.toIso8601String(),
   };
 
@@ -77,6 +82,7 @@ class Deadline {
       status: (json['status'] as String?) ?? '',
       sequence: (json['sequence'] as num?)?.toInt() ?? 0,
       priority: (json['priority'] as num?)?.toInt() ?? 1,
+      reminderMinutesBefore: (json['reminderMinutesBefore'] as num?)?.toInt(),
       lastModified: json['lastModified'] is String
           ? DateTime.tryParse(json['lastModified'] as String)
           : null,

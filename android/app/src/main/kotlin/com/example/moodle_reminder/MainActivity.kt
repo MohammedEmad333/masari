@@ -42,7 +42,9 @@ class MainActivity : FlutterActivity() {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, link)
                         }
-                        startActivity(Intent.createChooser(send, "Share course"))
+                        val language = call.argument<String>("language") ?: "en"
+                        val chooserTitle = if (language == "ar") "مشاركة المساق" else "Share course"
+                        startActivity(Intent.createChooser(send, chooserTitle))
                         result.success(null)
                     }
                 }

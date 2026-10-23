@@ -8,14 +8,11 @@ class ReminderNotificationCopy {
   const ReminderNotificationCopy._();
 
   static String upcomingTitle(Deadline deadline, {required bool arabic}) =>
-      arabic
-          ? 'اقترب موعد: ${deadline.title}'
-          : 'Due soon: ${deadline.title}';
+      arabic ? 'اقترب موعد: ${deadline.title}' : 'Due soon: ${deadline.title}';
 
-  static String dueTitle(Deadline deadline, {required bool arabic}) =>
-      arabic
-          ? 'حان موعد: ${deadline.title}'
-          : 'Deadline now: ${deadline.title}';
+  static String dueTitle(Deadline deadline, {required bool arabic}) => arabic
+      ? 'حان موعد: ${deadline.title}'
+      : 'Deadline now: ${deadline.title}';
 
   static String dueNow({required bool arabic}) =>
       arabic ? 'حان وقت الاستحقاق' : 'Due now';

@@ -290,7 +290,11 @@ class AppController extends ChangeNotifier {
 
   Future<void> _publishWidget() async {
     try {
-      await HomeWidgetBridge.publish(allDeadlines, completedIds);
+      await HomeWidgetBridge.publish(
+        allDeadlines,
+        completedIds,
+        languageCode: locale.languageCode,
+      );
     } catch (_) {
       // Platform widgets are optional (for example on iOS and in tests).
     }

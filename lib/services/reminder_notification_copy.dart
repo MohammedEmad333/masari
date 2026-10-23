@@ -43,8 +43,12 @@ class ReminderNotificationCopy {
       'hour' => ['ساعة', 'ساعتان', 'ساعات'],
       _ => ['يوم', 'يومان', 'أيام'],
     };
-    if (amount == 1) return '${names[0]} واحدة متبقية';
-    if (amount == 2) return '${names[1]} متبقيان';
+    if (amount == 1) {
+      return unit == 'day' ? 'يوم واحد متبقٍ' : '${names[0]} واحدة متبقية';
+    }
+    if (amount == 2) {
+      return unit == 'day' ? 'يومان متبقيان' : '${names[1]} متبقيتان';
+    }
     if (amount >= 3 && amount <= 10) {
       return '$amount ${names[2]} متبقية';
     }

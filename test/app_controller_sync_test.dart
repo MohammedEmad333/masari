@@ -31,37 +31,41 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('reminder failure never marks successful calendar sync as failed', () async {
-    const url = 'https://moodle.example/calendar.ics';
-    const calendar = 'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:quiz-1\n'
-        'SUMMARY:Quiz\nDTSTART:20300504T100000Z\n'
-        'END:VEVENT\nEND:VCALENDAR';
-    final client = MockClient((request) async {
-      return http.Response(calendar, 200);
-    });
-    final repository = CalendarRepository(client: client);
-    await repository.sync(calendarUrl: url);
-
-    var attempts = 0;
-    final controller = AppController(
-      repository,
-      reminderScheduler: () async {
-        attempts++;
-        throw StateError('Android notifications unavailable');
-      },
-    );
-    controller.calendarConnected = true;
-
-    expect(await controller.sync(), isTrue);
-    expect(controller.error, isNull);
-    expect(controller.reminderSchedulingFailed, isTrue);
-    expect(controller.deadlines.single.uid, 'quiz-1');
-    expect(controller.lastSync, isNotNull);
-    expect(attempts, 1);
-
-    controller.dispose();
-    client.close();
-  });
+  test(
+    'reminder failure never marks successful calendar sync as failed',
+    () async {
+      const url = 'https://moodle.example/calendar.ics';
+      const calendar =
+          'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:quiz-1\n'
+            'SUMMARY:Quiz\nDTSTART:20300504T100000Z\n'
+            'END:VEVENT\nEND:VCALENDAR';
+      final client = MockClient((request) async {
+        return http.Response(calendar, 200);
+      });
+      final repository = CalendarRepository(client: client);
+      await repository.sync(calendarUrl: url);
+  
+      var attempts = 0;
+      final controller = AppController(
+        repository,
+        reminderScheduler: () async {
+          attempts++;
+          throw StateError('Android notifications unavailable');
+        },
+      );
+      controller.calendarConnected = true;
+  
+      expect(await controller.sync(), isTrue);
+      expect(controller.error, isNull);
+      expect(controller.reminderSchedulingFailed, isTrue);
+      expect(controller.deadlines.single.uid, 'quiz-1');
+      expect(controller.lastSync, isNotNull);
+      expect(attempts, 1);
+  
+      controller.dispose();
+      client.close();
+    },
+  );
 
   test('failed calendar download still reports actual HTTP error', () async {
     const url = 'https://moodle.example/calendar.ics';

@@ -250,7 +250,7 @@ class NotificationService {
       id: 2147483000,
       title: ReminderNotificationCopy.getTestTitle(arabic: arabic),
       body: ReminderNotificationCopy.getTestBody(arabic: arabic),
-      notificationDetails: _details,
+      notificationDetails: _detailsFor(arabic: arabic),
     );
   }
 }

@@ -924,7 +924,7 @@ class _HomeShellState extends State<HomeShell> {
 
   Future<void> _testNotification() async {
     try {
-      await NotificationService.showTest();
+      await NotificationService.showTest(arabic: _ar);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

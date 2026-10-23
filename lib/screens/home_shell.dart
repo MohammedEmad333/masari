@@ -704,21 +704,63 @@ class _HomeShellState extends State<HomeShell> {
   Future<void> _repairReminders() async {
     final restored = await widget.controller.repairReminders();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          restored
-              ? t(
-                  'Reminders rescheduled. Check Android battery restrictions if alerts remain delayed.',
-                  'أُعيدت جدولة التنبيهات. افحص قيود البطارية إذا بقيت متأخرة.',
-                )
-              : t(
-                  'Enable notifications in Android settings and try again.',
-                  'اسمح بإشعارات مساري من إعدادات Android ثم حاول مجددًا.',
-                ),
+    final message = restored
+        ? t(
+            'Reminders rescheduled. Check Android battery restrictions if alerts remain delayed.',
+            'أُعيدت جدولة التنبيهات. افحص قيود البطارية إذا بقيت متأخرة.',
+          )
+        : switch (widget.controller.reminderRepairFailure) {
+            ReminderRepairFailure.permissionDenied => t(
+              'Android notification permission is disabled.',
+              'صلاحية إشعارات مساري غير مفعّلة في Android.',
+            ),
+            ReminderRepairFailure.initializationFailed => t(
+              'Could not initialize reminders. Check your device timezone and notification settings.',
+              'تعذّرت تهيئة التنبيهات. تحقق من المنطقة الزمنية وإعدادات الإشعارات.',
+            ),
+            ReminderRepairFailure.permissionCheckFailed => t(
+              'Could not verify Android notification permission.',
+              'تعذّر التحقق من صلاحية إشعارات Android.',
+            ),
+            ReminderRepairFailure.schedulingFailed => t(
+              'Notifications are allowed, but Android could not schedule the reminders. Check alarm and battery restrictions.',
+              'الإشعارات مسموحة، لكن Android لم يتمكن من جدولة التنبيهات. تحقق من قيود المنبّهات والبطارية.',
+            ),
+            null => t('Could not repair reminders.', 'تعذّر إصلاح التنبيهات.'),
+          };
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _testNotification() async {
+    try {
+      await NotificationService.showTest();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'Test notification sent. Check your notification shade.',
+              'تم إرسال إشعار تجريبي. تحقق من لوحة الإشعارات.',
+            ),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      debugPrint('Test notification failed: ${error.runtimeType}');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'Could not send the test notification. Check alarm and notification setup.',
+              'تعذّر إرسال الإشعار التجريبي. تحقق من إعدادات الإشعارات والمنبّهات.',
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _editCalendarUrl() async {
@@ -893,7 +935,7 @@ class _HomeShellState extends State<HomeShell> {
               ListTile(
                 leading: const Icon(Icons.notifications_active_outlined),
                 title: Text(t('Test notification', 'اختبار الإشعار')),
-                onTap: NotificationService.showTest,
+                onTap: _testNotification,
               ),
               const Divider(height: 1),
               ListTile(

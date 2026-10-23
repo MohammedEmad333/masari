@@ -9,12 +9,28 @@ import 'services/moodle_api_credentials_store.dart';
 import 'services/moodle_api_client.dart';
 import 'services/deadline_collection.dart';
 
+enum ReminderRepairFailure {
+  permissionDenied,
+  initializationFailed,
+  permissionCheckFailed,
+  schedulingFailed,
+}
+
 class AppController extends ChangeNotifier {
-  AppController(this._repository, {Future<void> Function()? reminderScheduler})
-    : _reminderScheduler = reminderScheduler;
+  AppController(
+    this._repository, {
+    Future<void> Function()? reminderScheduler,
+    Future<void> Function()? notificationInitializer,
+    Future<bool?> Function()? notificationPermissionChecker,
+  }) : _reminderScheduler = reminderScheduler,
+       _notificationInitializer = notificationInitializer,
+       _notificationPermissionChecker = notificationPermissionChecker;
 
   final CalendarRepository _repository;
   final Future<void> Function()? _reminderScheduler;
+  final Future<void> Function()? _notificationInitializer;
+  final Future<bool?> Function()? _notificationPermissionChecker;
+  ReminderRepairFailure? reminderRepairFailure;
   String? get syncWarning => _repository.lastSyncWarning;
   bool reminderSchedulingFailed = false;
 
@@ -433,14 +449,46 @@ class AppController extends ChangeNotifier {
   /// Called explicitly from Settings when Android permissions or timezone
   /// settings changed. Never clears the user's saved tasks.
   Future<bool> repairReminders() async {
+    reminderRepairFailure = null;
     try {
-      await NotificationService.init(requestPermissions: true);
-      final enabled = await NotificationService.notificationsEnabled();
-      if (enabled == false) return false;
+      if (_notificationInitializer == null) {
+        await NotificationService.init(requestPermissions: true);
+      } else {
+        await _notificationInitializer();
+      }
+    } catch (error) {
+      reminderRepairFailure = ReminderRepairFailure.initializationFailed;
+      debugPrint('Reminder initialization failed: ${error.runtimeType}');
+      return false;
+    }
+
+    bool? enabled;
+    try {
+      if (_notificationPermissionChecker == null) {
+        enabled = await NotificationService.notificationsEnabled();
+      } else {
+        enabled = await _notificationPermissionChecker();
+      }
+    } catch (error) {
+      reminderRepairFailure = ReminderRepairFailure.permissionCheckFailed;
+      debugPrint('Reminder permission check failed: ${error.runtimeType}');
+      return false;
+    }
+    if (enabled == false) {
+      reminderRepairFailure = ReminderRepairFailure.permissionDenied;
+      return false;
+    }
+
+    try {
       await _rescheduleNotifications();
+      reminderSchedulingFailed = false;
+      notifyListeners();
       return true;
     } catch (error) {
-      debugPrint('Could not restore deadline reminders: $error');
+      reminderSchedulingFailed = true;
+      reminderRepairFailure = ReminderRepairFailure.schedulingFailed;
+      debugPrint('Reminder scheduling failed: ${error.runtimeType}');
+      notifyListeners();
       return false;
     }
   }

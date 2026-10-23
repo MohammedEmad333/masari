@@ -38,6 +38,7 @@ void callbackDispatcher() {
         reminderOffsetsHours: offsets,
         completedIds: completed,
         taskReminderOffsets: perTask,
+        arabic: (await repository.loadLocale()) == 'ar',
       );
       return true;
     } catch (_) {

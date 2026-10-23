@@ -23,11 +23,23 @@ class NotificationText {
     if (hours % 24 == 0) {
       final days = hours ~/ 24;
       return arabic
-          ? 'تبقّى $days يوم'
+          ? (days == 1
+                ? 'تبقّى يوم واحد'
+                : days == 2
+                ? 'تبقّى يومان'
+                : days <= 10
+                ? 'تبقّى $days أيام'
+                : 'تبقّى $days يومًا')
           : '$days ${days == 1 ? 'day' : 'days'} remaining';
     }
     return arabic
-        ? 'تبقّى $hours ساعة'
+        ? (hours == 1
+              ? 'تبقّت ساعة واحدة'
+              : hours == 2
+              ? 'تبقّت ساعتان'
+              : hours <= 10
+              ? 'تبقّى $hours ساعات'
+              : 'تبقّى $hours ساعة')
         : '$hours ${hours == 1 ? 'hour' : 'hours'} remaining';
   }
 
@@ -36,7 +48,13 @@ class NotificationText {
       return remainingHours(minutes ~/ 60, arabic: arabic);
     }
     return arabic
-        ? 'تبقّى $minutes دقيقة'
+        ? (minutes == 1
+              ? 'تبقّت دقيقة واحدة'
+              : minutes == 2
+              ? 'تبقّت دقيقتان'
+              : minutes <= 10
+              ? 'تبقّى $minutes دقائق'
+              : 'تبقّى $minutes دقيقة')
         : '$minutes ${minutes == 1 ? 'minute' : 'minutes'} remaining';
   }
 

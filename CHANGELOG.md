@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.7
+
+- Fix the misleading permission-denied message shown when Android reminders fail to initialize or schedule despite notification access being enabled.
+- Skip redundant notification permission requests and optional exact-alarm prompts, while retaining inexact scheduling fallback when special alarm access is unavailable.
+- Display separate permission, initialization, and scheduling errors; handle test notification failures in the UI.
+- Add regression tests for each repair outcome.
+
 ## 2.2.6
 
 - Correct false Moodle synchronization failures when Android notification scheduling fails after the calendar has already downloaded and been saved.

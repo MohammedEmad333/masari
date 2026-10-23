@@ -34,7 +34,7 @@ class SyncFeedback {
       return 'تعذّر تنزيل تقويم Moodle. تحقّق من الاتصال بالإنترنت.';
     }
     if (raw.startsWith('Moodle returned HTTP ')) {
-      final status = RegExp(r'HTTP (\\d{3})').firstMatch(raw)?.group(1);
+      final status = RegExp(r'HTTP (\d{3})').firstMatch(raw)?.group(1);
       return status == null
           ? 'أرجع خادم Moodle خطأً أثناء تنزيل التقويم.'
           : 'أرجع خادم Moodle رمز الخطأ HTTP $status. تحقّق من رابط التقويم.';
@@ -51,7 +51,7 @@ class SyncFeedback {
         'الرابط لم يُرجع ملف تقويم iCalendar صالحًا.',
       'Could not connect the first Moodle calendar.' =>
         'تعذّر الاتصال بأول تقويم Moodle. تحقّق من الرابط.',
-      _ => RegExp(r'^HTTP \\d{3}
+      _ => RegExp(r'^HTTP \d{3}
     };
   }
 

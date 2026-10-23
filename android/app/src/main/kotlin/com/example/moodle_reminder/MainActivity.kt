@@ -54,7 +54,8 @@ class MainActivity : FlutterActivity() {
                 if (call.method == "updateDeadline") {
                     val title = call.argument<String>("title") ?: ""
                     val due = call.argument<Number>("due")?.toLong() ?: 0L
-                    MoodleWidgetProvider.updateDeadline(applicationContext, title, due)
+                    val language = call.argument<String>("language") ?: "en"
+                    MoodleWidgetProvider.updateDeadline(applicationContext, title, due, language)
                     result.success(null)
                 } else {
                     result.notImplemented()

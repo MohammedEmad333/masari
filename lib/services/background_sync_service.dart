@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'calendar_repository.dart';
@@ -32,12 +33,15 @@ void callbackDispatcher() {
       final offsets = await repository.loadReminderOffsets();
       final completed = await repository.loadCompletedIds();
       final perTask = await repository.loadTaskReminderOffsets();
+      final arabic = await repository.loadLocale() == 'ar';
+      if (arabic) await initializeDateFormatting('ar');
       await NotificationService.init(requestPermissions: false);
       await NotificationService.scheduleAll(
         deadlines,
         reminderOffsetsHours: offsets,
         completedIds: completed,
         taskReminderOffsets: perTask,
+        arabic: arabic,
       );
       return true;
     } catch (_) {

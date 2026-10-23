@@ -381,7 +381,13 @@ class AppController extends ChangeNotifier {
     await _repository.saveManualDeadlines(manualDeadlines);
     await _repository.saveCompletedIds(completedIds);
     await _repository.saveTaskReminderOffsets(taskReminderOffsets);
-    await _rescheduleNotifications();
+    try {
+      await _rescheduleNotifications();
+      reminderSchedulingFailed = false;
+    } catch (_) {
+      reminderSchedulingFailed = true;
+      debugPrint('Manual task deleted; reminder rescheduling needs repair.');
+    }
     await _publishWidget();
     notifyListeners();
   }

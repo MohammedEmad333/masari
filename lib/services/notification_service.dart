@@ -98,9 +98,7 @@ class NotificationService {
       final minutesBefore = deadline.reminderMinutesBefore;
       if (minutesBefore == -1) continue;
       if (minutesBefore != null) {
-        final fireAt = deadline.due.subtract(
-          Duration(minutes: minutesBefore),
-        );
+        final fireAt = deadline.due.subtract(Duration(minutes: minutesBefore));
         if (minutesBefore > 0 && fireAt.isAfter(now)) {
           pending.add(
             _ScheduledReminder(

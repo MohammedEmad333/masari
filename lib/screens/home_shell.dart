@@ -726,10 +726,7 @@ class _HomeShellState extends State<HomeShell> {
               'Notifications are allowed, but Android could not schedule the reminders. Check alarm and battery restrictions.',
               'الإشعارات مسموحة، لكن Android لم يتمكن من جدولة التنبيهات. تحقق من قيود المنبّهات والبطارية.',
             ),
-            null => t(
-              'Could not repair reminders.',
-              'تعذّر إصلاح التنبيهات.',
-            ),
+            null => t('Could not repair reminders.', 'تعذّر إصلاح التنبيهات.'),
           };
     ScaffoldMessenger.of(
       context,

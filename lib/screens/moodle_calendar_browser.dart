@@ -94,7 +94,10 @@ class _MoodleCalendarBrowserState extends State<MoodleCalendarBrowser> {
             if (!mounted || error.isForMainFrame != true) return;
             setState(() {
               _loading = false;
-              _error = error.description;
+              _error = t(
+                'Unable to load the Moodle page. Check the connection and try again.',
+                'تعذّر تحميل صفحة Moodle. تحقّق من الاتصال ثم حاول مجددًا.',
+              );
             });
           },
         ),

@@ -1,8 +1,9 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import '../models/deadline.dart';
-import 'ics_parser.dart';
+import 'notification_text.dart';
 import 'reminder_policy.dart';
 import 'reminder_schedule_time.dart';
 
@@ -13,11 +14,11 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   static bool _initialized = false;
 
-  static const _details = NotificationDetails(
+  static NotificationDetails _details() => const NotificationDetails(
     android: AndroidNotificationDetails(
-      'deadlines_v2',
-      'Deadline reminders',
-      channelDescription: 'Upcoming Moodle assignment, quiz and exam reminders',
+      'masari_reminders_v1',
+      'Masari • مساري',
+      channelDescription: 'تذكيرات الدراسة • Study reminders',
       importance: Importance.high,
       priority: Priority.high,
       category: AndroidNotificationCategory.reminder,
@@ -69,7 +70,9 @@ class NotificationService {
     required List<int> reminderOffsetsHours,
     Set<String> completedIds = const {},
     Map<String, List<int>> taskReminderOffsets = const {},
+    bool arabic = false,
   }) async {
+    await initializeDateFormatting('ar');
     await init(requestPermissions: false);
 
     final android = _plugin
@@ -103,8 +106,12 @@ class NotificationService {
           pending.add(
             _ScheduledReminder(
               id: _stableId('${deadline.stableKey}|before-min|$minutesBefore'),
-              title: 'Due soon: ${deadline.title}',
-              body: _body(deadline, _minuteOffsetLabel(minutesBefore)),
+              title: NotificationText.dueSoon(deadline, arabic: arabic),
+              body: NotificationText.body(
+                deadline,
+                NotificationText.remainingMinutes(minutesBefore, arabic: arabic),
+                arabic: arabic,
+              ),
               when: fireAt,
               payload: deadline.stableKey,
             ),
@@ -121,8 +128,12 @@ class NotificationService {
           pending.add(
             _ScheduledReminder(
               id: _stableId('${deadline.stableKey}|before|$hours'),
-              title: 'Due soon: ${deadline.title}',
-              body: _body(deadline, _offsetLabel(hours)),
+              title: NotificationText.dueSoon(deadline, arabic: arabic),
+              body: NotificationText.body(
+                deadline,
+                NotificationText.remainingHours(hours, arabic: arabic),
+                arabic: arabic,
+              ),
               when: fireAt,
               payload: deadline.stableKey,
             ),
@@ -133,8 +144,12 @@ class NotificationService {
         pending.add(
           _ScheduledReminder(
             id: _stableId('${deadline.stableKey}|due'),
-            title: 'Deadline now: ${deadline.title}',
-            body: _body(deadline, 'Due now'),
+            title: NotificationText.dueNow(deadline, arabic: arabic),
+            body: NotificationText.body(
+              deadline,
+              arabic ? 'الموعد الآن' : 'Due now',
+              arabic: arabic,
+            ),
             when: deadline.due,
             payload: deadline.stableKey,
           ),
@@ -172,7 +187,7 @@ class NotificationService {
       title: title,
       body: body,
       scheduledDate: reminderScheduledInstant(when),
-      notificationDetails: _details,
+      notificationDetails: _details(),
       payload: payload,
       androidScheduleMode: mode,
     );
@@ -182,24 +197,6 @@ class NotificationService {
       if (scheduleMode == AndroidScheduleMode.inexactAllowWhileIdle) rethrow;
       await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
     }
-  }
-
-  static String _body(Deadline deadline, String prefix) {
-    final course = deadline.course.isEmpty ? '' : '${deadline.course} • ';
-    return '$prefix • $course${formatDue(deadline.due)}';
-  }
-
-  static String _offsetLabel(int hours) {
-    if (hours % 24 == 0) {
-      final days = hours ~/ 24;
-      return '$days ${days == 1 ? 'day' : 'days'} remaining';
-    }
-    return '$hours ${hours == 1 ? 'hour' : 'hours'} remaining';
-  }
-
-  static String _minuteOffsetLabel(int minutes) {
-    if (minutes % 60 == 0) return _offsetLabel(minutes ~/ 60);
-    return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} remaining';
   }
 
   static int _stableId(String value) {
@@ -213,16 +210,17 @@ class NotificationService {
     return hash;
   }
 
-  static Future<void> showTest() async {
+  static Future<void> showTest({bool arabic = false}) async {
+    await initializeDateFormatting('ar');
     await init(requestPermissions: true);
     if (await notificationsEnabled() == false) {
       throw StateError('Android notifications are disabled');
     }
     await _plugin.show(
       id: 2147483000,
-      title: 'Notifications are ready ✅',
-      body: 'Moodle Reminder can alert you before upcoming deadlines.',
-      notificationDetails: _details,
+      title: NotificationText.testTitle(arabic: arabic),
+      body: NotificationText.testBody(arabic: arabic),
+      notificationDetails: _details(),
     );
   }
 }

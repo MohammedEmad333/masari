@@ -317,26 +317,47 @@ class CalendarRepository {
         'Moodle returned HTTP ${response.statusCode}. Check the calendar URL.',
       );
     }
-    // Some Moodle installations return a UTF-8 BOM before the ICS header.
-    // Strip only the BOM and outer whitespace, never relax the requirement
-    // that the response contains a complete calendar.
-    final responseText = response.body.replaceFirst('\uFEFF', '');
-    final calendarBody = responseText.trim();
+    // The iCalendar standard uses UTF-8. Response.body may instead default
+    // to Latin-1 when Moodle omits a charset from its text/* content type.
+    final calendarBody = utf8
+        .decode(response.bodyBytes, allowMalformed: true)
+        .replaceFirst('\uFEFF', '')
+        .trim();
     if (!calendarBody.startsWith('BEGIN:VCALENDAR') ||
         !calendarBody.endsWith('END:VCALENDAR')) {
-      final looksLikeLogin = RegExp(
-        r'<(?:!doctype\\s+html|html|form)\\b',
-        caseSensitive: false,
-      ).hasMatch(calendarBody);
-      if (looksLikeLogin) {
+      final lower = calendarBody.toLowerCase();
+      // Older Moodle sites return HTTP 200 even for authentication failures.
+      // Do not expose the server's response body or private export URL.
+      if (lower.contains('invalid authentication') ||
+          lower.contains('invalid token') ||
+          lower.contains('invalid authtoken')) {
         throw const CalendarSyncException(
-          'Moodle returned an HTML page instead of an iCalendar feed. '
-          'Use the private calendar subscription URL, not a login or export page.',
+          'Moodle rejected the private calendar authorization. '
+          'Generate a fresh subscription URL from Moodle.',
+        );
+      }
+      if (lower == 'no export') {
+        throw const CalendarSyncException(
+          'Moodle calendar export is disabled by the university server.',
+        );
+      }
+      if (RegExp(
+        r'<!doctype\s+html\b|<html\b|<form\b',
+        caseSensitive: false,
+      ).hasMatch(calendarBody)) {
+        throw const CalendarSyncException(
+          'Moodle returned a web page instead of iCalendar data. '
+          'The server may require sign-in or block app downloads.',
+        );
+      }
+      if (calendarBody.isEmpty) {
+        throw const CalendarSyncException(
+          'Moodle returned an empty calendar response (HTTP 200).',
         );
       }
       throw const CalendarSyncException(
         'Moodle returned HTTP 200 but no iCalendar data. '
-        'The export may require browser login.',
+        'The server returned an unrecognized response.',
       );
     }
     return IcsParser.parse(calendarBody).toList();

@@ -31,6 +31,9 @@ void main() {
 
     expect(service, contains('reminderScheduledInstant(when)'));
     expect(service, isNot(contains('FlutterTimezone.getLocalTimezone()')));
-    expect(service, contains('static Future<void> showTest({bool arabic = false})'));
+    expect(
+      service,
+      contains('static Future<void> showTest({bool arabic = false})'),
+    );
   });
 }

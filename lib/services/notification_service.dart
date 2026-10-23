@@ -109,7 +109,10 @@ class NotificationService {
               title: NotificationText.dueSoon(deadline, arabic: arabic),
               body: NotificationText.body(
                 deadline,
-                NotificationText.remainingMinutes(minutesBefore, arabic: arabic),
+                NotificationText.remainingMinutes(
+                  minutesBefore,
+                  arabic: arabic,
+                ),
                 arabic: arabic,
               ),
               when: fireAt,

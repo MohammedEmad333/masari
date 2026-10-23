@@ -52,6 +52,12 @@ jobs:
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
+      - name: Show Dart formatter differences
+        if: failure()
+        run: |
+          dart format lib/app_controller.dart lib/models/deadline.dart lib/screens/home_shell.dart lib/services/manual_task_form.dart lib/services/notification_service.dart lib/services/reminder_policy.dart test/manual_task_reminders_test.dart
+          git diff --no-ext-diff -- lib/app_controller.dart lib/models/deadline.dart lib/screens/home_shell.dart lib/services/manual_task_form.dart lib/services/notification_service.dart lib/services/reminder_policy.dart test/manual_task_reminders_test.dart
+
       - name: Analyze
         run: flutter analyze
 

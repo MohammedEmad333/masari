@@ -51,25 +51,7 @@ class SyncFeedback {
         'الرابط لم يُرجع ملف تقويم iCalendar صالحًا.',
       'Could not connect the first Moodle calendar.' =>
         'تعذّر الاتصال بأول تقويم Moodle. تحقّق من الرابط.',
-      _ => RegExp(r'^HTTP \d{3}
-    };
-  }
-
-  static String offlineHint({
-    required bool hasSavedDeadlines,
-    required bool arabic,
-  }) {
-    if (hasSavedDeadlines) {
-      return arabic
-          ? 'تبقى المواعيد المحفوظة متاحة دون إنترنت.'
-          : 'Saved deadlines remain available offline.';
-    }
-    return arabic
-        ? 'لا توجد مواعيد محفوظة على الجهاز بعد.'
-        : 'There are no deadlines saved on this device yet.';
-  }
-}
-).hasMatch(raw.trim())
+      _ => RegExp(r'^HTTP \d{3}$').hasMatch(raw.trim())
           ? raw.trim()
           : 'تعذّر إكمال العملية. تحقّق من الاتصال ثم حاول مجددًا.',
     };

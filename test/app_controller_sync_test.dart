@@ -37,14 +37,13 @@ void main() {
       const url = 'https://moodle.example/calendar.ics';
       const calendar =
           'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:quiz-1\n'
-            'SUMMARY:Quiz\nDTSTART:20300504T100000Z\n'
-            'END:VEVENT\nEND:VCALENDAR';
+          'SUMMARY:Quiz\nDTSTART:20300504T100000Z\n'
+          'END:VEVENT\nEND:VCALENDAR';
       final client = MockClient((request) async {
         return http.Response(calendar, 200);
       });
       final repository = CalendarRepository(client: client);
       await repository.sync(calendarUrl: url);
-  
       var attempts = 0;
       final controller = AppController(
         repository,
@@ -54,14 +53,12 @@ void main() {
         },
       );
       controller.calendarConnected = true;
-  
       expect(await controller.sync(), isTrue);
       expect(controller.error, isNull);
       expect(controller.reminderSchedulingFailed, isTrue);
       expect(controller.deadlines.single.uid, 'quiz-1');
       expect(controller.lastSync, isNotNull);
       expect(attempts, 1);
-  
       controller.dispose();
       client.close();
     },
@@ -82,7 +79,9 @@ void main() {
     var scheduled = false;
     final controller = AppController(
       repository,
-      reminderScheduler: () async => scheduled = true,
+      reminderScheduler: () async {
+        scheduled = true;
+      },
     );
     controller.calendarConnected = true;
 

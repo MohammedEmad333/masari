@@ -447,6 +447,18 @@ class AppController extends ChangeNotifier {
         : const Locale('en');
     await _repository.saveLocale(locale.languageCode);
     notifyListeners();
+    if (allDeadlines.isNotEmpty) {
+      try {
+        await _rescheduleNotifications();
+        reminderSchedulingFailed = false;
+      } catch (_) {
+        // Language selection succeeds even when Android restricts alarms.
+        reminderSchedulingFailed = true;
+        debugPrint('Locale saved; reminders need rescheduling.');
+      }
+    }
+    await _publishWidget();
+    notifyListeners();
   }
 
   Future<void> disconnect() async {
@@ -530,6 +542,7 @@ class AppController extends ChangeNotifier {
       reminderOffsetsHours: reminderOffsets,
       completedIds: completedIds,
       taskReminderOffsets: taskReminderOffsets,
+      arabic: locale.languageCode == 'ar',
     );
   }
 

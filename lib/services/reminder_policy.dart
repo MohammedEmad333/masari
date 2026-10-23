@@ -23,15 +23,16 @@ List<DateTime> upcomingReminderTimes(
     return const [];
   }
   final minutes = deadline.reminderMinutesBefore;
-  return [
-    if (minutes != null)
-      if (minutes > 0 &&
-          deadline.due.subtract(Duration(minutes: minutes)).isAfter(now))
-        deadline.due.subtract(Duration(minutes: minutes))
-    else
-      for (final hours in offsetsForDeadline(deadline, defaults, overrides))
-        if (deadline.due.subtract(Duration(hours: hours)).isAfter(now))
-          deadline.due.subtract(Duration(hours: hours)),
-    deadline.due,
-  ];
+  final early = minutes != null
+      ? <DateTime>[
+          if (minutes > 0 &&
+              deadline.due.subtract(Duration(minutes: minutes)).isAfter(now))
+            deadline.due.subtract(Duration(minutes: minutes)),
+        ]
+      : <DateTime>[
+          for (final hours in offsetsForDeadline(deadline, defaults, overrides))
+            if (deadline.due.subtract(Duration(hours: hours)).isAfter(now))
+              deadline.due.subtract(Duration(hours: hours)),
+        ];
+  return [...early, deadline.due];
 }

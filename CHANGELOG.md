@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.5
+
+- Differentiate Moodle's HTTP 200 calendar-export authentication, disabled export, HTML and empty response failures without revealing tokens.
+- Decode ICS response bytes as UTF-8 despite incorrect server charset headers.
+- Add offline import of previously downloaded Moodle ICS files, with a clear note that manual imports do not auto-refresh.
+- Translate these calendar error messages to Arabic.
+
 ## 2.2.4
 
 - Allow primary Moodle calendar refresh to succeed when an additional feed is unavailable, while retaining previously cached deadlines and showing a partial-sync warning.

@@ -9,6 +9,21 @@ class SyncFeedback {
       return 'أرجع Moodle صفحة ويب بدل ملف التقويم. '
           'استخدم رابط الاشتراك الخاص بالتقويم وليس صفحة الدخول أو التصدير.';
     }
+    if (raw.startsWith('Moodle rejected the private calendar authorization.')) {
+      return 'رفض Moodle صلاحية رابط التقويم الخاص. أنشئ رابط اشتراك جديدًا من صفحة تصدير التقويم.';
+    }
+    if (raw.startsWith('Moodle returned a web page instead of iCalendar')) {
+      return 'أرجع Moodle صفحة ويب بدل ملف التقويم. قد يتطلب الخادم تسجيل الدخول أو يمنع تنزيلات التطبيق.';
+    }
+    if (raw.startsWith('Moodle returned HTTP 200 but no iCalendar data.')) {
+      return 'استجاب Moodle بنجاح لكنه لم يُرجع بيانات تقويم ICS. افحص رابط الاشتراك وإعدادات خادم الجامعة.';
+    }
+    if (raw.startsWith('Moodle calendar export is disabled')) {
+      return 'تصدير التقويم معطّل من خادم الجامعة.';
+    }
+    if (raw.startsWith('Moodle returned an empty calendar response')) {
+      return 'أرجع خادم Moodle استجابة فارغة بدلاً من بيانات التقويم.';
+    }
     return switch (raw.trim()) {
       'Could not sync Moodle. Check your connection and calendar URL.' =>
         'تعذّرت مزامنة Moodle. تحقّق من اتصال الإنترنت ورابط التقويم.',

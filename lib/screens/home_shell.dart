@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
+import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
 import '../services/study_insights.dart';
@@ -1296,6 +1300,46 @@ class _SetupState extends State<_Setup> {
     if (!saved && mounted) setState(() {});
   }
 
+  Future<void> _importDownloadedIcs() async {
+    try {
+      final selected = await FilePicker.pickFiles();
+      if (selected.isEmpty) return;
+      final picked = selected.first;
+      if (picked.path == null || !picked.name.toLowerCase().endsWith('.ics')) {
+        throw const FormatException('Choose an .ics calendar file.');
+      }
+      final file = File(picked.path!);
+      if (await file.length() > 2 * 1024 * 1024) {
+        throw const FormatException('Calendar file is too large.');
+      }
+      final contents = utf8
+          .decode(await file.readAsBytes(), allowMalformed: true)
+          .replaceFirst('\uFEFF', '')
+          .trim();
+      if (!contents.startsWith('BEGIN:VCALENDAR') ||
+          !contents.endsWith('END:VCALENDAR')) {
+        throw const FormatException('Not a complete iCalendar file.');
+      }
+      final deadlines = IcsParser.parse(contents);
+      if (deadlines.isEmpty) {
+        throw const FormatException('No importable deadlines found.');
+      }
+      await widget.controller.importSessionDeadlines(deadlines);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              'Invalid ICS file or no deadlines found.',
+              'ملف ICS غير صالح أو لا يحتوي على مواعيد.',
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1408,6 +1452,23 @@ class _SetupState extends State<_Setup> {
                   )
                 : const Icon(Icons.lock_open_rounded),
             label: Text(t('Connect securely', 'اتصال آمن')),
+          ),
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
+            onPressed: widget.controller.busy ? null : _importDownloadedIcs,
+            icon: const Icon(Icons.upload_file_outlined),
+            label: Text(
+              t('Import a downloaded .ics file', 'استيراد ملف ICS تم تنزيله'),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            t(
+              'Imported deadlines are stored locally and do not auto-refresh.',
+              'الاستيراد يحفظ المواعيد على جهازك، ولا يحدّثها تلقائيًا.',
+            ),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),

@@ -447,6 +447,21 @@ class AppController extends ChangeNotifier {
         : const Locale('en');
     await _repository.saveLocale(locale.languageCode);
     notifyListeners();
+    // Android stores scheduled notification copy at scheduling time.
+    // Refresh it when the user changes languages; do not undo the preference
+    // if optional platform scheduling is unavailable.
+    try {
+      if (allDeadlines.isNotEmpty) await _rescheduleNotifications();
+    } catch (_) {
+      reminderSchedulingFailed = true;
+      debugPrint('Saved language; reminders need repair.');
+      notifyListeners();
+    }
+    try {
+      await _publishWidget();
+    } catch (_) {
+      debugPrint('Saved language; home widget refresh unavailable.');
+    }
   }
 
   Future<void> disconnect() async {
@@ -530,6 +545,7 @@ class AppController extends ChangeNotifier {
       reminderOffsetsHours: reminderOffsets,
       completedIds: completedIds,
       taskReminderOffsets: taskReminderOffsets,
+      arabic: locale.languageCode == 'ar',
     );
   }
 

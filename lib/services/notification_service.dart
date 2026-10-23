@@ -56,12 +56,9 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >();
     await android?.requestNotificationsPermission();
-    // Exact alarms are optional. Denial must not prevent inexact reminders.
-    try {
-      await android?.requestExactAlarmsPermission();
-    } on PlatformException {
-      // Continue with AndroidScheduleMode.inexactAllowWhileIdle.
-    }
+    // Exact alarms are optional. Do not request the special OS access while
+    // initializing notifications: MIUI can reject that flow even when normal
+    // notifications are enabled. scheduleAll uses an inexact fallback.
     await _plugin
         .resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin

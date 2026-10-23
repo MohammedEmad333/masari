@@ -286,8 +286,8 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
               Text(course.name, textAlign: TextAlign.center),
               Text(
                 t(
-                  'Scan using any QR scanner and open the link with Moodle Reminder.',
-                  'امسح الرمز بالكاميرا وافتح الرابط باستخدام Moodle Reminder.',
+                  'Scan the QR code and open the course link in Masari.',
+                  'امسح رمز QR بالكاميرا وافتح رابط المساق في مساري.',
                 ),
               ),
             ],

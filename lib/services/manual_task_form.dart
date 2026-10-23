@@ -21,5 +21,11 @@ ManualTaskValidationError? validateManualTask(
 DateTime defaultManualTaskDue(DateTime now) {
   final later = now.add(const Duration(hours: 1));
   final roundedMinutes = ((later.minute + 4) ~/ 5) * 5;
-  return DateTime(later.year, later.month, later.day, later.hour, roundedMinutes);
+  return DateTime(
+    later.year,
+    later.month,
+    later.day,
+    later.hour,
+    roundedMinutes,
+  );
 }

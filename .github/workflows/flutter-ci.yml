@@ -52,12 +52,6 @@ jobs:
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
-      - name: Show formatter patch
-        if: failure()
-        run: |
-          dart format lib/screens/home_shell.dart
-          git diff --no-ext-diff -- lib/screens/home_shell.dart
-
       - name: Analyze
         run: flutter analyze
 

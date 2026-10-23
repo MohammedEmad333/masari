@@ -1305,8 +1305,7 @@ class _SetupState extends State<_Setup> {
       final selected = await FilePicker.pickFiles();
       if (selected.isEmpty) return;
       final picked = selected.first;
-      if (picked.path == null ||
-          !picked.name.toLowerCase().endsWith('.ics')) {
+      if (picked.path == null || !picked.name.toLowerCase().endsWith('.ics')) {
         throw const FormatException('Choose an .ics calendar file.');
       }
       final file = File(picked.path!);
@@ -1459,10 +1458,7 @@ class _SetupState extends State<_Setup> {
             onPressed: widget.controller.busy ? null : _importDownloadedIcs,
             icon: const Icon(Icons.upload_file_outlined),
             label: Text(
-              t(
-                'Import a downloaded .ics file',
-                'استيراد ملف ICS تم تنزيله',
-              ),
+              t('Import a downloaded .ics file', 'استيراد ملف ICS تم تنزيله'),
             ),
           ),
           const SizedBox(height: 6),

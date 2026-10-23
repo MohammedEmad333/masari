@@ -24,6 +24,17 @@ class SyncFeedback {
     if (raw.startsWith('Moodle returned an empty calendar response')) {
       return 'أرجع خادم Moodle استجابة فارغة بدلاً من بيانات التقويم.';
     }
+    // Standalone HTTP status codes are language-neutral diagnostics.
+    final trimmed = raw.trim();
+    if (trimmed.startsWith('HTTP ') && trimmed.length == 8) {
+      return trimmed;
+    }
+    if (raw.startsWith('Moodle returned HTTP ')) {
+      final status = RegExp(r'HTTP ([0-9]{3})').firstMatch(raw)?.group(1);
+      return status == null
+          ? 'تعذّر تنزيل التقويم من خادم Moodle.'
+          : 'تعذّر تنزيل التقويم من خادم Moodle (HTTP $status).';
+    }
     return switch (raw.trim()) {
       'Could not sync Moodle. Check your connection and calendar URL.' =>
         'تعذّرت مزامنة Moodle. تحقّق من اتصال الإنترنت ورابط التقويم.',
@@ -34,7 +45,14 @@ class SyncFeedback {
         'الرابط لم يُرجع ملف تقويم iCalendar صالحًا.',
       'Could not connect the first Moodle calendar.' =>
         'تعذّر الاتصال بأول تقويم Moodle. تحقّق من الرابط.',
-      _ => raw,
+      'Moodle calendar download timed out. Please retry.' =>
+        'انتهت مهلة تحميل تقويم Moodle. حاول مجددًا.',
+      'Could not reach the Moodle server. Check connectivity or DNS.' =>
+        'تعذّر الوصول لخادم Moodle. تحقق من الإنترنت وإعدادات DNS.',
+      'Could not download the Moodle calendar. Check your connection.' =>
+        'تعذّر تنزيل تقويم Moodle. تحقق من اتصال الإنترنت.',
+      'Enter a valid Moodle calendar URL.' => 'أدخل رابط تقويم Moodle صالحًا.',
+      _ => 'تعذّرت مزامنة تقويم Moodle. تحقق من الرابط والاتصال بالإنترنت.',
     };
   }
 

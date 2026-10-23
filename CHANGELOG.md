@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.10
+
+- Localize immediate and scheduled Masari reminders, including test messages, due-date timestamps, and singular/plural minute/hour/day labels for Arabic and English.
+- Preserve imported task and course names exactly as provided by students and Moodle.
+- Propagate saved language to background Moodle notifications, re-schedule future alerts when switching languages, and display widget summaries according to Masari's selected language.
+- Localize Android's course sharing chooser, replace raw browser connectivity errors with translated feedback, and complete Moodle calendar network error translations.
+- Add automated regression tests for notifications, saved locale changes, native widget language propagation, and browser error coverage.
+
 ## 2.2.9
 
 - Replace the manual task dialog with independent date and time pickers, optional notes, priority, and clear form validation.

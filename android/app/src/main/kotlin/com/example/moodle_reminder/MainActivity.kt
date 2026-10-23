@@ -42,7 +42,9 @@ class MainActivity : FlutterActivity() {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_TEXT, link)
                         }
-                        startActivity(Intent.createChooser(send, "Share course"))
+                        val language = call.argument<String>("language")
+                        val chooserTitle = if (language == "ar") "مشاركة المساق" else "Share course"
+                        startActivity(Intent.createChooser(send, chooserTitle))
                         result.success(null)
                     }
                 }
@@ -54,7 +56,8 @@ class MainActivity : FlutterActivity() {
                 if (call.method == "updateDeadline") {
                     val title = call.argument<String>("title") ?: ""
                     val due = call.argument<Number>("due")?.toLong() ?: 0L
-                    MoodleWidgetProvider.updateDeadline(applicationContext, title, due)
+                    val language = call.argument<String>("language") ?: "en"
+                    MoodleWidgetProvider.updateDeadline(applicationContext, title, due, language)
                     result.success(null)
                 } else {
                     result.notImplemented()

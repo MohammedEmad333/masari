@@ -34,6 +34,6 @@ void main() {
 
   test('next Masari release increments its Android version code', () {
     final yaml = File('pubspec.yaml').readAsStringSync();
-    expect(yaml, contains('version: 2.2.9+13'));
+    expect(yaml, contains('version: 2.2.10+14'));
   });
 }

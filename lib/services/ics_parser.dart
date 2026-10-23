@@ -207,5 +207,7 @@ class IcsParser {
   }
 }
 
-String formatDue(DateTime value) =>
-    DateFormat('EEE, MMM d • h:mm a').format(value);
+String formatDue(DateTime value, {bool arabic = false}) => DateFormat(
+  arabic ? 'EEE، d MMM • h:mm a' : 'EEE, MMM d • h:mm a',
+  arabic ? 'ar' : 'en',
+).format(value);

@@ -75,7 +75,10 @@ class _MoodleSessionPilotScreenState extends State<MoodleSessionPilotScreen> {
             if (error.isForMainFrame != true || !mounted) return;
             setState(() {
               _busy = false;
-              _error = error.description;
+              _error = t(
+                'Could not load the Moodle page. Check your connection.',
+                'تعذّر تحميل صفحة Moodle. تحقق من اتصال الإنترنت.',
+              );
             });
           },
         ),

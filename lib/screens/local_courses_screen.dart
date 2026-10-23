@@ -255,7 +255,10 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
       await Clipboard.setData(ClipboardData(text: url));
       await const MethodChannel(
         'moodle_reminder/course_share',
-      ).invokeMethod<void>('shareLink', {'url': url});
+      ).invokeMethod<void>('shareLink', {
+        'url': url,
+        'language': widget.arabic ? 'ar' : 'en',
+      });
     } catch (_) {
       _error();
     }
@@ -286,8 +289,8 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
               Text(course.name, textAlign: TextAlign.center),
               Text(
                 t(
-                  'Scan using any QR scanner and open the link with Moodle Reminder.',
-                  'امسح الرمز بالكاميرا وافتح الرابط باستخدام Moodle Reminder.',
+                  'Scan this QR code and open the link with Masari.',
+                  'امسح رمز QR وافتح الرابط باستخدام مساري.',
                 ),
               ),
             ],

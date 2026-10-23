@@ -23,12 +23,14 @@ class HomeWidgetBridge {
 
   static Future<void> publish(
     Iterable<Deadline> deadlines,
-    Set<String> completedIds,
-  ) async {
+    Set<String> completedIds, {
+    String languageCode = 'en',
+  }) async {
     final next = nextDeadline(deadlines, completedIds, DateTime.now());
     await channel.invokeMethod<void>('updateDeadline', {
       'title': next?.title ?? '',
       'due': next?.due.millisecondsSinceEpoch ?? 0,
+      'language': languageCode == 'ar' ? 'ar' : 'en',
     });
   }
 }

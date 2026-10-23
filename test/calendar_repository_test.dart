@@ -150,7 +150,7 @@ void main() {
     final repository = CalendarRepository(client: client);
     await expectLater(
       repository.sync(
-        calendarUrl: 'https://moodle.example/calendar/export_execute.php?userid=1&authtoken=secret',
+        calendarUrl: 'https://moodle.example/calendar.ics',
       ),
       throwsA(
         isA<CalendarSyncException>().having(
@@ -163,7 +163,7 @@ void main() {
     client.close();
   });
 
-  test('calendar response uses UTF-8 even with text/plain content type', () async {
+  test('calendar response decodes UTF-8', () async {
     final bytes = utf8.encode(
       '\uFEFFBEGIN:VCALENDAR\\nBEGIN:VEVENT\\nUID:arabic-1\\n'
       'SUMMARY:واجب جامعي\\nDTSTART:20300504T100000Z\\n'
@@ -185,7 +185,9 @@ void main() {
   });
 
   test('Moodle disabled calendar export reports specific error', () async {
-    final client = MockClient((request) async => http.Response('no export', 200));
+    final client = MockClient((request) async {
+      return http.Response('no export', 200);
+    });
     final repository = CalendarRepository(client: client);
     await expectLater(
       repository.sync(calendarUrl: 'https://moodle.example/calendar.ics'),

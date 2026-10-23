@@ -24,6 +24,49 @@ class SyncFeedback {
     if (raw.startsWith('Moodle returned an empty calendar response')) {
       return 'أرجع خادم Moodle استجابة فارغة بدلاً من بيانات التقويم.';
     }
+    // HTTP error codes are language-neutral diagnostics; keep them visible.
+    if (RegExp(r'^HTTP \\d{3}
+      final status = RegExp(r'HTTP (\\d{3})').firstMatch(raw)?.group(1);
+      return status == null
+          ? 'تعذّر تنزيل التقويم من خادم Moodle.'
+          : 'تعذّر تنزيل التقويم من خادم Moodle (HTTP $status).';
+    }
+    return switch (raw.trim()) {
+      'Could not sync Moodle. Check your connection and calendar URL.' =>
+        'تعذّرت مزامنة Moodle. تحقّق من اتصال الإنترنت ورابط التقويم.',
+      'Could not sync Moodle API. Check your connection.' =>
+        'تعذّرت مزامنة Moodle API. تحقّق من الاتصال وبيانات الدخول.',
+      'Add your Moodle calendar URL first.' => 'أضف رابط تقويم Moodle أولاً.',
+      'The URL did not return a valid iCalendar feed.' =>
+        'الرابط لم يُرجع ملف تقويم iCalendar صالحًا.',
+      'Could not connect the first Moodle calendar.' =>
+        'تعذّر الاتصال بأول تقويم Moodle. تحقّق من الرابط.',
+      'Moodle calendar download timed out. Please retry.' =>
+        'انتهت مهلة تحميل تقويم Moodle. حاول مجددًا.',
+      'Could not reach the Moodle server. Check connectivity or DNS.' =>
+        'تعذّر الوصول لخادم Moodle. تحقق من الإنترنت وإعدادات DNS.',
+      'Could not download the Moodle calendar. Check your connection.' =>
+        'تعذّر تنزيل تقويم Moodle. تحقق من اتصال الإنترنت.',
+      'Enter a valid Moodle calendar URL.' => 'أدخل رابط تقويم Moodle صالحًا.',
+      _ => 'تعذّرت مزامنة تقويم Moodle. تحقق من الرابط والاتصال بالإنترنت.',
+    };
+  }
+
+  static String offlineHint({
+    required bool hasSavedDeadlines,
+    required bool arabic,
+  }) {
+    if (hasSavedDeadlines) {
+      return arabic
+          ? 'تبقى المواعيد المحفوظة متاحة دون إنترنت.'
+          : 'Saved deadlines remain available offline.';
+    }
+    return arabic
+        ? 'لا توجد مواعيد محفوظة على الجهاز بعد.'
+        : 'There are no deadlines saved on this device yet.';
+  }
+}
+).hasMatch(raw.trim())) return raw.trim();
     if (raw.startsWith('Moodle returned HTTP ')) {
       final status = RegExp(r'HTTP (\\d{3})').firstMatch(raw)?.group(1);
       return status == null

@@ -18,8 +18,7 @@ List<DateTime> upcomingReminderTimes(
   Map<String, List<int>> overrides, {
   required DateTime now,
 }) {
-  if (!deadline.due.isAfter(now) ||
-      deadline.reminderMinutesBefore == -1) {
+  if (!deadline.due.isAfter(now) || deadline.reminderMinutesBefore == -1) {
     return const [];
   }
   final minutes = deadline.reminderMinutesBefore;

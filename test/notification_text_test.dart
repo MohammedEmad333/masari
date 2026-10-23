@@ -18,8 +18,8 @@ void main() {
   test('Arabic reminders translate fixed copy and keep user task names', () {
     expect(NotificationText.dueSoon(task, arabic: true), 'اقترب موعد: تجربة الإشعارات');
     expect(NotificationText.dueNow(task, arabic: true), 'حان موعد: تجربة الإشعارات');
-    expect(NotificationText.remainingMinutes(5, arabic: true), 'تبقّى 5 دقيقة');
-    expect(NotificationText.remainingHours(6, arabic: true), 'تبقّى 6 ساعة');
+    expect(NotificationText.remainingMinutes(5, arabic: true), 'تبقّى 5 دقائق');
+    expect(NotificationText.remainingHours(6, arabic: true), 'تبقّى 6 ساعات');
     expect(NotificationText.testTitle(arabic: true), 'إشعارات مساري جاهزة');
     expect(NotificationText.testBody(arabic: true), contains('مساري'));
     final body = NotificationText.body(
@@ -29,7 +29,7 @@ void main() {
     );
     expect(body, isNot(contains('Due soon')));
     expect(body, contains('الذكاء الاصطناعي'));
-    expect(body, contains('تبقّى 5 دقيقة'));
+    expect(body, contains('تبقّى 5 دقائق'));
     expect(body, contains(formatDue(due, arabic: true)));
     expect(body, isNot(contains('remaining')));
   });

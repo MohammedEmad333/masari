@@ -10,10 +10,13 @@ import 'services/moodle_api_client.dart';
 import 'services/deadline_collection.dart';
 
 class AppController extends ChangeNotifier {
-  AppController(this._repository);
+  AppController(this._repository, {Future<void> Function()? reminderScheduler})
+    : _reminderScheduler = reminderScheduler;
 
   final CalendarRepository _repository;
+  final Future<void> Function()? _reminderScheduler;
   String? get syncWarning => _repository.lastSyncWarning;
+  bool reminderSchedulingFailed = false;
 
   List<Deadline> deadlines = const [];
   List<Deadline> manualDeadlines = const [];
@@ -131,6 +134,7 @@ class AppController extends ChangeNotifier {
     if (busy) return false;
     busy = true;
     error = null;
+    reminderSchedulingFailed = false;
     notifyListeners();
 
     try {
@@ -144,8 +148,9 @@ class AppController extends ChangeNotifier {
       try {
         await NotificationService.init(requestPermissions: true);
         await _rescheduleNotifications();
-      } catch (exception) {
-        debugPrint('Calendar saved, but reminders need attention: $exception');
+      } catch (_) {
+        reminderSchedulingFailed = true;
+        debugPrint('Calendar saved; Android reminders need attention.');
       }
       await _publishWidget();
       notifyListeners();
@@ -172,6 +177,7 @@ class AppController extends ChangeNotifier {
     _syncInProgress = true;
     busy = true;
     error = null;
+    reminderSchedulingFailed = false;
     notifyListeners();
 
     try {
@@ -201,7 +207,14 @@ class AppController extends ChangeNotifier {
         ? await _repository.loadLastSync()
         : DateTime.now();
     error = null;
-    await _rescheduleNotifications();
+    try {
+      await _rescheduleNotifications();
+    } catch (_) {
+      // Downloading/saving Moodle data succeeded; Android notification
+      // scheduling is a separate operation and must not mark sync as failed.
+      reminderSchedulingFailed = true;
+      debugPrint('Calendar synced; Android reminders need attention.');
+    }
     await _publishWidget();
     notifyListeners();
   }
@@ -433,6 +446,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _rescheduleNotifications() {
+    if (_reminderScheduler != null) return _reminderScheduler();
     return NotificationService.scheduleAll(
       allDeadlines,
       reminderOffsetsHours: reminderOffsets,

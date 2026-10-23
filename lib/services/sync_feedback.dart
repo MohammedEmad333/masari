@@ -46,8 +46,7 @@ class SyncFeedback {
         'تعذّر الوصول لخادم Moodle. تحقق من الإنترنت وإعدادات DNS.',
       'Could not download the Moodle calendar. Check your connection.' =>
         'تعذّر تنزيل تقويم Moodle. تحقق من اتصال الإنترنت.',
-      'Enter a valid Moodle calendar URL.' =>
-        'أدخل رابط تقويم Moodle صالحًا.',
+      'Enter a valid Moodle calendar URL.' => 'أدخل رابط تقويم Moodle صالحًا.',
       _ => 'تعذّرت مزامنة تقويم Moodle. تحقق من الرابط والاتصال بالإنترنت.',
     };
   }

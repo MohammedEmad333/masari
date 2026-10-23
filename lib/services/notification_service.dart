@@ -172,10 +172,7 @@ class NotificationService {
         pending.add(
           _ScheduledReminder(
             id: _stableId('${deadline.stableKey}|due'),
-            title: ReminderNotificationCopy.dueTitle(
-              deadline,
-              arabic: arabic,
-            ),
+            title: ReminderNotificationCopy.dueTitle(deadline, arabic: arabic),
             body: ReminderNotificationCopy.body(
               deadline,
               ReminderNotificationCopy.dueNow(arabic: arabic),

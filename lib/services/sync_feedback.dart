@@ -51,9 +51,10 @@ class SyncFeedback {
         'الرابط لم يُرجع ملف تقويم iCalendar صالحًا.',
       'Could not connect the first Moodle calendar.' =>
         'تعذّر الاتصال بأول تقويم Moodle. تحقّق من الرابط.',
-      _ => RegExp(r'^HTTP \d{3}$').hasMatch(raw.trim())
-          ? raw.trim()
-          : 'تعذّر إكمال العملية. تحقّق من الاتصال ثم حاول مجددًا.',
+      _ =>
+        RegExp(r'^HTTP \d{3}$').hasMatch(raw.trim())
+            ? raw.trim()
+            : 'تعذّر إكمال العملية. تحقّق من الاتصال ثم حاول مجددًا.',
     };
   }
 

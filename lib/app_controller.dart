@@ -347,7 +347,9 @@ class AppController extends ChangeNotifier {
   /// duplicate task when a user retries saving the same dialog.
   Future<void> saveManualDeadline(Deadline deadline) async {
     final next = [...manualDeadlines];
-    final index = next.indexWhere((task) => task.stableKey == deadline.stableKey);
+    final index = next.indexWhere(
+      (task) => task.stableKey == deadline.stableKey,
+    );
     if (index == -1) {
       next.add(deadline);
     } else {

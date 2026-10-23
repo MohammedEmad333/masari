@@ -16,8 +16,9 @@ class NotificationText {
   static String dueSoon(Deadline deadline, {required bool arabic}) =>
       arabic ? 'اقترب موعد: ${deadline.title}' : 'Due soon: ${deadline.title}';
 
-  static String dueNow(Deadline deadline, {required bool arabic}) =>
-      arabic ? 'حان موعد: ${deadline.title}' : 'Deadline now: ${deadline.title}';
+  static String dueNow(Deadline deadline, {required bool arabic}) => arabic
+      ? 'حان موعد: ${deadline.title}'
+      : 'Deadline now: ${deadline.title}';
 
   static String remainingHours(int hours, {required bool arabic}) {
     if (hours % 24 == 0) {
@@ -58,11 +59,7 @@ class NotificationText {
         : '$minutes ${minutes == 1 ? 'minute' : 'minutes'} remaining';
   }
 
-  static String body(
-    Deadline deadline,
-    String prefix, {
-    required bool arabic,
-  }) {
+  static String body(Deadline deadline, String prefix, {required bool arabic}) {
     final course = deadline.course.isEmpty ? '' : '${deadline.course} • ';
     return '$prefix • $course${formatDue(deadline.due, arabic: arabic)}';
   }

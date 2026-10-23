@@ -1305,7 +1305,8 @@ class _SetupState extends State<_Setup> {
       final selected = await FilePicker.pickFiles();
       if (selected.isEmpty) return;
       final picked = selected.first;
-      if (picked.path == null || !picked.name.toLowerCase().endsWith('.ics')) {
+      if (picked.path == null ||
+          !picked.name.toLowerCase().endsWith('.ics')) {
         throw const FormatException('Choose an .ics calendar file.');
       }
       final file = File(picked.path!);
@@ -1331,8 +1332,8 @@ class _SetupState extends State<_Setup> {
         SnackBar(
           content: Text(
             t(
-              'Could not import the file. Choose a valid Moodle .ics with deadlines.',
-              'تعذّر استيراد الملف. اختر ملف Moodle بصيغة ICS يحتوي على مواعيد.',
+              'Invalid ICS file or no deadlines found.',
+              'ملف ICS غير صالح أو لا يحتوي على مواعيد.',
             ),
           ),
         ),
@@ -1467,8 +1468,8 @@ class _SetupState extends State<_Setup> {
           const SizedBox(height: 6),
           Text(
             t(
-              'Manual import keeps deadlines on this device; it does not update automatically.',
-              'الاستيراد اليدوي يحفظ المواعيد على الجهاز، لكنه لا يحدّثها تلقائيًا.',
+              'Imported deadlines are stored locally and do not auto-refresh.',
+              'الاستيراد يحفظ المواعيد على جهازك، ولا يحدّثها تلقائيًا.',
             ),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,

@@ -4,9 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('test and scheduled alerts use one localized notification system', () {
-    final service = File('lib/services/notification_service.dart').readAsStringSync();
+    final service = File(
+      'lib/services/notification_service.dart',
+    ).readAsStringSync();
     final controller = File('lib/app_controller.dart').readAsStringSync();
-    final background = File('lib/services/background_sync_service.dart').readAsStringSync();
+    final background = File(
+      'lib/services/background_sync_service.dart',
+    ).readAsStringSync();
     final home = File('lib/screens/home_shell.dart').readAsStringSync();
 
     expect(service, contains('NotificationText.testTitle(arabic: arabic)'));
@@ -19,14 +23,18 @@ void main() {
   });
 
   test('native widget and course chooser follow Masari language choice', () {
-    final bridge = File('lib/services/home_widget_bridge.dart').readAsStringSync();
+    final bridge = File(
+      'lib/services/home_widget_bridge.dart',
+    ).readAsStringSync();
     final kotlin = File(
       'android/app/src/main/kotlin/com/example/moodle_reminder/MoodleWidgetProvider.kt',
     ).readAsStringSync();
     final chooser = File(
       'android/app/src/main/kotlin/com/example/moodle_reminder/MainActivity.kt',
     ).readAsStringSync();
-    final shareScreen = File('lib/screens/local_courses_screen.dart').readAsStringSync();
+    final shareScreen = File(
+      'lib/screens/local_courses_screen.dart',
+    ).readAsStringSync();
 
     expect(bridge, contains("'language': languageCode == 'ar' ? 'ar' : 'en'"));
     expect(kotlin, contains('Locale.forLanguageTag(language)'));

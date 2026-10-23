@@ -904,8 +904,8 @@ class _HomeShellState extends State<HomeShell> {
               'صلاحية إشعارات مساري غير مفعّلة في Android.',
             ),
             ReminderRepairFailure.initializationFailed => t(
-              'Could not initialize reminders. Check your device timezone and notification settings.',
-              'تعذّرت تهيئة التنبيهات. تحقق من المنطقة الزمنية وإعدادات الإشعارات.',
+              'Could not initialize reminders. Check Android notification settings.',
+              'تعذّرت تهيئة التنبيهات. تحقق من إعدادات إشعارات Android.',
             ),
             ReminderRepairFailure.permissionCheckFailed => t(
               'Could not verify Android notification permission.',
@@ -924,7 +924,7 @@ class _HomeShellState extends State<HomeShell> {
 
   Future<void> _testNotification() async {
     try {
-      await NotificationService.showTest();
+      await NotificationService.showTest(arabic: _ar);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

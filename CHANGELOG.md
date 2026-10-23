@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.6
+
+- Correct false Moodle synchronization failures when Android notification scheduling fails after the calendar has already downloaded and been saved.
+- Keep actual calendar download errors distinct from reminder errors, and show a reminder-repair warning in the app.
+- Add regression tests for successful calendar refresh with notification failure and for real HTTP errors.
+
 ## 2.2.5
 
 - Differentiate Moodle's HTTP 200 calendar-export authentication, disabled export, HTML and empty response failures without revealing tokens.

@@ -143,6 +143,63 @@ void main() {
     client.close();
   });
 
+  test('HTTP 200 Moodle invalid authentication is reported safely', () async {
+    final client = MockClient((request) async {
+      return http.Response('Invalid authentication', 200);
+    });
+    final repository = CalendarRepository(client: client);
+    await expectLater(
+      repository.sync(
+        calendarUrl: 'https://moodle.example/calendar/export_execute.php?userid=1&authtoken=secret',
+      ),
+      throwsA(
+        isA<CalendarSyncException>().having(
+          (exception) => exception.message,
+          'message',
+          contains('rejected the private calendar authorization'),
+        ),
+      ),
+    );
+    client.close();
+  });
+
+  test('calendar response uses UTF-8 even with text/plain content type', () async {
+    final bytes = utf8.encode(
+      '\uFEFFBEGIN:VCALENDAR\\nBEGIN:VEVENT\\nUID:arabic-1\\n'
+      'SUMMARY:واجب جامعي\\nDTSTART:20300504T100000Z\\n'
+      'END:VEVENT\\nEND:VCALENDAR',
+    );
+    final client = MockClient((request) async {
+      return http.Response.bytes(
+        bytes,
+        200,
+        headers: {'content-type': 'text/plain'},
+      );
+    });
+    final repository = CalendarRepository(client: client);
+    final deadlines = await repository.sync(
+      calendarUrl: 'https://moodle.example/calendar.ics',
+    );
+    expect(deadlines.single.title, 'واجب جامعي');
+    client.close();
+  });
+
+  test('Moodle disabled calendar export reports specific error', () async {
+    final client = MockClient((request) async => http.Response('no export', 200));
+    final repository = CalendarRepository(client: client);
+    await expectLater(
+      repository.sync(calendarUrl: 'https://moodle.example/calendar.ics'),
+      throwsA(
+        isA<CalendarSyncException>().having(
+          (exception) => exception.message,
+          'message',
+          contains('disabled by the university server'),
+        ),
+      ),
+    );
+    client.close();
+  });
+
   test('truncated calendar does not replace cached deadlines', () async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('deadline_cache_v2', 'previous-cache');

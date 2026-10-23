@@ -175,7 +175,9 @@ class _HomeShellState extends State<HomeShell> {
           builder: (context, update) => AlertDialog(
             scrollable: true,
             title: Text(
-              existing == null ? t('New task', 'مهمة جديدة') : t('Edit task', 'تعديل المهمة'),
+              existing == null
+                  ? t('New task', 'مهمة جديدة')
+                  : t('Edit task', 'تعديل المهمة'),
             ),
             content: SizedBox(
               width: 380,
@@ -190,7 +192,10 @@ class _HomeShellState extends State<HomeShell> {
                     textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: t('Task title *', 'عنوان المهمة *'),
-                      hintText: t('e.g. Review chapter 3', 'مثلاً: مراجعة الفصل الثالث'),
+                      hintText: t(
+                        'e.g. Review chapter 3',
+                        'مثلاً: مراجعة الفصل الثالث',
+                      ),
                     ),
                   ),
                   TextField(
@@ -236,9 +241,9 @@ class _HomeShellState extends State<HomeShell> {
                     leading: const Icon(Icons.access_time_outlined),
                     title: Text(t('Due time', 'وقت الاستحقاق')),
                     subtitle: Text(
-                      MaterialLocalizations.of(context).formatTimeOfDay(
-                        TimeOfDay.fromDateTime(due),
-                      ),
+                      MaterialLocalizations.of(
+                        context,
+                      ).formatTimeOfDay(TimeOfDay.fromDateTime(due)),
                     ),
                     trailing: const Icon(Icons.edit_outlined),
                     onTap: () async {
@@ -292,7 +297,9 @@ class _HomeShellState extends State<HomeShell> {
                     items: [
                       DropdownMenuItem(
                         value: -2,
-                        child: Text(t('Use default reminders', 'التذكيرات الافتراضية')),
+                        child: Text(
+                          t('Use default reminders', 'التذكيرات الافتراضية'),
+                        ),
                       ),
                       DropdownMenuItem(
                         value: -1,
@@ -356,7 +363,8 @@ class _HomeShellState extends State<HomeShell> {
                         );
                         if (validation != null) {
                           update(() {
-                            validationMessage = validation ==
+                            validationMessage =
+                                validation ==
                                     ManualTaskValidationError.titleRequired
                                 ? t('Enter a task title.', 'اكتب عنوان المهمة.')
                                 : t(
@@ -371,7 +379,8 @@ class _HomeShellState extends State<HomeShell> {
                           validationMessage = null;
                         });
                         try {
-                          final uid = existing?.uid ??
+                          final uid =
+                              existing?.uid ??
                               'manual-${DateTime.now().microsecondsSinceEpoch}';
                           await widget.controller.saveManualDeadline(
                             Deadline(
@@ -380,8 +389,9 @@ class _HomeShellState extends State<HomeShell> {
                               due: due,
                               description: notesController.text.trim(),
                               priority: priority,
-                              reminderMinutesBefore:
-                                  reminderChoice == -2 ? null : reminderChoice,
+                              reminderMinutesBefore: reminderChoice == -2
+                                  ? null
+                                  : reminderChoice,
                             ),
                           );
                           if (!dialogContext.mounted) return;
@@ -1381,7 +1391,8 @@ class _HomeShellState extends State<HomeShell> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(dialogContext, false),
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
                             child: Text(t('Cancel', 'إلغاء')),
                           ),
                           TextButton(
@@ -1403,12 +1414,12 @@ class _HomeShellState extends State<HomeShell> {
                 Wrap(
                   spacing: 8,
                   children: [1, 6, 24, 48, 72].map((hours) {
-                    final specific =
-                        widget.controller.taskReminderOffsets[deadline.stableKey];
+                    final specific = widget
+                        .controller
+                        .taskReminderOffsets[deadline.stableKey];
                     final selected =
-                        (specific ?? widget.controller.reminderOffsets).contains(
-                          hours,
-                        );
+                        (specific ?? widget.controller.reminderOffsets)
+                            .contains(hours);
                     return FilterChip(
                       label: Text(_offsetLabel(hours)),
                       selected: selected,

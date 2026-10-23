@@ -1307,6 +1307,9 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Future<void> _showDeadline(Deadline deadline) async {
+    final isManual = widget.controller.manualDeadlines.any(
+      (task) => task.stableKey == deadline.stableKey,
+    );
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -1333,51 +1336,115 @@ class _HomeShellState extends State<HomeShell> {
                 Text(deadline.description),
               ],
               const SizedBox(height: 12),
-              Text(t('Task reminders', 'تذكيرات المهمة')),
-              Wrap(
-                spacing: 8,
-                children: [1, 6, 24, 48, 72].map((hours) {
-                  final specific =
-                      widget.controller.taskReminderOffsets[deadline.stableKey];
-                  final selected =
-                      (specific ?? widget.controller.reminderOffsets).contains(
-                        hours,
-                      );
-                  return FilterChip(
-                    label: Text(_offsetLabel(hours)),
-                    selected: selected,
-                    onSelected: (checked) async {
-                      final values = [
-                        ...(specific ?? widget.controller.reminderOffsets),
-                      ];
-                      if (checked) {
-                        values.add(hours);
-                      } else {
-                        values.remove(hours);
-                      }
-                      await widget.controller.setTaskReminderOffsets(
-                        deadline,
-                        values,
-                      );
-                      if (context.mounted) Navigator.pop(context);
-                      if (mounted) _showDeadline(deadline);
-                    },
-                  );
-                }).toList(),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await widget.controller.setTaskReminderOffsets(
-                    deadline,
-                    null,
-                  );
-                  if (context.mounted) Navigator.pop(context);
-                  if (mounted) _showDeadline(deadline);
-                },
-                child: Text(
-                  t('Use global reminders', 'استخدام التذكيرات العامة'),
+              if (isManual) ...[
+                Text(
+                  t('Reminder', 'التذكير'),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-              ),
+                Text(
+                  deadline.reminderMinutesBefore == null
+                      ? t('Default reminders', 'التذكيرات الافتراضية')
+                      : deadline.reminderMinutesBefore == -1
+                      ? t('No notifications', 'بدون إشعارات')
+                      : deadline.reminderMinutesBefore! < 60
+                      ? t(
+                          '${deadline.reminderMinutesBefore} minutes before',
+                          'قبل ${deadline.reminderMinutesBefore} دقيقة',
+                        )
+                      : t(
+                          '${deadline.reminderMinutesBefore! ~/ 60} hours before',
+                          'قبل ${deadline.reminderMinutesBefore! ~/ 60} ساعة',
+                        ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    if (mounted) _addManualTask(existing: deadline);
+                  },
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(t('Edit task', 'تعديل المهمة')),
+                ),
+                TextButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    if (!mounted) return;
+                    final confirmed = await showDialog<bool>(
+                      context: this.context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: Text(t('Delete task?', 'حذف المهمة؟')),
+                        content: Text(
+                          t(
+                            'This task will be removed from this device.',
+                            'سيتم حذف هذه المهمة من الجهاز.',
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext, false),
+                            child: Text(t('Cancel', 'إلغاء')),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                            child: Text(t('Delete', 'حذف')),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true) {
+                      await widget.controller.deleteManualDeadline(deadline);
+                    }
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(t('Delete task', 'حذف المهمة')),
+                ),
+              ] else ...[
+                Text(t('Task reminders', 'تذكيرات المهمة')),
+                Wrap(
+                  spacing: 8,
+                  children: [1, 6, 24, 48, 72].map((hours) {
+                    final specific =
+                        widget.controller.taskReminderOffsets[deadline.stableKey];
+                    final selected =
+                        (specific ?? widget.controller.reminderOffsets).contains(
+                          hours,
+                        );
+                    return FilterChip(
+                      label: Text(_offsetLabel(hours)),
+                      selected: selected,
+                      onSelected: (checked) async {
+                        final values = [
+                          ...(specific ?? widget.controller.reminderOffsets),
+                        ];
+                        if (checked) {
+                          values.add(hours);
+                        } else {
+                          values.remove(hours);
+                        }
+                        await widget.controller.setTaskReminderOffsets(
+                          deadline,
+                          values,
+                        );
+                        if (context.mounted) Navigator.pop(context);
+                        if (mounted) _showDeadline(deadline);
+                      },
+                    );
+                  }).toList(),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await widget.controller.setTaskReminderOffsets(
+                      deadline,
+                      null,
+                    );
+                    if (context.mounted) Navigator.pop(context);
+                    if (mounted) _showDeadline(deadline);
+                  },
+                  child: Text(
+                    t('Use global reminders', 'استخدام التذكيرات العامة'),
+                  ),
+                ),
+              ],
               if (deadline.url.isNotEmpty) ...[
                 OutlinedButton.icon(
                   onPressed: () async {

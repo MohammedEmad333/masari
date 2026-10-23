@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.10
+
+- Localize upcoming, due-now, and test notification titles/bodies for Arabic or English, including remaining time and due-date labels while preserving Moodle/user titles as-is.
+- Replace the old `Moodle Reminder` notification and QR-sharing copy with Masari/مساري.
+- Propagate the selected language to pending reminders when switched, to background Moodle sync and to Android home widgets.
+- Localize additional Moodle network and calendar errors; provide localized messages for embedded WebView failures.
+- Add bilingual notification regression tests, locale persistence coverage, and a hands-on localization/device QA checklist.
+
 ## 2.2.9
 
 - Replace the manual task dialog with independent date and time pickers, optional notes, priority, and clear form validation.

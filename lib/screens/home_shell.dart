@@ -14,6 +14,7 @@ import '../services/notification_service.dart';
 import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
+import '../services/manual_task_form.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
 import 'moodle_calendar_browser.dart';
@@ -156,90 +157,267 @@ class _HomeShellState extends State<HomeShell> {
   bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
-  Future<void> _addManualTask() async {
-    final titleController = TextEditingController();
-    DateTime due = DateTime.now().add(const Duration(days: 1));
-    int priority = 1;
+  Future<void> _addManualTask({Deadline? existing}) async {
+    final titleController = TextEditingController(text: existing?.title ?? '');
+    final notesController = TextEditingController(
+      text: existing?.description ?? '',
+    );
+    DateTime due = existing?.due ?? defaultManualTaskDue(DateTime.now());
+    int priority = existing?.priority ?? 1;
+    // -2 uses the normal global schedule; -1 disables all alerts.
+    int reminderChoice = existing?.reminderMinutesBefore ?? -2;
+    bool saving = false;
+    String? validationMessage;
     try {
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => StatefulBuilder(
           builder: (context, update) => AlertDialog(
-            title: Text(t('New task', 'مهمة جديدة')),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: t('Task title', 'عنوان المهمة'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListTile(
-                  leading: const Icon(Icons.event),
-                  title: Text(_formatDue(due)),
-                  onTap: () async {
-                    final selected = await showDatePicker(
-                      context: context,
-                      initialDate: due,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                    );
-                    if (selected == null || !context.mounted) return;
-                    update(
-                      () => due = DateTime(
-                        selected.year,
-                        selected.month,
-                        selected.day,
-                        23,
-                        59,
-                      ),
-                    );
-                  },
-                ),
-                DropdownButtonFormField<int>(
-                  initialValue: priority,
-                  decoration: InputDecoration(
-                    labelText: t('Priority', 'الأولوية'),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(t('Normal', 'عادية')),
+            scrollable: true,
+            title: Text(
+              existing == null ? t('New task', 'مهمة جديدة') : t('Edit task', 'تعديل المهمة'),
+            ),
+            content: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    enabled: !saving,
+                    maxLength: 150,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: t('Task title *', 'عنوان المهمة *'),
+                      hintText: t('e.g. Review chapter 3', 'مثلاً: مراجعة الفصل الثالث'),
                     ),
-                    DropdownMenuItem(value: 2, child: Text(t('High', 'عالية'))),
-                    DropdownMenuItem(
-                      value: 3,
-                      child: Text(t('Urgent', 'عاجلة')),
+                  ),
+                  TextField(
+                    controller: notesController,
+                    enabled: !saving,
+                    maxLines: 2,
+                    maxLength: 500,
+                    decoration: InputDecoration(
+                      labelText: t('Notes (optional)', 'ملاحظات (اختياري)'),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    enabled: !saving,
+                    leading: const Icon(Icons.event_outlined),
+                    title: Text(t('Due date', 'تاريخ الاستحقاق')),
+                    subtitle: Text(
+                      MaterialLocalizations.of(context).formatMediumDate(due),
+                    ),
+                    trailing: const Icon(Icons.edit_calendar_outlined),
+                    onTap: () async {
+                      final selected = await showDatePicker(
+                        context: context,
+                        initialDate: due,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (selected == null || !context.mounted) return;
+                      update(() {
+                        due = manualTaskDue(
+                          selected,
+                          TimeOfDay.fromDateTime(due),
+                        );
+                        validationMessage = null;
+                      });
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    enabled: !saving,
+                    leading: const Icon(Icons.access_time_outlined),
+                    title: Text(t('Due time', 'وقت الاستحقاق')),
+                    subtitle: Text(
+                      MaterialLocalizations.of(context).formatTimeOfDay(
+                        TimeOfDay.fromDateTime(due),
+                      ),
+                    ),
+                    trailing: const Icon(Icons.edit_outlined),
+                    onTap: () async {
+                      final selected = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.fromDateTime(due),
+                      );
+                      if (selected == null || !context.mounted) return;
+                      update(() {
+                        due = manualTaskDue(due, selected);
+                        validationMessage = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    initialValue: priority,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: t('Priority', 'الأولوية'),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Text(t('Normal', 'عادية')),
+                      ),
+                      DropdownMenuItem(
+                        value: 2,
+                        child: Text(t('High', 'عالية')),
+                      ),
+                      DropdownMenuItem(
+                        value: 3,
+                        child: Text(t('Urgent', 'عاجلة')),
+                      ),
+                    ],
+                    onChanged: saving
+                        ? null
+                        : (value) => update(() => priority = value ?? 1),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<int>(
+                    initialValue: reminderChoice,
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      labelText: t('Remind me', 'ذكّرني'),
+                      helperText: t(
+                        'A reminder can fire before the task is due.',
+                        'يمكن إرسال تذكير قبل موعد المهمة.',
+                      ),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: -2,
+                        child: Text(t('Use default reminders', 'التذكيرات الافتراضية')),
+                      ),
+                      DropdownMenuItem(
+                        value: -1,
+                        child: Text(t('No notifications', 'بدون إشعارات')),
+                      ),
+                      DropdownMenuItem(
+                        value: 5,
+                        child: Text(t('5 minutes before', 'قبل 5 دقائق')),
+                      ),
+                      DropdownMenuItem(
+                        value: 15,
+                        child: Text(t('15 minutes before', 'قبل 15 دقيقة')),
+                      ),
+                      DropdownMenuItem(
+                        value: 30,
+                        child: Text(t('30 minutes before', 'قبل 30 دقيقة')),
+                      ),
+                      DropdownMenuItem(
+                        value: 60,
+                        child: Text(t('1 hour before', 'قبل ساعة')),
+                      ),
+                      DropdownMenuItem(
+                        value: 360,
+                        child: Text(t('6 hours before', 'قبل 6 ساعات')),
+                      ),
+                      DropdownMenuItem(
+                        value: 1440,
+                        child: Text(t('1 day before', 'قبل يوم')),
+                      ),
+                    ],
+                    onChanged: saving
+                        ? null
+                        : (value) => update(() => reminderChoice = value ?? -2),
+                  ),
+                  if (validationMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      validationMessage!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ],
-                  onChanged: (value) => update(() => priority = value ?? 1),
-                ),
-              ],
+                ],
+              ),
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
+                onPressed: saving ? null : () => Navigator.pop(dialogContext),
                 child: Text(t('Cancel', 'إلغاء')),
               ),
-              FilledButton(
-                onPressed: () async {
-                  final title = titleController.text.trim();
-                  if (title.isEmpty) return;
-                  final uid = 'manual-${DateTime.now().microsecondsSinceEpoch}';
-                  await widget.controller.addManualDeadline(
-                    Deadline(
-                      uid: uid,
-                      title: title,
-                      due: due,
-                      priority: priority,
-                    ),
-                  );
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                child: Text(t('Save', 'حفظ')),
+              FilledButton.icon(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final title = titleController.text.trim();
+                        final validation = validateManualTask(
+                          title,
+                          due,
+                          now: DateTime.now(),
+                        );
+                        if (validation != null) {
+                          update(() {
+                            validationMessage = validation ==
+                                    ManualTaskValidationError.titleRequired
+                                ? t('Enter a task title.', 'اكتب عنوان المهمة.')
+                                : t(
+                                    'Choose a future date and time.',
+                                    'اختر تاريخاً ووقتاً في المستقبل.',
+                                  );
+                          });
+                          return;
+                        }
+                        update(() {
+                          saving = true;
+                          validationMessage = null;
+                        });
+                        try {
+                          final uid = existing?.uid ??
+                              'manual-${DateTime.now().microsecondsSinceEpoch}';
+                          await widget.controller.saveManualDeadline(
+                            Deadline(
+                              uid: uid,
+                              title: title,
+                              due: due,
+                              description: notesController.text.trim(),
+                              priority: priority,
+                              reminderMinutesBefore:
+                                  reminderChoice == -2 ? null : reminderChoice,
+                            ),
+                          );
+                          if (!dialogContext.mounted) return;
+                          Navigator.pop(dialogContext);
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(this.context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                widget.controller.reminderSchedulingFailed
+                                    ? t(
+                                        'Task saved. Reminders need repair in Settings.',
+                                        'حُفظت المهمة، لكن التنبيهات بحاجة لإصلاح من الإعدادات.',
+                                      )
+                                    : t('Task saved.', 'تم حفظ المهمة.'),
+                              ),
+                            ),
+                          );
+                        } catch (_) {
+                          if (!dialogContext.mounted) return;
+                          update(() {
+                            saving = false;
+                            validationMessage = t(
+                              'Could not save the task. Try again.',
+                              'تعذّر حفظ المهمة. حاول مجدداً.',
+                            );
+                          });
+                        }
+                      },
+                icon: saving
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: Text(t('Save task', 'حفظ المهمة')),
               ),
             ],
           ),
@@ -247,6 +425,7 @@ class _HomeShellState extends State<HomeShell> {
       );
     } finally {
       titleController.dispose();
+      notesController.dispose();
     }
   }
 

@@ -129,24 +129,28 @@ class _HomeShellState extends State<HomeShell> {
   Future<void> _sync() async {
     final ok = await widget.controller.sync();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok
-              ? widget.controller.syncWarning != null
-                    ? t(
-                        'Some calendars could not sync; saved events were kept.',
-                        'تعذّرت مزامنة بعض التقويمات، واحتفظنا بالمواعيد المحفوظة.',
-                      )
-                    : t('Moodle calendar synced.', 'تمت مزامنة تقويم Moodle.')
-              : SyncFeedback.errorMessage(
-                  widget.controller.error ??
-                      t('Sync failed.', 'فشلت المزامنة.'),
-                  arabic: _ar,
-                ),
-        ),
-      ),
-    );
+    String message;
+    if (!ok) {
+      message = SyncFeedback.errorMessage(
+        widget.controller.error ?? t('Sync failed.', 'فشلت المزامنة.'),
+        arabic: _ar,
+      );
+    } else if (widget.controller.reminderSchedulingFailed) {
+      message = t(
+        'Calendar updated, but reminders could not be scheduled. Use Repair reminders in Settings.',
+        'تم تحديث التقويم، لكن تعذّرت جدولة التنبيهات. استخدم إصلاح التنبيهات من الإعدادات.',
+      );
+    } else if (widget.controller.syncWarning != null) {
+      message = t(
+        'Some calendars could not sync; saved events were kept.',
+        'تعذّرت مزامنة بعض التقويمات، واحتفظنا بالمواعيد المحفوظة.',
+      );
+    } else {
+      message = t('Moodle calendar synced.', 'تمت مزامنة تقويم Moodle.');
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool _sameDay(DateTime a, DateTime b) =>
@@ -284,6 +288,26 @@ class _HomeShellState extends State<HomeShell> {
                   ),
             isArabic: _ar,
           ),
+          if (controller.reminderSchedulingFailed) ...[
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.notifications_off_outlined),
+                title: Text(
+                  t(
+                    'Calendar updated; reminders need repair.',
+                    'التقويم محدّث؛ التنبيهات بحاجة إلى إصلاح.',
+                  ),
+                ),
+                subtitle: Text(
+                  t(
+                    'Open Settings and select Repair reminders.',
+                    'افتح الإعدادات واختر إصلاح التنبيهات.',
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (controller.error != null) ...[
             const SizedBox(height: 12),
             Card(

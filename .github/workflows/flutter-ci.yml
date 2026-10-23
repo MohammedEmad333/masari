@@ -52,6 +52,12 @@ jobs:
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 
+      - name: Show Moodle feedback formatting patch
+        if: failure()
+        run: |
+          dart format lib/services/sync_feedback.dart
+          git diff --no-ext-diff -- lib/services/sync_feedback.dart
+
       - name: Analyze
         run: flutter analyze
 

@@ -163,9 +163,9 @@ void main() {
 
   test('calendar response decodes UTF-8', () async {
     final bytes = utf8.encode(
-      '\uFEFFBEGIN:VCALENDAR\\nBEGIN:VEVENT\\nUID:arabic-1\\n'
-      'SUMMARY:واجب جامعي\\nDTSTART:20300504T100000Z\\n'
-      'END:VEVENT\\nEND:VCALENDAR',
+      '\uFEFFBEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:arabic-1\n'
+      'SUMMARY:واجب جامعي\nDTSTART:20300504T100000Z\n'
+      'END:VEVENT\nEND:VCALENDAR',
     );
     final client = MockClient((request) async {
       return http.Response.bytes(

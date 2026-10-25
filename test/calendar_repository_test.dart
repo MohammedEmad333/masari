@@ -170,6 +170,89 @@ void main() {
     },
   );
 
+  test('sync retains old events outside current export window', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final historical = Deadline(
+      uid: 'old-assignment',
+      title: 'Last semester assignment',
+      due: DateTime.utc(2024, 2, 1),
+    );
+    await prefs.setString(
+      'deadline_cache_v2',
+      jsonEncode([historical.toJson()]),
+    );
+    final client = MockClient(
+      (request) async => http.Response(
+        'BEGIN:VCALENDAR\nEND:VCALENDAR',
+        200,
+      ),
+    );
+    final repository = CalendarRepository(client: client);
+    final values = await repository.sync(
+      calendarUrl: 'https://moodle.example.edu/calendar.ics',
+    );
+    expect(values.map((value) => value.uid), contains('old-assignment'));
+    expect(
+      (await repository.loadCachedDeadlines()).single.uid,
+      'old-assignment',
+    );
+    client.close();
+  });
+
+  test('fresh version replaces historical event without duplication', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final historical = Deadline(
+      uid: 'revised-event',
+      title: 'Old title',
+      due: DateTime.utc(2024, 2, 1),
+    );
+    await prefs.setString(
+      'deadline_cache_v2',
+      jsonEncode([historical.toJson()]),
+    );
+    final client = MockClient(
+      (request) async => http.Response(
+        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:revised-event\n'
+        'SUMMARY:Updated title\nDTSTART:20300504T100000Z\n'
+        'END:VEVENT\nEND:VCALENDAR',
+        200,
+      ),
+    );
+    final repository = CalendarRepository(client: client);
+    final values = await repository.sync(
+      calendarUrl: 'https://moodle.example.edu/calendar.ics',
+    );
+    expect(values, hasLength(1));
+    expect(values.single.title, 'Updated title');
+    expect(values.single.due.year, 2030);
+    client.close();
+  });
+
+  test('future items missing from a successful export are not archived', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final future = Deadline(
+      uid: 'removed-future',
+      title: 'No longer in feed',
+      due: DateTime.now().add(const Duration(days: 20)),
+    );
+    await prefs.setString(
+      'deadline_cache_v2',
+      jsonEncode([future.toJson()]),
+    );
+    final client = MockClient(
+      (request) async => http.Response(
+        'BEGIN:VCALENDAR\nEND:VCALENDAR',
+        200,
+      ),
+    );
+    final repository = CalendarRepository(client: client);
+    final values = await repository.sync(
+      calendarUrl: 'https://moodle.example.edu/calendar.ics',
+    );
+    expect(values, isEmpty);
+    client.close();
+  });
+
   test('HTTP sync failure preserves offline deadlines and timestamp', () async {
     final prefs = await SharedPreferences.getInstance();
     final deadline = Deadline(

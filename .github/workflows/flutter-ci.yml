@@ -49,16 +49,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Capture formatted cloud files
-        run: |
-          dart format lib/services/optional_cloud_backup.dart lib/screens/cloud_backup_screen.dart test/optional_cloud_backup_test.dart
-          for f in lib/services/optional_cloud_backup.dart lib/screens/cloud_backup_screen.dart test/optional_cloud_backup_test.dart; do
-            echo "FORMAT_BEGIN $f"
-            base64 -w0 "$f"
-            echo
-            echo "FORMAT_END $f"
-          done
-
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

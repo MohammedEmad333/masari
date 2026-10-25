@@ -100,9 +100,9 @@ void main() {
     final client = MockClient((request) async {
       requests.add(request.url);
       return http.Response(
-        'BEGIN:VCALENDAR\\nBEGIN:VEVENT\\nUID:custom-1\\n'
-        'SUMMARY:Custom period assignment\\nDTSTART:20300504T100000Z\\n'
-        'END:VEVENT\\nEND:VCALENDAR',
+        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:custom-1\n'
+        'SUMMARY:Custom period assignment\nDTSTART:20300504T100000Z\n'
+        'END:VEVENT\nEND:VCALENDAR',
         200,
       );
     });
@@ -125,9 +125,9 @@ void main() {
       periods.add(period);
       if (period == 'custom') return http.Response('Bad request', 400);
       return http.Response(
-        'BEGIN:VCALENDAR\\nBEGIN:VEVENT\\nUID:original-1\\n'
-        'SUMMARY:Original period assignment\\nDTSTART:20300504T100000Z\\n'
-        'END:VEVENT\\nEND:VCALENDAR',
+        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:original-1\n'
+        'SUMMARY:Original period assignment\nDTSTART:20300504T100000Z\n'
+        'END:VEVENT\nEND:VCALENDAR',
         200,
       );
     });
@@ -273,7 +273,7 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('deadline_cache_v2', 'previous-cache');
     final client = MockClient(
-      (request) async => http.Response('BEGIN:VCALENDAR\\nBEGIN:VEVENT', 200),
+      (request) async => http.Response('BEGIN:VCALENDAR\nBEGIN:VEVENT', 200),
     );
     final repository = CalendarRepository(client: client);
     await expectLater(
@@ -289,7 +289,7 @@ void main() {
     await prefs.setString('deadline_cache_v2', 'previous-cache');
     final client = MockClient(
       (request) async =>
-          http.Response('<html>BEGIN:VCALENDAR\\nEND:VCALENDAR</html>', 200),
+          http.Response('<html>BEGIN:VCALENDAR\nEND:VCALENDAR</html>', 200),
     );
     final repository = CalendarRepository(client: client);
     await expectLater(

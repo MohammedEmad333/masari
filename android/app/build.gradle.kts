@@ -20,16 +20,12 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
-    // Keep GitHub APKs compatible with existing installations. The official
-    // Play Store build uses the new, permanently registered application ID.
+    // All build variants share the same permanent Android application ID.
+    // Signing still differs between CI smoke builds and official releases.
     val playStoreBuild = System.getenv("PLAY_STORE_BUILD") == "true"
 
     defaultConfig {
-        applicationId = if (playStoreBuild) {
-            "com.mohammedemad333.masari"
-        } else {
-            "com.example.moodle_reminder"
-        }
+        applicationId = "com.mohammedemad333.masari"
         minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode
@@ -62,7 +58,7 @@ android {
 
     buildTypes {
         release {
-            // GitHub test APKs keep working; Play builds require upload signing.
+            // CI smoke APKs are not distributed; official builds use upload signing.
             signingConfig = if (playStoreBuild) {
                 signingConfigs.getByName("playRelease")
             } else {

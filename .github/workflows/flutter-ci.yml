@@ -61,6 +61,8 @@ jobs:
       # Compilation-only APK: same permanent ID, temporary debug signature.
       # Do not distribute; official signed APKs are published after green main CI.
       - name: Smoke-build Masari APK (not for distribution)
+        env:
+          MASARI_CI_SMOKE_BUILD: 'true'
         run: |
           flutter build apk --release
           AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n 1)"
@@ -78,6 +80,7 @@ jobs:
 
       - name: Smoke-test Masari Play AAB (temporary key, never publish)
         env:
+          MASARI_CI_SMOKE_BUILD: 'true'
           PLAY_STORE_BUILD: 'true'
           PLAY_KEYSTORE_PATH: ${{ runner.temp }}/masari-ci-upload.jks
           PLAY_STORE_PASSWORD: masari-ci-only

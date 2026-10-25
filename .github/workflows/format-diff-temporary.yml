@@ -1,0 +1,18 @@
+name: Temporary Dart Format Diff
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+      - run: |
+          dart format lib/services/calendar_repository.dart lib/screens/home_shell.dart test/calendar_repository_test.dart
+          git diff -- lib/services/calendar_repository.dart lib/screens/home_shell.dart test/calendar_repository_test.dart

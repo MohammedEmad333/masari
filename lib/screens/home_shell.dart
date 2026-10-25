@@ -22,7 +22,6 @@ import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
 import 'task_plans_screen.dart';
 
-
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
 
@@ -70,9 +69,12 @@ class _HomeShellState extends State<HomeShell> {
             tooltip: t('Task plans', 'خطط المهام'),
             icon: const Icon(Icons.account_tree_outlined),
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => TaskPlansScreen(
-                deadlines: controller.allDeadlines, arabic: _ar,
-              )),
+              MaterialPageRoute<void>(
+                builder: (_) => TaskPlansScreen(
+                  deadlines: controller.allDeadlines,
+                  arabic: _ar,
+                ),
+              ),
             ),
           ),
           IconButton(

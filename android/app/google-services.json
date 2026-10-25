@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "657266784006",
+    "project_id": "masari-bb658",
+    "storage_bucket": "masari-bb658.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:657266784006:android:9f700e4bcd8420fed31087",
+        "android_client_info": {
+          "package_name": "com.mohammedemad333.masari"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "657266784006-1fcbhb6i8560pvb1e4d1k2fpo5nhhb7r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mohammedemad333.masari",
+            "certificate_hash": "18f89f5c966457305385b9629ddf4f6169f32ea4"
+          }
+        },
+        {
+          "client_id": "657266784006-ai622s0cibo6t9kpld590pruvgccib48.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApSNw-a1XHNOsgZewHHYFDUadevKxEWxY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "657266784006-ai622s0cibo6t9kpld590pruvgccib48.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

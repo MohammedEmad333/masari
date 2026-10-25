@@ -1,0 +1,34 @@
+name: Inspect official APK signing fingerprints
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/inspect-apk-fingerprints.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Download official latest GitHub Release APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/masari-release"
+          gh release download --repo "$GH_REPO" --pattern '*.apk' --dir "$RUNNER_TEMP/masari-release"
+          test "$(find "$RUNNER_TEMP/masari-release" -maxdepth 1 -name '*.apk' | wc -l)" -ge 1
+      - name: Show SHA-1 and SHA-256 of signing certificate
+        run: |
+          for apk in "$RUNNER_TEMP"/masari-release/*.apk; do
+            echo "APK: $(basename "$apk")"
+            keytool -printcert -jarfile "$apk" | grep -E 'SHA1:|SHA256:|Owner:|Issuer:'
+          done

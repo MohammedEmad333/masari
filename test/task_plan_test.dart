@@ -7,11 +7,28 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   test('progress and grouped daily steps survive serialization', () {
-    final plan = TaskPlan(deadlineId: 'moodle-123', steps: [
-      TaskStep(id: '1', title: 'Research', scheduledFor: DateTime(2026, 10, 27), status: TaskStepStatus.completed),
-      TaskStep(id: '2', title: 'Draft', scheduledFor: DateTime(2026, 10, 27), status: TaskStepStatus.inProgress),
-      TaskStep(id: '3', title: 'Review', scheduledFor: DateTime(2026, 10, 28)),
-    ]);
+    final plan = TaskPlan(
+      deadlineId: 'moodle-123',
+      steps: [
+        TaskStep(
+          id: '1',
+          title: 'Research',
+          scheduledFor: DateTime(2026, 10, 27),
+          status: TaskStepStatus.completed,
+        ),
+        TaskStep(
+          id: '2',
+          title: 'Draft',
+          scheduledFor: DateTime(2026, 10, 27),
+          status: TaskStepStatus.inProgress,
+        ),
+        TaskStep(
+          id: '3',
+          title: 'Review',
+          scheduledFor: DateTime(2026, 10, 28),
+        ),
+      ],
+    );
     expect(plan.progress, closeTo(1 / 3, 0.001));
     expect(plan.byDay.length, 2);
     final restored = TaskPlan.fromJson(plan.toJson());
@@ -21,9 +38,18 @@ void main() {
 
   test('plans for different Moodle tasks are stored independently', () async {
     const repository = TaskPlanRepository();
-    await repository.save(TaskPlan(deadlineId: 'course:a', steps: [
-      TaskStep(id: 's1', title: 'Read', scheduledFor: DateTime(2026, 10, 27)),
-    ]));
+    await repository.save(
+      TaskPlan(
+        deadlineId: 'course:a',
+        steps: [
+          TaskStep(
+            id: 's1',
+            title: 'Read',
+            scheduledFor: DateTime(2026, 10, 27),
+          ),
+        ],
+      ),
+    );
     await repository.save(TaskPlan(deadlineId: 'course:b', steps: const []));
     expect((await repository.load('course:a'))?.steps.single.title, 'Read');
     await repository.remove('course:b');
@@ -34,7 +60,7 @@ void main() {
   test('bad plan entries do not discard valid ones', () async {
     SharedPreferences.setMockInitialValues({
       TaskPlanRepository.storageKey:
-        '{"valid":{"deadlineId":"valid","steps":[]},"bad":{"steps":"oops"}}',
+          '{"valid":{"deadlineId":"valid","steps":[]},"bad":{"steps":"oops"}}',
     });
     const repository = TaskPlanRepository();
     expect((await repository.loadAll()).keys, contains('valid'));

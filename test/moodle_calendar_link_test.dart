@@ -43,6 +43,38 @@ void main() {
     );
   });
 
+  test('normalizes any Moodle export period to custom', () {
+    for (final period in ['monthnow', 'weeknext', 'monthnext', 'anything']) {
+      final original =
+          'https://moodle.example.edu/calendar/export_execute.php'
+          '?userid=42&authtoken=secret&preset_what=all&preset_time=$period';
+      final updated = MoodleCalendarLink.preferCustomPeriod(original);
+      final uri = Uri.parse(updated);
+      expect(uri.queryParameters['preset_time'], 'custom');
+      expect(uri.queryParameters['authtoken'], 'secret');
+      expect(uri.queryParameters['userid'], '42');
+      expect(uri.queryParameters['preset_what'], 'all');
+    }
+  });
+
+  test('adds missing period and leaves existing custom unchanged', () {
+    const original =
+        'https://moodle.example.edu/calendar/export_execute.php'
+        '?userid=42&authtoken=secret';
+    final updated = MoodleCalendarLink.preferCustomPeriod(original);
+    expect(Uri.parse(updated).queryParameters['preset_time'], 'custom');
+    expect(MoodleCalendarLink.preferCustomPeriod(updated), updated);
+  });
+
+  test('does not rewrite unrelated or unauthenticated calendar URLs', () {
+    const ics = 'https://example.edu/feed.ics?preset_time=monthnow';
+    const withoutToken =
+        'https://moodle.example.edu/calendar/export_execute.php'
+        '?preset_time=monthnow';
+    expect(MoodleCalendarLink.preferCustomPeriod(ics), ics);
+    expect(MoodleCalendarLink.preferCustomPeriod(withoutToken), withoutToken);
+  });
+
   test('rejects site-specific paths and URL fragments', () {
     expect(
       MoodleCalendarLink.fromBrowser(

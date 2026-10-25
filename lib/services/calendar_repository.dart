@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/deadline.dart';
 import 'ics_parser.dart';
+import 'moodle_calendar_link.dart';
 import 'calendar_source_merger.dart';
 
 class CalendarSyncException implements Exception {
@@ -291,6 +292,19 @@ class CalendarRepository {
   }
 
   Future<List<Deadline>> _fetchCalendar(String url) async {
+    final preferred = MoodleCalendarLink.preferCustomPeriod(url);
+    if (preferred != url) {
+      try {
+        return await _downloadCalendar(preferred);
+      } on CalendarSyncException {
+        // Moodle installations may reject custom ranges. Use the original
+        // export period instead of disconnecting a working subscription.
+      }
+    }
+    return _downloadCalendar(url);
+  }
+
+  Future<List<Deadline>> _downloadCalendar(String url) async {
     late final http.Response response;
     try {
       response = await _client

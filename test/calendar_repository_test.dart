@@ -95,6 +95,81 @@ void main() {
     expect(await CalendarRepository().loadReminderOffsets(), [24, 6, 1]);
   });
 
+  test(
+    'sync prefers custom period and preserves original stored URL',
+    () async {
+      final requests = <Uri>[];
+      final client = MockClient((request) async {
+        requests.add(request.url);
+        return http.Response(
+          'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:custom-1\n'
+          'SUMMARY:Custom period assignment\nDTSTART:20300504T100000Z\n'
+          'END:VEVENT\nEND:VCALENDAR',
+          200,
+        );
+      });
+      final repository = CalendarRepository(client: client);
+      const original =
+          'https://moodle.example.edu/calendar/export_execute.php'
+          '?userid=7&authtoken=secret&preset_time=monthnow';
+      final values = await repository.sync(calendarUrl: original);
+      expect(values.single.uid, 'custom-1');
+      expect(requests.length, 1);
+      expect(requests.single.queryParameters['preset_time'], 'custom');
+      expect(await repository.loadCalendarUrl(), original);
+      client.close();
+    },
+  );
+
+  test('failed custom period retries original export', () async {
+    final periods = <String?>[];
+    final client = MockClient((request) async {
+      final period = request.url.queryParameters['preset_time'];
+      periods.add(period);
+      if (period == 'custom') return http.Response('Bad request', 400);
+      return http.Response(
+        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:original-1\n'
+        'SUMMARY:Original period assignment\nDTSTART:20300504T100000Z\n'
+        'END:VEVENT\nEND:VCALENDAR',
+        200,
+      );
+    });
+    final repository = CalendarRepository(client: client);
+    final values = await repository.sync(
+      calendarUrl:
+          'https://moodle.example.edu/calendar/export_execute.php'
+          '?userid=7&authtoken=secret&preset_time=monthnow',
+    );
+    expect(periods, ['custom', 'monthnow']);
+    expect(values.single.uid, 'original-1');
+    client.close();
+  });
+
+  test(
+    'both export failures retain offline cache and report failure',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('deadline_cache_v2', 'existing-cache');
+      final periods = <String?>[];
+      final client = MockClient((request) async {
+        periods.add(request.url.queryParameters['preset_time']);
+        return http.Response('Invalid authentication', 200);
+      });
+      final repository = CalendarRepository(client: client);
+      await expectLater(
+        repository.sync(
+          calendarUrl:
+              'https://moodle.example.edu/calendar/export_execute.php'
+              '?authtoken=secret&preset_time=monthnow',
+        ),
+        throwsA(isA<CalendarSyncException>()),
+      );
+      expect(periods, ['custom', 'monthnow']);
+      expect(prefs.getString('deadline_cache_v2'), 'existing-cache');
+      client.close();
+    },
+  );
+
   test('HTTP sync failure preserves offline deadlines and timestamp', () async {
     final prefs = await SharedPreferences.getInstance();
     final deadline = Deadline(
@@ -204,7 +279,7 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('deadline_cache_v2', 'previous-cache');
     final client = MockClient(
-      (request) async => http.Response('BEGIN:VCALENDAR\\nBEGIN:VEVENT', 200),
+      (request) async => http.Response('BEGIN:VCALENDAR\nBEGIN:VEVENT', 200),
     );
     final repository = CalendarRepository(client: client);
     await expectLater(
@@ -220,7 +295,7 @@ void main() {
     await prefs.setString('deadline_cache_v2', 'previous-cache');
     final client = MockClient(
       (request) async =>
-          http.Response('<html>BEGIN:VCALENDAR\\nEND:VCALENDAR</html>', 200),
+          http.Response('<html>BEGIN:VCALENDAR\nEND:VCALENDAR</html>', 200),
     );
     final repository = CalendarRepository(client: client);
     await expectLater(

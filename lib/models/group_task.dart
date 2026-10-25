@@ -23,12 +23,22 @@ class GroupTaskPart {
   final String assigneeId;
   final GroupTaskStatus status;
 
-  GroupTaskPart copyWith({String? title, String? assigneeId, GroupTaskStatus? status}) =>
-      GroupTaskPart(id: id, title: title ?? this.title,
-          assigneeId: assigneeId ?? this.assigneeId, status: status ?? this.status);
+  GroupTaskPart copyWith({
+    String? title,
+    String? assigneeId,
+    GroupTaskStatus? status,
+  }) => GroupTaskPart(
+    id: id,
+    title: title ?? this.title,
+    assigneeId: assigneeId ?? this.assigneeId,
+    status: status ?? this.status,
+  );
 
   Map<String, dynamic> toJson() => {
-    'id': id, 'title': title, 'assigneeId': assigneeId, 'status': status.name,
+    'id': id,
+    'title': title,
+    'assigneeId': assigneeId,
+    'status': status.name,
   };
 
   factory GroupTaskPart.fromJson(Map<String, dynamic> json) => GroupTaskPart(
@@ -57,14 +67,18 @@ class GroupTask {
   final List<GroupTaskMember> members;
   final List<GroupTaskPart> parts;
 
-  double get progress => parts.isEmpty ? 0 :
-      parts.where((part) => part.status == GroupTaskStatus.completed).length / parts.length;
+  double get progress => parts.isEmpty
+      ? 0
+      : parts.where((part) => part.status == GroupTaskStatus.completed).length /
+            parts.length;
 
   bool get assignmentsValid =>
       members.map((member) => member.id).toSet().length == members.length &&
-      parts.every((part) =>
-          part.assigneeId.isEmpty ||
-          members.any((member) => member.id == part.assigneeId));
+      parts.every(
+        (part) =>
+            part.assigneeId.isEmpty ||
+            members.any((member) => member.id == part.assigneeId),
+      );
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -78,11 +92,17 @@ class GroupTask {
     id: json['id'] as String,
     deadlineId: json['deadlineId'] as String,
     name: json['name'] as String,
-    members: (json['members'] as List).map(
-      (value) => GroupTaskMember.fromJson(Map<String, dynamic>.from(value as Map)),
-    ).toList(),
-    parts: (json['parts'] as List).map(
-      (value) => GroupTaskPart.fromJson(Map<String, dynamic>.from(value as Map)),
-    ).toList(),
+    members: (json['members'] as List)
+        .map(
+          (value) =>
+              GroupTaskMember.fromJson(Map<String, dynamic>.from(value as Map)),
+        )
+        .toList(),
+    parts: (json['parts'] as List)
+        .map(
+          (value) =>
+              GroupTaskPart.fromJson(Map<String, dynamic>.from(value as Map)),
+        )
+        .toList(),
   );
 }

@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/backups/{backupId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && backupId == 'personal-v1'
+        && (request.method == 'get' || request.method == 'delete'
+          || (request.resource.data.schema == 1
+            && request.resource.data.keys().hasOnly(['schema', 'manualTasks', 'plans', 'uploadedAt'])
+            && request.resource.data.manualTasks is list
+            && request.resource.data.plans is list));
+    }
+  }
+}

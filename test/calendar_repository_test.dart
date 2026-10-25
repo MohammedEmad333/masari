@@ -95,7 +95,6 @@ void main() {
     expect(await CalendarRepository().loadReminderOffsets(), [24, 6, 1]);
   });
 
-
   test('sync prefers custom period and preserves original stored URL', () async {
     final requests = <Uri>[];
     final client = MockClient((request) async {
@@ -108,7 +107,8 @@ void main() {
       );
     });
     final repository = CalendarRepository(client: client);
-    const original = 'https://moodle.example.edu/calendar/export_execute.php'
+    const original =
+        'https://moodle.example.edu/calendar/export_execute.php'
         '?userid=7&authtoken=secret&preset_time=monthnow';
     final values = await repository.sync(calendarUrl: original);
     expect(values.single.uid, 'custom-1');
@@ -133,7 +133,8 @@ void main() {
     });
     final repository = CalendarRepository(client: client);
     final values = await repository.sync(
-      calendarUrl: 'https://moodle.example.edu/calendar/export_execute.php'
+      calendarUrl:
+          'https://moodle.example.edu/calendar/export_execute.php'
           '?userid=7&authtoken=secret&preset_time=monthnow',
     );
     expect(periods, ['custom', 'monthnow']);
@@ -152,7 +153,8 @@ void main() {
     final repository = CalendarRepository(client: client);
     await expectLater(
       repository.sync(
-        calendarUrl: 'https://moodle.example.edu/calendar/export_execute.php'
+        calendarUrl:
+            'https://moodle.example.edu/calendar/export_execute.php'
             '?authtoken=secret&preset_time=monthnow',
       ),
       throwsA(isA<CalendarSyncException>()),

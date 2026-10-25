@@ -12,7 +12,20 @@
           "package_name": "com.mohammedemad333.masari"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "657266784006-1fcbhb6i8560pvb1e4d1k2fpo5nhhb7r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mohammedemad333.masari",
+            "certificate_hash": "18f89f5c966457305385b9629ddf4f6169f32ea4"
+          }
+        },
+        {
+          "client_id": "657266784006-ai622s0cibo6t9kpld590pruvgccib48.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyApSNw-a1XHNOsgZewHHYFDUadevKxEWxY"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "657266784006-ai622s0cibo6t9kpld590pruvgccib48.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

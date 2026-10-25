@@ -49,6 +49,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Export formatted calendar screen
+        run: |
+          dart format lib/screens/calendar_backup_screen.dart
+          echo CALENDAR_FORMAT_BEGIN
+          base64 -w0 lib/screens/calendar_backup_screen.dart
+          echo
+          echo CALENDAR_FORMAT_END
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

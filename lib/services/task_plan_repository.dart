@@ -21,7 +21,9 @@ class TaskPlanRepository {
       final result = <String, TaskPlan>{};
       for (final entry in decoded.entries) {
         try {
-          final plan = TaskPlan.fromJson(Map<String, dynamic>.from(entry.value as Map));
+          final plan = TaskPlan.fromJson(
+            Map<String, dynamic>.from(entry.value as Map),
+          );
           result[entry.key.toString()] = plan;
         } catch (_) {
           // Preserve other valid plans when one stored entry is corrupted.
@@ -33,11 +35,16 @@ class TaskPlanRepository {
     }
   }
 
-  Future<TaskPlan?> load(String deadlineId) async => (await loadAll())[deadlineId];
+  Future<TaskPlan?> load(String deadlineId) async =>
+      (await loadAll())[deadlineId];
 
   Future<void> save(TaskPlan plan) async {
     if (plan.deadlineId.trim().isEmpty) {
-      throw ArgumentError.value(plan.deadlineId, 'deadlineId', 'Cannot be empty');
+      throw ArgumentError.value(
+        plan.deadlineId,
+        'deadlineId',
+        'Cannot be empty',
+      );
     }
     final all = await loadAll();
     all[plan.deadlineId] = plan;

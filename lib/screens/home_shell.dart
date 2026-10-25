@@ -20,6 +20,8 @@ import 'pomodoro_dialog.dart';
 import 'moodle_calendar_browser.dart';
 import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
+import 'task_plans_screen.dart';
+
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -64,6 +66,15 @@ class _HomeShellState extends State<HomeShell> {
       appBar: AppBar(
         title: Text(titles[_index]),
         actions: [
+          IconButton(
+            tooltip: t('Task plans', 'خطط المهام'),
+            icon: const Icon(Icons.account_tree_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => TaskPlansScreen(
+                deadlines: controller.allDeadlines, arabic: _ar,
+              )),
+            ),
+          ),
           IconButton(
             tooltip: t('Sync now', 'مزامنة الآن'),
             onPressed: controller.busy || !_canSync ? null : _sync,

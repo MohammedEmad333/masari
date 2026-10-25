@@ -250,7 +250,10 @@ class CalendarRepository {
     lastSyncWarning = null;
     // A failed optional feed must not prevent the primary feed from updating.
     // Retain cached events for an unavailable feed until it works again.
-    final previous = await loadCachedDeadlines();
+    final previousUrl = await loadCalendarUrl();
+    final sameAccount =
+        calendarUrl == null || previousUrl == null || previousUrl == url;
+    final previous = sameAccount ? await loadCachedDeadlines() : <Deadline>[];
     final sources = <String, List<Deadline>>{'': await _fetchCalendar(url)};
     var failedCount = 0;
     for (final extra in additional.toSet()) {
@@ -268,11 +271,16 @@ class CalendarRepository {
     }
     final refreshed = CalendarSourceMerger.merge(sources);
     final retained = <String, Deadline>{};
-    if (failedCount > 0) {
-      for (final deadline in previous) {
+    final now = DateTime.now();
+    // Keep previously imported historical events even after Moodle's rolling
+    // ICS export window moves on. A missing event does not prove deletion.
+    // During partial feed failures keep the entire previous cache instead.
+    for (final deadline in previous) {
+      if (failedCount > 0 || deadline.due.isBefore(now)) {
         retained[deadline.stableKey] = deadline;
       }
     }
+    // Fresh events win by stable UID, including revised deadlines and titles.
     for (final deadline in refreshed) {
       retained[deadline.stableKey] = deadline;
     }

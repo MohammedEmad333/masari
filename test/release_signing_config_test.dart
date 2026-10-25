@@ -20,14 +20,15 @@ void main() {
     }
   });
 
-  test('legacy CI APK cannot be mistaken for a distributable release', () {
+  test('CI smoke APK cannot be mistaken for a distributable release', () {
     final ci = File('.github/workflows/flutter-ci.yml').readAsStringSync();
     final publish = File(
       '.github/workflows/publish-release.yml',
     ).readAsStringSync();
 
     expect(ci, isNot(contains('actions/upload-artifact@')));
-    expect(ci, contains('Smoke-build legacy APK (not for distribution)'));
+    expect(ci, contains("MASARI_CI_SMOKE_BUILD: 'true'"));
+    expect(ci, contains('Smoke-build Masari APK (not for distribution)'));
     expect(publish, isNot(contains('moodle-reminder-release-apk')));
     expect(publish, isNot(contains('--clobber')));
   });

@@ -16,10 +16,9 @@ class MoodleCalendarLink {
       return value;
     }
     if (uri.queryParameters['preset_time'] == 'custom') return value;
-    return uri.replace(queryParameters: {
-      ...uri.queryParameters,
-      'preset_time': 'custom',
-    }).toString();
+    return uri.replace(
+      queryParameters: {...uri.queryParameters, 'preset_time': 'custom'},
+    ).toString();
   }
 
   static Uri? exportPage(String moodleServer) {

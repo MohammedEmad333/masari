@@ -43,7 +43,6 @@ void main() {
     );
   });
 
-
   test('normalizes any Moodle export period to custom', () {
     for (final period in ['monthnow', 'weeknext', 'monthnext', 'anything']) {
       final original =

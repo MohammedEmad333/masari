@@ -21,6 +21,7 @@ import 'moodle_calendar_browser.dart';
 import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
 import 'task_plans_screen.dart';
+import 'google_account_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -65,6 +66,15 @@ class _HomeShellState extends State<HomeShell> {
       appBar: AppBar(
         title: Text(titles[_index]),
         actions: [
+          IconButton(
+            tooltip: t('Google account', 'حساب Google'),
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => GoogleAccountScreen(arabic: _ar),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: t('Task plans', 'خطط المهام'),
             icon: const Icon(Icons.account_tree_outlined),

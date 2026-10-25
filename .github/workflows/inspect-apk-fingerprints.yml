@@ -28,7 +28,9 @@ jobs:
           test "$(find "$RUNNER_TEMP/masari-release" -maxdepth 1 -name '*.apk' | wc -l)" -ge 1
       - name: Show SHA-1 and SHA-256 of signing certificate
         run: |
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
           for apk in "$RUNNER_TEMP"/masari-release/*.apk; do
             echo "APK: $(basename "$apk")"
-            keytool -printcert -jarfile "$apk" | grep -E 'SHA1:|SHA256:|Owner:|Issuer:'
+            "$APKSIGNER" verify --print-certs "$apk" | grep -E 'certificate SHA-1 digest:|certificate SHA-256 digest:|certificate DN:'
           done

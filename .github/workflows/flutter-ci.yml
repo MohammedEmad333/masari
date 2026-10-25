@@ -58,12 +58,13 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      # Compilation-only APK: do not upload as a downloadable installable artifact.
-      # Official signed APKs are published by publish-release.yml after green main CI.
-      - name: Smoke-build legacy APK (not for distribution)
-        env:
-          LEGACY_CI_BUILD: 'true'
-        run: flutter build apk --release
+      # Compilation-only APK: same permanent ID, temporary debug signature.
+      # Do not distribute; official signed APKs are published after green main CI.
+      - name: Smoke-build Masari APK (not for distribution)
+        run: |
+          flutter build apk --release
+          AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n 1)"
+          "$AAPT" dump badging build/app/outputs/flutter-apk/app-release.apk | grep -F "package: name='com.mohammedemad333.masari'"
 
       - name: Create CI-only signing key for Google Play smoke test
         shell: bash

@@ -189,15 +189,17 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
           onPressed: _busy
               ? null
               : () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => CalendarBackupScreen(arabic: widget.arabic),
-                    ),
+                  MaterialPageRoute<void>(
+                    builder: (_) => CalendarBackupScreen(arabic: widget.arabic),
                   ),
+                ),
           icon: const Icon(Icons.enhanced_encryption_outlined),
-          label: Text(t(
-            'Encrypted Moodle calendar links',
-            'حفظ روابط تقويم Moodle بشكل مشفّر',
-          )),
+          label: Text(
+            t(
+              'Encrypted Moodle calendar links',
+              'حفظ روابط تقويم Moodle بشكل مشفّر',
+            ),
+          ),
         ),
         if (_busy)
           const Center(

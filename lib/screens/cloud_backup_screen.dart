@@ -77,18 +77,20 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
         manualTasks: widget.controller.manualDeadlines,
         plans: plans,
       );
-      if (mounted)
+      if (mounted) {
         setState(
           () => _status = t('Backup saved.', 'تم حفظ النسخة الاحتياطية.'),
         );
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _status = t(
             'Backup failed. Check Firestore access.',
             'فشل النسخ. تحقق من صلاحيات Firestore.',
           ),
         );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -133,21 +135,23 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
           importedPlans++;
         }
       }
-      if (mounted)
+      if (mounted) {
         setState(
           () => _status = t(
             'Imported $importedTasks tasks and $importedPlans plans. Existing items were not replaced.',
             'تم استيراد $importedTasks مهمة و$importedPlans خطة، دون استبدال العناصر الموجودة.',
           ),
         );
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _status = t(
             'Restore failed. Check Firestore access.',
             'فشل الاسترجاع. تحقق من صلاحيات Firestore.',
           ),
         );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

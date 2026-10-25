@@ -268,11 +268,16 @@ class CalendarRepository {
     }
     final refreshed = CalendarSourceMerger.merge(sources);
     final retained = <String, Deadline>{};
-    if (failedCount > 0) {
-      for (final deadline in previous) {
+    final now = DateTime.now();
+    // Keep previously imported historical events even after Moodle's rolling
+    // ICS export window moves on. A missing event does not prove deletion.
+    // During partial feed failures keep the entire previous cache instead.
+    for (final deadline in previous) {
+      if (failedCount > 0 || deadline.due.isBefore(now)) {
         retained[deadline.stableKey] = deadline;
       }
     }
+    // Fresh events win by stable UID, including revised deadlines and titles.
     for (final deadline in refreshed) {
       retained[deadline.stableKey] = deadline;
     }

@@ -41,7 +41,9 @@ class EncryptedCalendarBackup {
 
   static void _validateUrl(String url) {
     final uri = Uri.tryParse(url);
-    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty ||
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
         uri.userInfo.isNotEmpty) {
       throw const FormatException('Expected a valid HTTPS calendar feed URL.');
     }
@@ -86,7 +88,10 @@ class EncryptedCalendarBackup {
     );
     final plain = await _aes.decrypt(
       box,
-      secretKey: await _key(passphrase, base64Decode(archive['salt'] as String)),
+      secretKey: await _key(
+        passphrase,
+        base64Decode(archive['salt'] as String),
+      ),
     );
     final decoded = jsonDecode(utf8.decode(plain));
     if (decoded is! List) {
@@ -111,10 +116,9 @@ class EncryptedCalendarBackup {
     required String passphrase,
   }) async {
     final archive = await encrypt(urls: urls, passphrase: passphrase);
-    await _document(user).set({
-      ...archive,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
+    await _document(
+      user,
+    ).set({...archive, 'updatedAt': FieldValue.serverTimestamp()});
   }
 
   Future<List<String>?> download({

@@ -145,27 +145,30 @@ void main() {
     client.close();
   });
 
-  test('both export failures retain offline cache and report failure', () async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('deadline_cache_v2', 'existing-cache');
-    final periods = <String?>[];
-    final client = MockClient((request) async {
-      periods.add(request.url.queryParameters['preset_time']);
-      return http.Response('Invalid authentication', 200);
-    });
-    final repository = CalendarRepository(client: client);
-    await expectLater(
-      repository.sync(
-        calendarUrl:
-            'https://moodle.example.edu/calendar/export_execute.php'
-            '?authtoken=secret&preset_time=monthnow',
-      ),
-      throwsA(isA<CalendarSyncException>()),
-    );
-    expect(periods, ['custom', 'monthnow']);
-    expect(prefs.getString('deadline_cache_v2'), 'existing-cache');
-    client.close();
-  });
+  test(
+    'both export failures retain offline cache and report failure',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('deadline_cache_v2', 'existing-cache');
+      final periods = <String?>[];
+      final client = MockClient((request) async {
+        periods.add(request.url.queryParameters['preset_time']);
+        return http.Response('Invalid authentication', 200);
+      });
+      final repository = CalendarRepository(client: client);
+      await expectLater(
+        repository.sync(
+          calendarUrl:
+              'https://moodle.example.edu/calendar/export_execute.php'
+              '?authtoken=secret&preset_time=monthnow',
+        ),
+        throwsA(isA<CalendarSyncException>()),
+      );
+      expect(periods, ['custom', 'monthnow']);
+      expect(prefs.getString('deadline_cache_v2'), 'existing-cache');
+      client.close();
+    },
+  );
 
   test('HTTP sync failure preserves offline deadlines and timestamp', () async {
     final prefs = await SharedPreferences.getInstance();

@@ -72,10 +72,8 @@ class _HomeShellState extends State<HomeShell> {
             icon: const Icon(Icons.cloud_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => CloudBackupScreen(
-                  controller: controller,
-                  arabic: _ar,
-                ),
+                builder: (_) =>
+                    CloudBackupScreen(controller: controller, arabic: _ar),
               ),
             ),
           ),

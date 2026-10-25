@@ -98,10 +98,7 @@ class _CalendarBackupScreenState extends State<CalendarBackupScreen> {
       if (upload) {
         final primary = await repository.loadCalendarUrl();
         final secondary = await repository.loadAdditionalCalendarUrls();
-        final urls = <String>{
-          ?primary,
-          ...secondary,
-        }.toList();
+        final urls = <String>{?primary, ...secondary}.toList();
         if (urls.isEmpty) {
           if (mounted) {
             setState(

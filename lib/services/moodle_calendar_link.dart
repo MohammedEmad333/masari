@@ -5,6 +5,23 @@ import 'moodle_browser_login.dart';
 class MoodleCalendarLink {
   const MoodleCalendarLink._();
 
+  /// Prefer Moodle's wider custom export window without modifying its token.
+  /// Other calendar providers and ordinary ICS URLs remain unchanged.
+  static String preferCustomPeriod(String value) {
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        (uri.scheme != 'https' && uri.scheme != 'http') ||
+        !uri.path.endsWith('/calendar/export_execute.php') ||
+        !uri.queryParameters.containsKey('authtoken')) {
+      return value;
+    }
+    if (uri.queryParameters['preset_time'] == 'custom') return value;
+    return uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      'preset_time': 'custom',
+    }).toString();
+  }
+
   static Uri? exportPage(String moodleServer) {
     final login = MoodleBrowserLogin.universityLoginUrl(moodleServer);
     return login?.resolve('../calendar/export.php');

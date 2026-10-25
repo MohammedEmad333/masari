@@ -11,13 +11,18 @@ class OptionalCloudBackup {
 
   final FirebaseFirestore firestore;
 
-  DocumentReference<Map<String, dynamic>> _document(User user) =>
-      firestore.collection('users').doc(user.uid).collection('backups').doc('personal-v1');
+  DocumentReference<Map<String, dynamic>> _document(User user) => firestore
+      .collection('users')
+      .doc(user.uid)
+      .collection('backups')
+      .doc('personal-v1');
 
   static bool _safeId(String value) =>
       value.isNotEmpty &&
-      !RegExp(r'https?[:/]|authtoken|access_token|password|[?&]token=', caseSensitive: false)
-          .hasMatch(value);
+      !RegExp(
+        r'https?[:/]|authtoken|access_token|password|[?&]token=',
+        caseSensitive: false,
+      ).hasMatch(value);
 
   static Map<String, dynamic> _task(Deadline task) => {
     'uid': task.uid,
@@ -36,10 +41,14 @@ class OptionalCloudBackup {
     required Map<String, TaskPlan> plans,
   }) => {
     'schema': 1,
-    'manualTasks': manualTasks.where((task) => _safeId(task.uid))
-        .map(_task).toList(),
-    'plans': plans.entries.where((entry) => _safeId(entry.key))
-        .map((entry) => entry.value.toJson()).toList(),
+    'manualTasks': manualTasks
+        .where((task) => _safeId(task.uid))
+        .map(_task)
+        .toList(),
+    'plans': plans.entries
+        .where((entry) => _safeId(entry.key))
+        .map((entry) => entry.value.toJson())
+        .toList(),
   };
 
   Future<void> upload({
@@ -48,10 +57,9 @@ class OptionalCloudBackup {
     required Map<String, TaskPlan> plans,
   }) async {
     final payload = prepare(manualTasks: manualTasks, plans: plans);
-    await _document(user).set({
-      ...payload,
-      'uploadedAt': FieldValue.serverTimestamp(),
-    });
+    await _document(
+      user,
+    ).set({...payload, 'uploadedAt': FieldValue.serverTimestamp()});
   }
 
   Future<({List<Deadline> tasks, Map<String, TaskPlan> plans})> download(
@@ -67,16 +75,18 @@ class OptionalCloudBackup {
         final item = Map<String, dynamic>.from(value as Map);
         // Never accept a URL or OAuth/Moodle secrets from a remote document.
         if (!_safeId(item['uid'] as String? ?? '')) continue;
-        tasks.add(Deadline.fromJson({
-          'uid': item['uid'],
-          'title': item['title'],
-          'due': item['due'],
-          'description': item['description'],
-          'course': item['course'],
-          'priority': item['priority'],
-          'reminderMinutesBefore': item['reminderMinutesBefore'],
-          'lastModified': item['lastModified'],
-        }));
+        tasks.add(
+          Deadline.fromJson({
+            'uid': item['uid'],
+            'title': item['title'],
+            'due': item['due'],
+            'description': item['description'],
+            'course': item['course'],
+            'priority': item['priority'],
+            'reminderMinutesBefore': item['reminderMinutesBefore'],
+            'lastModified': item['lastModified'],
+          }),
+        );
       } catch (_) {
         // Skip invalid remote entries without losing the other tasks.
       }

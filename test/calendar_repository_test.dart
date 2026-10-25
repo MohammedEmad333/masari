@@ -95,28 +95,31 @@ void main() {
     expect(await CalendarRepository().loadReminderOffsets(), [24, 6, 1]);
   });
 
-  test('sync prefers custom period and preserves original stored URL', () async {
-    final requests = <Uri>[];
-    final client = MockClient((request) async {
-      requests.add(request.url);
-      return http.Response(
-        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:custom-1\n'
-        'SUMMARY:Custom period assignment\nDTSTART:20300504T100000Z\n'
-        'END:VEVENT\nEND:VCALENDAR',
-        200,
-      );
-    });
-    final repository = CalendarRepository(client: client);
-    const original =
-        'https://moodle.example.edu/calendar/export_execute.php'
-        '?userid=7&authtoken=secret&preset_time=monthnow';
-    final values = await repository.sync(calendarUrl: original);
-    expect(values.single.uid, 'custom-1');
-    expect(requests.length, 1);
-    expect(requests.single.queryParameters['preset_time'], 'custom');
-    expect(await repository.loadCalendarUrl(), original);
-    client.close();
-  });
+  test(
+    'sync prefers custom period and preserves original stored URL',
+    () async {
+      final requests = <Uri>[];
+      final client = MockClient((request) async {
+        requests.add(request.url);
+        return http.Response(
+          'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:custom-1\n'
+          'SUMMARY:Custom period assignment\nDTSTART:20300504T100000Z\n'
+          'END:VEVENT\nEND:VCALENDAR',
+          200,
+        );
+      });
+      final repository = CalendarRepository(client: client);
+      const original =
+          'https://moodle.example.edu/calendar/export_execute.php'
+          '?userid=7&authtoken=secret&preset_time=monthnow';
+      final values = await repository.sync(calendarUrl: original);
+      expect(values.single.uid, 'custom-1');
+      expect(requests.length, 1);
+      expect(requests.single.queryParameters['preset_time'], 'custom');
+      expect(await repository.loadCalendarUrl(), original);
+      client.close();
+    },
+  );
 
   test('failed custom period retries original export', () async {
     final periods = <String?>[];

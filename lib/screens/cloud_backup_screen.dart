@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
+import 'calendar_backup_screen.dart';
 import '../services/google_account_service.dart';
 import '../services/optional_cloud_backup.dart';
 import '../services/task_plan_repository.dart';
@@ -182,6 +183,21 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
           label: Text(
             t('Restore missing items', 'استرجاع العناصر غير الموجودة'),
           ),
+        ),
+        const SizedBox(height: 20),
+        OutlinedButton.icon(
+          onPressed: _busy
+              ? null
+              : () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => CalendarBackupScreen(arabic: widget.arabic),
+                    ),
+                  ),
+          icon: const Icon(Icons.enhanced_encryption_outlined),
+          label: Text(t(
+            'Encrypted Moodle calendar links',
+            'حفظ روابط تقويم Moodle بشكل مشفّر',
+          )),
         ),
         if (_busy)
           const Center(

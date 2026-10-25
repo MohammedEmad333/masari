@@ -199,34 +199,37 @@ void main() {
     client.close();
   });
 
-  test('fresh version replaces historical event without duplication', () async {
-    final prefs = await SharedPreferences.getInstance();
-    final historical = Deadline(
-      uid: 'revised-event',
-      title: 'Old title',
-      due: DateTime.utc(2024, 2, 1),
-    );
-    await prefs.setString(
-      'deadline_cache_v2',
-      jsonEncode([historical.toJson()]),
-    );
-    final client = MockClient(
-      (request) async => http.Response(
-        'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:revised-event\n'
-        'SUMMARY:Updated title\nDTSTART:20300504T100000Z\n'
-        'END:VEVENT\nEND:VCALENDAR',
-        200,
-      ),
-    );
-    final repository = CalendarRepository(client: client);
-    final values = await repository.sync(
-      calendarUrl: 'https://moodle.example.edu/calendar.ics',
-    );
-    expect(values, hasLength(1));
-    expect(values.single.title, 'Updated title');
-    expect(values.single.due.year, 2030);
-    client.close();
-  });
+  test(
+    'fresh version replaces historical event without duplication',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final historical = Deadline(
+        uid: 'revised-event',
+        title: 'Old title',
+        due: DateTime.utc(2024, 2, 1),
+      );
+      await prefs.setString(
+        'deadline_cache_v2',
+        jsonEncode([historical.toJson()]),
+      );
+      final client = MockClient(
+        (request) async => http.Response(
+          'BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:revised-event\n'
+          'SUMMARY:Updated title\nDTSTART:20300504T100000Z\n'
+          'END:VEVENT\nEND:VCALENDAR',
+          200,
+        ),
+      );
+      final repository = CalendarRepository(client: client);
+      final values = await repository.sync(
+        calendarUrl: 'https://moodle.example.edu/calendar.ics',
+      );
+      expect(values, hasLength(1));
+      expect(values.single.title, 'Updated title');
+      expect(values.single.due.year, 2030);
+      client.close();
+    },
+  );
 
   test('future items missing from a successful export are not archived', () async {
     final prefs = await SharedPreferences.getInstance();

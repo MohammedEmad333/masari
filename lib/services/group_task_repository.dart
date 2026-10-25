@@ -17,16 +17,22 @@ class GroupTaskRepository {
     try {
       final data = jsonDecode(raw);
       if (data is! List) return [];
-      return data.map((value) =>
-        GroupTask.fromJson(Map<String, dynamic>.from(value as Map))
-      ).where((group) => group.assignmentsValid).toList();
+      return data
+          .map(
+            (value) =>
+                GroupTask.fromJson(Map<String, dynamic>.from(value as Map)),
+          )
+          .where((group) => group.assignmentsValid)
+          .toList();
     } catch (_) {
       return [];
     }
   }
 
   Future<void> save(GroupTask group) async {
-    if (!group.assignmentsValid || group.id.isEmpty || group.deadlineId.isEmpty) {
+    if (!group.assignmentsValid ||
+        group.id.isEmpty ||
+        group.deadlineId.isEmpty) {
       throw ArgumentError('Invalid group assignments or identifiers');
     }
     final groups = await loadAll();
@@ -47,8 +53,10 @@ class GroupTaskRepository {
 
   Future<void> _write(List<GroupTask> groups) async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = await prefs.setString(storageKey,
-        jsonEncode(groups.map((group) => group.toJson()).toList()));
+    final saved = await prefs.setString(
+      storageKey,
+      jsonEncode(groups.map((group) => group.toJson()).toList()),
+    );
     if (!saved) throw StateError('Unable to save group tasks');
   }
 }

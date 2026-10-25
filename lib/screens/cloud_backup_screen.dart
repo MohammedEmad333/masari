@@ -166,8 +166,8 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
       children: [
         Text(
           t(
-            'Manual tasks and task plans only. Moodle calendar feeds, tokens, passwords and cached Moodle events stay on this device. Sync is manual, not automatic.',
-            'النسخ يشمل المهام اليدوية وخطط المهام فقط. روابط التقويم والتوكن وكلمات المرور ومواعيد Moodle المخزنة تبقى على الجهاز. المزامنة يدوية وليست تلقائية.',
+            'Tasks and plans can be backed up here. Private calendar URLs can be backed up separately with client-side encryption and a password you choose. Moodle passwords and cached Moodle events stay on this device. Backups are manual.',
+            'يمكن حفظ المهام والخطط هنا. كما يمكن حفظ روابط التقويم بشكل منفصل بعد تشفيرها بكلمة مرور تختارها. كلمات مرور Moodle والمواعيد المخزنة تبقى على الجهاز. النسخ يدوي.',
           ),
         ),
         const SizedBox(height: 24),

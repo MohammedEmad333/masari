@@ -149,9 +149,8 @@ class _HomeShellState extends State<HomeShell> {
     } else {
       message = t('Moodle calendar synced.', 'تمت مزامنة تقويم Moodle.');
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   bool _sameDay(DateTime a, DateTime b) =>
@@ -241,9 +240,8 @@ class _HomeShellState extends State<HomeShell> {
                     leading: const Icon(Icons.access_time_outlined),
                     title: Text(t('Due time', 'وقت الاستحقاق')),
                     subtitle: Text(
-                      MaterialLocalizations.of(
-                        context,
-                      ).formatTimeOfDay(TimeOfDay.fromDateTime(due)),
+                      MaterialLocalizations.of(context)
+                          .formatTimeOfDay(TimeOfDay.fromDateTime(due)),
                     ),
                     trailing: const Icon(Icons.edit_outlined),
                     onTap: () async {
@@ -617,10 +615,9 @@ class _HomeShellState extends State<HomeShell> {
     final overdue = deadlines
         .where((d) => d.isPast && !d.due.isBefore(archiveCutoff))
         .toList();
-    final historical = deadlines
-        .where((d) => d.due.isBefore(archiveCutoff))
-        .toList()
-      ..sort((a, b) => b.due.compareTo(a.due));
+    final historical =
+        deadlines.where((d) => d.due.isBefore(archiveCutoff)).toList()
+          ..sort((a, b) => b.due.compareTo(a.due));
     final upcoming = deadlines.where((d) => !d.isPast).toList();
     upcoming.sort((a, b) => a.due.compareTo(b.due));
     return ListView(
@@ -940,9 +937,8 @@ class _HomeShellState extends State<HomeShell> {
             ),
             null => t('Could not repair reminders.', 'تعذّر إصلاح التنبيهات.'),
           };
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _testNotification() async {
@@ -1018,9 +1014,8 @@ class _HomeShellState extends State<HomeShell> {
               widget.controller.error ?? t('Invalid URL', 'رابط غير صالح'),
               arabic: _ar,
             );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     } finally {
       field.dispose();
     }
@@ -1241,9 +1236,8 @@ class _HomeShellState extends State<HomeShell> {
       Expanded(
         child: Text(
           title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
       ),
       Badge(label: Text(count)),
@@ -1356,9 +1350,8 @@ class _HomeShellState extends State<HomeShell> {
             children: [
               Text(
                 deadline.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               if (deadline.course.isNotEmpty)
@@ -1555,9 +1548,8 @@ class _HomeShellState extends State<HomeShell> {
             children: [
               Text(
                 _displayCourse(course),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               ...deadlines.take(8).map(_deadlineCard),
@@ -1711,9 +1703,8 @@ class _SetupState extends State<_Setup> {
           Text(
             t('Connect your Moodle calendar', 'اربط تقويم Moodle'),
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 12),
           Text(
@@ -1968,9 +1959,8 @@ class _DeadlineCalendar extends StatelessWidget {
               child: Text(
                 DateFormat.yMMMM(localeName).format(selectedDate),
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             IconButton(

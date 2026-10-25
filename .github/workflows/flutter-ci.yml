@@ -49,6 +49,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Export formatted home shell
+        run: |
+          dart format lib/screens/home_shell.dart
+          echo HOME_FORMAT_BEGIN
+          base64 -w0 lib/screens/home_shell.dart
+          echo
+          echo HOME_FORMAT_END
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

@@ -613,7 +613,14 @@ class _HomeShellState extends State<HomeShell> {
       query: _searchQuery,
       course: selectedCourse,
     );
-    final overdue = deadlines.where((d) => d.isPast).toList();
+    final archiveCutoff = DateTime.now().subtract(const Duration(days: 7));
+    final overdue = deadlines
+        .where((d) => d.isPast && !d.due.isBefore(archiveCutoff))
+        .toList();
+    final historical = deadlines
+        .where((d) => d.due.isBefore(archiveCutoff))
+        .toList()
+      ..sort((a, b) => b.due.compareTo(a.due));
     final upcoming = deadlines.where((d) => !d.isPast).toList();
     upcoming.sort((a, b) => a.due.compareTo(b.due));
     return ListView(
@@ -671,6 +678,22 @@ class _HomeShellState extends State<HomeShell> {
           _section(t('Overdue', 'مهام متأخرة'), '${overdue.length}'),
           const SizedBox(height: 8),
           ...overdue.take(15).map(_deadlineCard),
+        ],
+        if (historical.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _section(
+            t('Previous tasks (saved)', 'المهام السابقة المحفوظة'),
+            '${historical.length}',
+          ),
+          const SizedBox(height: 4),
+          Text(
+            t(
+              'Past dates do not confirm whether Moodle accepted a submission.',
+              'مرور موعد المهمة لا يؤكد تسليمها أو إغلاق التسليم في Moodle.',
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...historical.map(_deadlineCard),
         ],
         const SizedBox(height: 18),
         _section(

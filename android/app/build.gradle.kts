@@ -20,23 +20,20 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
-    // Keep GitHub APKs compatible with existing installations. The official
-    // Play Store build uses the new, permanently registered application ID.
+    // All build variants share the same permanent Android application ID.
+    // CI-only smoke builds use a temporary key and are never distributed.
     val playStoreBuild = System.getenv("PLAY_STORE_BUILD") == "true"
+    val ciSmokeBuild = System.getenv("MASARI_CI_SMOKE_BUILD") == "true"
 
     defaultConfig {
-        applicationId = if (playStoreBuild) {
-            "com.mohammedemad333.masari"
-        } else {
-            "com.example.moodle_reminder"
-        }
+        applicationId = "com.mohammedemad333.masari"
         minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    val playSigningRequested = playStoreBuild
+    val playSigningRequested = !ciSmokeBuild
     val playKeystorePath = System.getenv("PLAY_KEYSTORE_PATH")
     val playStorePassword = System.getenv("PLAY_STORE_PASSWORD")
     val playKeyAlias = System.getenv("PLAY_KEY_ALIAS")
@@ -49,7 +46,7 @@ android {
         throw GradleException("Missing Play signing environment variables")
     }
 
-    if (playStoreBuild && playSigningAvailable) {
+    if (!ciSmokeBuild && playSigningAvailable) {
         signingConfigs {
             create("playRelease") {
                 storeFile = file(playKeystorePath!!)
@@ -62,8 +59,8 @@ android {
 
     buildTypes {
         release {
-            // GitHub test APKs keep working; Play builds require upload signing.
-            signingConfig = if (playStoreBuild) {
+            // CI smoke APKs are not distributed; official builds use upload signing.
+            signingConfig = if (!ciSmokeBuild) {
                 signingConfigs.getByName("playRelease")
             } else {
                 signingConfigs.getByName("debug")

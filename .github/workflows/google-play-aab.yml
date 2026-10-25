@@ -36,7 +36,7 @@ jobs:
             fi
           done
           # This workflow must build the app registered in Google Play Console.
-          # GitHub release APKs deliberately keep the legacy application ID.
+          # Google Play AAB and GitHub releases share the same package and upload key.
           if ! grep -Fq '"com.mohammedemad333.masari"' android/app/build.gradle.kts; then
             echo "::error::Expected Masari Google Play application ID is missing."
             exit 1
@@ -54,11 +54,16 @@ jobs:
       - name: Decode upload key
         env:
           PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
         shell: bash
         run: |
           umask 077
           printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload-keystore.jks"
           test -s "$RUNNER_TEMP/upload-keystore.jks"
+          # Fail if the upload certificate changes unexpectedly.
+          SIGNER_SHA256="$(keytool -list -keystore "$RUNNER_TEMP/upload-keystore.jks" -storepass "$PLAY_STORE_PASSWORD" -alias "$PLAY_KEY_ALIAS" -v | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          test "$SIGNER_SHA256" = "bff786abee97d6a467103b95fed08ce536a683edc362d9f3a712ab77932230d4"
       - name: Build signed Android App Bundle
         env:
           PLAY_STORE_BUILD: 'true'

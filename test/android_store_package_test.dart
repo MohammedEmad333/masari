@@ -5,14 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 String readProjectFile(String path) => File(path).readAsStringSync();
 
 void main() {
-  test('Play and GitHub APK builds use distinct application IDs', () {
+  test('every Android variant uses one application ID', () {
     final gradle = readProjectFile('android/app/build.gradle.kts');
 
     expect(gradle, contains('System.getenv("PLAY_STORE_BUILD") == "true"'));
-    expect(gradle, contains('applicationId = if (playStoreBuild) {'));
+    expect(gradle, contains('applicationId = "com.mohammedemad333.masari"'));
     expect(gradle, contains('"com.mohammedemad333.masari"'));
-    expect(gradle, contains('"com.example.moodle_reminder"'));
-    expect(gradle, contains('signingConfig = if (playStoreBuild) {'));
+    expect(gradle, isNot(contains('applicationId = if (playStoreBuild)')));
+    expect(gradle, contains('signingConfig = if (!ciSmokeBuild) {'));
+    expect(gradle, contains('val playSigningRequested = !ciSmokeBuild'));
   });
 
   test('Play publishing workflow opts into the signed Store build', () {

@@ -81,6 +81,9 @@ jobs:
           umask 077
           printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/masari-upload.jks"
           test -s "$RUNNER_TEMP/masari-upload.jks"
+          # Require the Firebase-registered official release certificate.
+          SIGNER_SHA256="$(keytool -list -keystore "$RUNNER_TEMP/masari-upload.jks" -storepass "$PLAY_STORE_PASSWORD" -alias "$PLAY_KEY_ALIAS" -v | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          test "$SIGNER_SHA256" = "bff786abee97d6a467103b95fed08ce536a683edc362d9f3a712ab77932230d4"
 
       - name: Build official signed Masari APK
         if: steps.latest.outputs.publish == 'true'

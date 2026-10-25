@@ -49,6 +49,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Capture Google account screen formatting
+        run: |
+          dart format lib/screens/google_account_screen.dart
+          echo FORMAT_BEGIN
+          base64 -w0 lib/screens/google_account_screen.dart
+          echo
+          echo FORMAT_END
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

@@ -38,8 +38,10 @@ class _GoogleAccountScreenState extends State<GoogleAccountScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = tr('Google sign-in is unavailable on this build.',
-            'تسجيل الدخول باستخدام Google غير متاح في هذه النسخة.');
+        _error = tr(
+          'Google sign-in is unavailable on this build.',
+          'تسجيل الدخول باستخدام Google غير متاح في هذه النسخة.',
+        );
         _busy = false;
       });
     }
@@ -56,13 +58,21 @@ class _GoogleAccountScreenState extends State<GoogleAccountScreen> {
       setState(() => _user = user);
     } on GoogleSignInException catch (error) {
       if (error.code != GoogleSignInExceptionCode.canceled && mounted) {
-        setState(() => _error = tr('Google sign-in failed. Check app signing settings.',
-            'فشل تسجيل الدخول. تحقق من إعدادات توقيع التطبيق.'));
+        setState(
+          () => _error = tr(
+            'Google sign-in failed. Check app signing settings.',
+            'فشل تسجيل الدخول. تحقق من إعدادات توقيع التطبيق.',
+          ),
+        );
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _error = tr('Could not connect to Google.',
-            'تعذّر الاتصال بحساب Google.'));
+        setState(
+          () => _error = tr(
+            'Could not connect to Google.',
+            'تعذّر الاتصال بحساب Google.',
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -85,45 +95,55 @@ class _GoogleAccountScreenState extends State<GoogleAccountScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(tr('Google account', 'حساب Google'))),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.account_circle_outlined, size: 64),
-                const SizedBox(height: 16),
-                Text(_user?.displayName ??
-                    tr('Sign in to Masari', 'تسجيل الدخول إلى مساري')),
-                if (_user?.email != null) Text(_user!.email!),
-                const SizedBox(height: 12),
-                Text(tr(
-                  'Google sign-in is optional. Tasks and Moodle calendar remain local; cloud backup is not enabled yet.',
-                  'ربط Google اختياري. تظل المهام والتقويم محليين؛ النسخ الاحتياطي السحابي غير مفعل بعد.',
-                ), textAlign: TextAlign.center),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(_error!, textAlign: TextAlign.center,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                ],
-                const SizedBox(height: 24),
-                if (_busy)
-                  const CircularProgressIndicator()
-                else if (_user == null)
-                  FilledButton.icon(
-                    onPressed: _signIn,
-                    icon: const Icon(Icons.login),
-                    label: Text(tr('Continue with Google', 'المتابعة باستخدام Google')),
-                  )
-                else
-                  OutlinedButton(
-                    onPressed: _signOut,
-                    child: Text(tr('Sign out', 'تسجيل الخروج')),
-                  ),
-              ],
+    appBar: AppBar(title: Text(tr('Google account', 'حساب Google'))),
+    body: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.account_circle_outlined, size: 64),
+            const SizedBox(height: 16),
+            Text(
+              _user?.displayName ??
+                  tr('Sign in to Masari', 'تسجيل الدخول إلى مساري'),
             ),
-          ),
+            if (_user?.email != null) Text(_user!.email!),
+            const SizedBox(height: 12),
+            Text(
+              tr(
+                'Google sign-in is optional. Tasks and Moodle calendar remain local; cloud backup is not enabled yet.',
+                'ربط Google اختياري. تظل المهام والتقويم محليين؛ النسخ الاحتياطي السحابي غير مفعل بعد.',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ],
+            const SizedBox(height: 24),
+            if (_busy)
+              const CircularProgressIndicator()
+            else if (_user == null)
+              FilledButton.icon(
+                onPressed: _signIn,
+                icon: const Icon(Icons.login),
+                label: Text(
+                  tr('Continue with Google', 'المتابعة باستخدام Google'),
+                ),
+              )
+            else
+              OutlinedButton(
+                onPressed: _signOut,
+                child: Text(tr('Sign out', 'تسجيل الخروج')),
+              ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

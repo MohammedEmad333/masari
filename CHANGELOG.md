@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.11
+
+- Add optional Google account sign-in and sign-out using Firebase Authentication, without moving Moodle credentials or tasks to the cloud.
+- Unify Android package identity to `com.mohammedemad333.masari` across APK and AAB builds.
+- Require the stable official upload certificate for distributable GitHub and Google Play builds; prevent CI-only signatures from being published.
+- Register Firebase configuration and Google OAuth for the official Masari package and signed releases.
+
+
 ## 2.2.10
 
 - Localize immediate and scheduled Masari reminders, including test messages, due-date timestamps, and singular/plural minute/hour/day labels for Arabic and English.

@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/deadline.dart';
 import '../models/task_step.dart';
-import 'task_plan_repository.dart';
 
 /// Only a user-initiated backup of non-secret fields. Not Moodle ICS or API data.
 class OptionalCloudBackup {

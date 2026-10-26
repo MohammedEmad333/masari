@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.12
+
+- Add optional Firestore backup and additive restore for manual tasks and plans.
+- Add end-to-end encrypted backup of primary and additional Moodle calendar URLs using a separate user-provided passphrase.
+- Keep Moodle passwords and session cookies off cloud storage; enforce user-owned backup access in Firestore security rules.
+
+
 ## 2.2.11
 
 - Add optional Google account sign-in and sign-out using Firebase Authentication, without moving Moodle credentials or tasks to the cloud.

@@ -37,6 +37,7 @@ class _HomeShellState extends State<HomeShell> {
   int _index = 0;
   String _searchQuery = '';
   String? _selectedCourse;
+  String _courseCalendarFilter = 'all';
   DateTime _selectedDate = DateTime.now();
 
   bool get _ar => widget.controller.locale.languageCode == 'ar';
@@ -851,8 +852,29 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _courses() {
+    final extras = widget.controller.additionalCalendarUrls;
+    String sourceKey(String url) {
+      final hash = url.codeUnits.fold<int>(
+        0,
+        (value, code) => ((value * 31) + code) & 0x7fffffff,
+      );
+      return 'feed-${hash.toRadixString(16)}:';
+    }
+
+    final sourceKeys = [for (final url in extras) sourceKey(url)];
+    String calendarOf(Deadline deadline) {
+      for (var index = 0; index < sourceKeys.length; index++) {
+        if (deadline.uid.startsWith(sourceKeys[index])) {
+          return 'extra-$index';
+        }
+      }
+      return 'primary';
+    }
+
+    final selected = _courseCalendarFilter;
     final grouped = <String, List<Deadline>>{};
     for (final deadline in widget.controller.activeDeadlines) {
+      if (selected != 'all' && calendarOf(deadline) != selected) continue;
       final course = deadline.course.isEmpty
           ? t('Other', 'أخرى')
           : deadline.course;
@@ -883,6 +905,38 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ),
         const SizedBox(height: 16),
+        if (extras.isNotEmpty) ...[
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ChoiceChip(
+                  label: Text(t('All calendars', 'كل التقاويم')),
+                  selected: _courseCalendarFilter == 'all',
+                  onSelected: (_) =>
+                      setState(() => _courseCalendarFilter = 'all'),
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: Text(t('Main calendar', 'التقويم الأساسي')),
+                  selected: _courseCalendarFilter == 'primary',
+                  onSelected: (_) =>
+                      setState(() => _courseCalendarFilter = 'primary'),
+                ),
+                for (var i = 0; i < extras.length; i++) ...[
+                  const SizedBox(width: 8),
+                  ChoiceChip(
+                    label: Text(t('Calendar ${i + 2}', 'تقويم ${i + 2}')),
+                    selected: _courseCalendarFilter == 'extra-$i',
+                    onSelected: (_) =>
+                        setState(() => _courseCalendarFilter = 'extra-$i'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
         _section(t('My courses', 'مساقاتي'), '${entries.length}'),
         const SizedBox(height: 8),
         if (entries.isEmpty)

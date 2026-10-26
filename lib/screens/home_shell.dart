@@ -506,11 +506,15 @@ class _HomeShellState extends State<HomeShell> {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.calendar_month_outlined),
-                title: Text(t('Connect your university calendar', 'اربط تقويم جامعتك')),
-                subtitle: Text(t(
-                  'Optional. You can manage tasks and study plans without Moodle.',
-                  'اختياري؛ يمكنك إدارة المهام والخطط دون ربط Moodle.',
-                )),
+                title: Text(
+                  t('Connect your university calendar', 'اربط تقويم جامعتك'),
+                ),
+                subtitle: Text(
+                  t(
+                    'Optional. You can manage tasks and study plans without Moodle.',
+                    'اختياري؛ يمكنك إدارة المهام والخطط دون ربط Moodle.',
+                  ),
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _openCalendarSetup,
               ),
@@ -1103,14 +1107,17 @@ class _HomeShellState extends State<HomeShell> {
               OutlinedButton.icon(
                 onPressed: controller.busy ? null : _openCalendarSetup,
                 icon: const Icon(Icons.add_link),
-                label: Text(t('Connect or import a calendar', 'ربط تقويم أو استيراده')),
+                label: Text(
+                  t('Connect or import a calendar', 'ربط تقويم أو استيراده'),
+                ),
               ),
               if (controller.calendarConnected) const SizedBox(height: 12),
-              if (controller.calendarConnected) OutlinedButton.icon(
-                onPressed: controller.busy ? null : _editCalendarUrl,
-                icon: const Icon(Icons.edit_calendar_outlined),
-                label: Text(t('Edit calendar URL', 'تعديل رابط التقويم')),
-              ),
+              if (controller.calendarConnected)
+                OutlinedButton.icon(
+                  onPressed: controller.busy ? null : _editCalendarUrl,
+                  icon: const Icon(Icons.edit_calendar_outlined),
+                  label: Text(t('Edit calendar URL', 'تعديل رابط التقويم')),
+                ),
             ],
           ),
         ),
@@ -1244,11 +1251,12 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ),
         const SizedBox(height: 16),
-        if (controller.calendarConnected) OutlinedButton.icon(
-          onPressed: _disconnect,
-          icon: const Icon(Icons.link_off_rounded),
-          label: Text(t('Disconnect Moodle', 'فصل Moodle')),
-        ),
+        if (controller.calendarConnected)
+          OutlinedButton.icon(
+            onPressed: _disconnect,
+            icon: const Icon(Icons.link_off_rounded),
+            label: Text(t('Disconnect Moodle', 'فصل Moodle')),
+          ),
       ],
     );
   }
@@ -1855,9 +1863,10 @@ class _SetupState extends State<_Setup> {
                 ? null
                 : () async {
                     final ok = await widget.controller.connect(_url.text);
-                    if (ok && mounted) {
+                    if (!context.mounted) return;
+                    if (ok) {
                       Navigator.of(context).pop();
-                    } else if (mounted) {
+                    } else {
                       setState(() {});
                     }
                   },

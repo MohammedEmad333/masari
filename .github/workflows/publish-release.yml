@@ -128,6 +128,18 @@ jobs:
             "$TAG" "$VERIFIED_SHA" "$GITHUB_REPOSITORY" \
             "${{ github.event.workflow_run.id }}" > dist/release-notes.md
 
+      - name: Upload official signed APK to Actions artifacts
+        if: steps.latest.outputs.publish == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: masari-${{ steps.version.outputs.tag }}-signed-apk
+          path: |
+            dist/${{ steps.version.outputs.apk }}
+            dist/${{ steps.version.outputs.apk }}.sha256
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
       - name: Publish immutable signed APK release
         if: steps.latest.outputs.publish == 'true'
         env:

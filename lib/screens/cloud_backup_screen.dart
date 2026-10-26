@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
+import 'calendar_backup_screen.dart';
 import '../services/google_account_service.dart';
 import '../services/optional_cloud_backup.dart';
 import '../services/task_plan_repository.dart';
@@ -165,8 +166,8 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
       children: [
         Text(
           t(
-            'Manual tasks and task plans only. Moodle calendar feeds, tokens, passwords and cached Moodle events stay on this device. Sync is manual, not automatic.',
-            'النسخ يشمل المهام اليدوية وخطط المهام فقط. روابط التقويم والتوكن وكلمات المرور ومواعيد Moodle المخزنة تبقى على الجهاز. المزامنة يدوية وليست تلقائية.',
+            'Tasks and plans can be backed up here. Private calendar URLs can be backed up separately with client-side encryption and a password you choose. Moodle passwords and cached Moodle events stay on this device. Backups are manual.',
+            'يمكن حفظ المهام والخطط هنا. كما يمكن حفظ روابط التقويم بشكل منفصل بعد تشفيرها بكلمة مرور تختارها. كلمات مرور Moodle والمواعيد المخزنة تبقى على الجهاز. النسخ يدوي.',
           ),
         ),
         const SizedBox(height: 24),
@@ -181,6 +182,23 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
           icon: const Icon(Icons.cloud_download_outlined),
           label: Text(
             t('Restore missing items', 'استرجاع العناصر غير الموجودة'),
+          ),
+        ),
+        const SizedBox(height: 20),
+        OutlinedButton.icon(
+          onPressed: _busy
+              ? null
+              : () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => CalendarBackupScreen(arabic: widget.arabic),
+                  ),
+                ),
+          icon: const Icon(Icons.enhanced_encryption_outlined),
+          label: Text(
+            t(
+              'Encrypted Moodle calendar links',
+              'حفظ روابط تقويم Moodle بشكل مشفّر',
+            ),
           ),
         ),
         if (_busy)

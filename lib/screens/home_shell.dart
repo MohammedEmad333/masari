@@ -861,9 +861,7 @@ class _HomeShellState extends State<HomeShell> {
       return 'feed-${hash.toRadixString(16)}:';
     }
 
-    final sourceKeys = [
-      for (final url in extras) sourceKey(url),
-    ];
+    final sourceKeys = [for (final url in extras) sourceKey(url)];
     String calendarOf(Deadline deadline) {
       for (var index = 0; index < sourceKeys.length; index++) {
         if (deadline.uid.startsWith(sourceKeys[index])) {
@@ -915,20 +913,23 @@ class _HomeShellState extends State<HomeShell> {
                 ChoiceChip(
                   label: Text(t('All calendars', 'كل التقاويم')),
                   selected: _courseCalendarFilter == 'all',
-                  onSelected: (_) => setState(() => _courseCalendarFilter = 'all'),
+                  onSelected: (_) =>
+                      setState(() => _courseCalendarFilter = 'all'),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
                   label: Text(t('Main calendar', 'التقويم الأساسي')),
                   selected: _courseCalendarFilter == 'primary',
-                  onSelected: (_) => setState(() => _courseCalendarFilter = 'primary'),
+                  onSelected: (_) =>
+                      setState(() => _courseCalendarFilter = 'primary'),
                 ),
                 for (var i = 0; i < extras.length; i++) ...[
                   const SizedBox(width: 8),
                   ChoiceChip(
                     label: Text(t('Calendar ${i + 2}', 'تقويم ${i + 2}')),
                     selected: _courseCalendarFilter == 'extra-$i',
-                    onSelected: (_) => setState(() => _courseCalendarFilter = 'extra-$i'),
+                    onSelected: (_) =>
+                        setState(() => _courseCalendarFilter = 'extra-$i'),
                   ),
                 ],
               ],

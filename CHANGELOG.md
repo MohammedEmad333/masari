@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.14
+
+- Filter courses by primary or additional Moodle calendars, or show all together.
+- Keep private Moodle calendar tokens hidden from the course filter UI.
+
+
 ## 2.2.13
 
 - Open the Masari home screen without requiring a Moodle connection.

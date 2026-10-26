@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.13
+
+- Open the Masari home screen without requiring a Moodle connection.
+- Offer an optional calendar connection card on the home screen and move connection/import methods to Settings.
+- Keep offline tasks, plans, Google sign-in and backups accessible without Moodle.
+
+
 ## 2.2.12
 
 - Add optional Firestore backup and additive restore for manual tasks and plans.

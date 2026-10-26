@@ -51,7 +51,6 @@ class _HomeShellState extends State<HomeShell> {
     if (!controller.initialized) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (!controller.hasConnection) return _Setup(controller: controller);
 
     final titles = [
       t('Home', 'الرئيسية'),
@@ -157,6 +156,14 @@ class _HomeShellState extends State<HomeShell> {
             label: t('Settings', 'الإعدادات'),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _openCalendarSetup() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => _Setup(controller: widget.controller),
       ),
     );
   }
@@ -495,6 +502,21 @@ class _HomeShellState extends State<HomeShell> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
+          if (!controller.calendarConnected && !controller.apiConnected) ...[
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.calendar_month_outlined),
+                title: Text(t('Connect your university calendar', 'اربط تقويم جامعتك')),
+                subtitle: Text(t(
+                  'Optional. You can manage tasks and study plans without Moodle.',
+                  'اختياري؛ يمكنك إدارة المهام والخطط دون ربط Moodle.',
+                )),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _openCalendarSetup,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           _HeroCard(
             title: t(
               '$weekCount deadlines this week',
@@ -1079,6 +1101,12 @@ class _HomeShellState extends State<HomeShell> {
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
+                onPressed: controller.busy ? null : _openCalendarSetup,
+                icon: const Icon(Icons.add_link),
+                label: Text(t('Connect or import a calendar', 'ربط تقويم أو استيراده')),
+              ),
+              if (controller.calendarConnected) const SizedBox(height: 12),
+              if (controller.calendarConnected) OutlinedButton.icon(
                 onPressed: controller.busy ? null : _editCalendarUrl,
                 icon: const Icon(Icons.edit_calendar_outlined),
                 label: Text(t('Edit calendar URL', 'تعديل رابط التقويم')),
@@ -1216,7 +1244,7 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
+        if (controller.calendarConnected) OutlinedButton.icon(
           onPressed: _disconnect,
           icon: const Icon(Icons.link_off_rounded),
           label: Text(t('Disconnect Moodle', 'فصل Moodle')),
@@ -1676,7 +1704,11 @@ class _SetupState extends State<_Setup> {
     if (!mounted || url == null) return;
     _url.text = url;
     final saved = await widget.controller.connect(url);
-    if (!saved && mounted) setState(() {});
+    if (saved && mounted) {
+      Navigator.of(context).pop();
+    } else if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _importDownloadedIcs() async {
@@ -1704,6 +1736,7 @@ class _SetupState extends State<_Setup> {
         throw const FormatException('No importable deadlines found.');
       }
       await widget.controller.importSessionDeadlines(deadlines);
+      if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1822,7 +1855,11 @@ class _SetupState extends State<_Setup> {
                 ? null
                 : () async {
                     final ok = await widget.controller.connect(_url.text);
-                    if (!ok && mounted) setState(() {});
+                    if (ok && mounted) {
+                      Navigator.of(context).pop();
+                    } else if (mounted) {
+                      setState(() {});
+                    }
                   },
             icon: widget.controller.busy
                 ? const SizedBox.square(

@@ -1,0 +1,16 @@
+{
+  "name": "masari-ai-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

@@ -1,0 +1,37 @@
+name: Masari AI proxy CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/ai-proxy/**'
+      - '.github/workflows/ai-proxy-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/ai-proxy/**'
+      - '.github/workflows/ai-proxy-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript syntax
+        run: |
+          node --check server/ai-proxy/index.mjs
+          node --check server/ai-proxy/core.mjs
+          node --check server/ai-proxy/test/core.test.mjs
+      - name: Run isolated proxy tests
+        working-directory: server/ai-proxy
+        run: node --test

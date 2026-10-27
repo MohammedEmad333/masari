@@ -1231,7 +1231,7 @@ class _HomeShellState extends State<HomeShell> {
                   title: Text(controller.calendarLabels[url] ??
                       t('Moodle calendar', 'تقويم Moodle')),
                   subtitle: Text(t('Private link saved', 'رابط خاص محفوظ')),
-                  trailing: Wrap(
+                  trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(

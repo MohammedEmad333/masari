@@ -21,6 +21,7 @@ class AutomaticGoogleSync {
 
   final AppController controller;
   static const preferenceKey = 'google_auto_sync_enabled_v1';
+  static const accountKey = 'google_auto_sync_account_uid_v1';
   final _plans = const TaskPlanRepository();
   bool _running = false;
   bool _queued = false;
@@ -37,7 +38,17 @@ class AutomaticGoogleSync {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(preferenceKey, value);
     enabled = value;
-    if (value) await sync();
+    if (value) {
+      await GoogleAccountService.instance.initialize();
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        await prefs.setBool(preferenceKey, false);
+        enabled = false;
+        throw StateError('Google sign-in is required.');
+      }
+      await prefs.setString(accountKey, user.uid);
+      await sync();
+    }
   }
 
   Future<void> checkForChanges() async {
@@ -62,6 +73,16 @@ class AutomaticGoogleSync {
       await GoogleAccountService.instance.initialize();
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
+      final prefs = await SharedPreferences.getInstance();
+      final accountUid = prefs.getString(accountKey);
+      if (accountUid == null) {
+        // Older settings did not bind automatic sync to an account.
+        // Require a fresh opt-in rather than risking cross-account upload.
+        enabled = false;
+        await prefs.setBool(preferenceKey, false);
+        return;
+      }
+      if (accountUid != user.uid) return;
       final backup = OptionalCloudBackup(FirebaseFirestore.instance);
       final remote = await backup.download(user);
       final localPlans = await _plans.loadAll();

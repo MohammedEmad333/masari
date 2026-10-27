@@ -218,7 +218,7 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
                       );
                     }
                   } catch (_) {
-                    if (mounted)
+                    if (mounted) {
                       setState(
                         () => _status = t(
                           'Unable to change automatic sync settings.',

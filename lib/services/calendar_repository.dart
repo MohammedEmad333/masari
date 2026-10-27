@@ -129,8 +129,9 @@ class CalendarRepository {
     try {
       final value = jsonDecode(encoded);
       if (value is! Map) return {};
-      return value.map<String, String>((key, label) =>
-          MapEntry(key.toString(), label.toString()));
+      return value.map<String, String>(
+        (key, label) => MapEntry(key.toString(), label.toString()),
+      );
     } catch (_) {
       return {};
     }
@@ -156,7 +157,10 @@ class CalendarRepository {
   Future<void> removeAdditionalCalendarUrl(String value) async {
     final labels = await loadCalendarLabels();
     labels.remove(value);
-    await _secureStorage.write(key: _calendarLabelsKey, value: jsonEncode(labels));
+    await _secureStorage.write(
+      key: _calendarLabelsKey,
+      value: jsonEncode(labels),
+    );
     final sources = await loadAdditionalCalendarUrls();
     await _secureStorage.write(
       key: _calendarSourcesKey,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -11,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
+import '../services/automatic_google_sync.dart';
 import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
@@ -33,7 +35,32 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
+  late final AutomaticGoogleSync _autoSync;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoSync = AutomaticGoogleSync(widget.controller);
+    WidgetsBinding.instance.addObserver(this);
+    widget.controller.addListener(_onDataChanged);
+    unawaited(_autoSync.initialize());
+  }
+
+  void _onDataChanged() => unawaited(_autoSync.checkForChanges());
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_autoSync.sync());
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onDataChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   int _index = 0;
   String _searchQuery = '';
   String? _selectedCourse;
@@ -73,7 +100,7 @@ class _HomeShellState extends State<HomeShell> {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) =>
-                    CloudBackupScreen(controller: controller, arabic: _ar),
+                    CloudBackupScreen(controller: controller, arabic: _ar, autoSync: _autoSync),
               ),
             ),
           ),
@@ -89,14 +116,17 @@ class _HomeShellState extends State<HomeShell> {
           IconButton(
             tooltip: t('Task plans', 'خطط المهام'),
             icon: const Icon(Icons.account_tree_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => TaskPlansScreen(
-                  deadlines: controller.allDeadlines,
-                  arabic: _ar,
+            onPressed: () async {
+              await Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => TaskPlansScreen(
+                    deadlines: controller.allDeadlines,
+                    arabic: _ar,
+                  ),
                 ),
-              ),
-            ),
+              );
+              unawaited(_autoSync.checkForChanges());
+            },
           ),
           IconButton(
             tooltip: t('Sync now', 'مزامنة الآن'),

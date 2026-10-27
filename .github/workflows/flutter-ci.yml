@@ -49,6 +49,16 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Diagnostic formatted changed files
+        run: |
+          dart format lib/app_controller.dart lib/screens/home_shell.dart lib/services/calendar_repository.dart
+          for filename in lib/app_controller.dart lib/screens/home_shell.dart lib/services/calendar_repository.dart; do
+            echo "FORMATTED_FILE_START:$filename"
+            base64 -w0 "$filename"
+            echo
+            echo "FORMATTED_FILE_END:$filename"
+          done
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

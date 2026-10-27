@@ -81,6 +81,8 @@ jobs:
           test -s "$APK"
           TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           "$TOOLS/apksigner" verify "$APK"
+          APK_CERT_SHA256="$("$TOOLS/apksigner" verify --print-certs "$APK" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          test "$APK_CERT_SHA256" = "bff786abee97d6a467103b95fed08ce536a683edc362d9f3a712ab77932230d4"
           "$TOOLS/aapt" dump badging "$APK" | grep -F "package: name='com.mohammedemad333.masari'"
 
       - name: Prepare pilot artifact (not a public release)

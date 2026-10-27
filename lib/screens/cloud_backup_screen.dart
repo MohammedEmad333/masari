@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
+import '../services/automatic_google_sync.dart';
 import 'calendar_backup_screen.dart';
 import '../services/google_account_service.dart';
 import '../services/optional_cloud_backup.dart';
@@ -14,9 +15,11 @@ class CloudBackupScreen extends StatefulWidget {
     super.key,
     required this.controller,
     required this.arabic,
+    required this.autoSync,
   });
   final AppController controller;
   final bool arabic;
+  final AutomaticGoogleSync autoSync;
 
   @override
   State<CloudBackupScreen> createState() => _CloudBackupScreenState();
@@ -169,6 +172,42 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
             'Tasks and plans can be backed up here. Private calendar URLs can be backed up separately with client-side encryption and a password you choose. Moodle passwords and cached Moodle events stay on this device. Backups are manual.',
             'يمكن حفظ المهام والخطط هنا. كما يمكن حفظ روابط التقويم بشكل منفصل بعد تشفيرها بكلمة مرور تختارها. كلمات مرور Moodle والمواعيد المخزنة تبقى على الجهاز. النسخ يدوي.',
           ),
+        ),
+        const SizedBox(height: 16),
+        SwitchListTile(
+          title: Text(t('Automatic Google sync', 'المزامنة التلقائية مع Google')),
+          subtitle: Text(t(
+            'Automatically merge missing personal tasks and plans on launch, when you return to the app, and after edits. Requires Google sign-in and internet. Deletions and simultaneous edits are not synchronized yet. Moodle calendar links remain encrypted and manual.',
+            'دمج المهام والخطط المفقودة تلقائيًا عند فتح التطبيق والعودة إليه وبعد التعديل. تتطلب حساب Google والإنترنت. حذف العناصر وتعديل العنصر نفسه على جهازين غير مدعومين بعد. روابط Moodle تبقى مشفّرة وبنسخ يدوي.',
+          )),
+          value: widget.autoSync.enabled,
+          onChanged: _busy ? null : (enabled) async {
+            setState(() {
+              _busy = true;
+              _status = null;
+            });
+            try {
+              if (enabled && await _user() == null) {
+                if (!mounted) return;
+                setState(() => _status = t(
+                  'Sign in with Google before enabling sync.',
+                  'سجّل الدخول بحساب Google قبل تفعيل المزامنة.',
+                ));
+                return;
+              }
+              await widget.autoSync.setEnabled(enabled);
+              if (mounted) setState(() => _status = enabled
+                  ? t('Automatic sync enabled.', 'تم تفعيل المزامنة التلقائية.')
+                  : t('Automatic sync disabled.', 'تم إيقاف المزامنة التلقائية.'));
+            } catch (_) {
+              if (mounted) setState(() => _status = t(
+                'Unable to change automatic sync settings.',
+                'تعذّر تغيير إعدادات المزامنة التلقائية.',
+              ));
+            } finally {
+              if (mounted) setState(() => _busy = false);
+            }
+          },
         ),
         const SizedBox(height: 24),
         FilledButton.icon(

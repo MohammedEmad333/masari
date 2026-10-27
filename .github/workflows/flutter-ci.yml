@@ -49,15 +49,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Diagnostic cloud toggle formatting
-        run: |
-          dart format lib/screens/cloud_backup_screen.dart
-          echo "FORMATTED_BEGIN:cloud"
-          base64 -w0 lib/screens/cloud_backup_screen.dart
-          echo
-          echo "FORMATTED_END:cloud"
-          exit 1  # Diagnostic-only run: retrieve formatted text without Android build
-
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

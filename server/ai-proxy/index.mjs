@@ -58,9 +58,19 @@ const complete = async ({ message, language }) => {
 const quotaBackend = process.env.MASARI_QUOTA_BACKEND || 'firestore';
 let reserveQuota;
 if (quotaBackend === 'postgres') {
+  const passwordFile = process.env.MASARI_POSTGRES_PASSWORD_FILE;
   const connectionString = process.env.MASARI_POSTGRES_URL;
-  if (!connectionString) throw new Error('MASARI_POSTGRES_URL is required');
-  const pool = new pg.Pool({ connectionString, max: 4, connectionTimeoutMillis: 5000 });
+  if (!connectionString && !passwordFile) {
+    throw new Error('PostgreSQL credentials are required');
+  }
+  const pgOptions = passwordFile ? {
+    host: process.env.MASARI_POSTGRES_HOST || 'masari-ai-postgres',
+    port: 5432,
+    user: 'masari_ai',
+    database: 'masari_ai',
+    password: readFileSync(passwordFile, 'utf8').trim(),
+  } : { connectionString };
+  const pool = new pg.Pool({ ...pgOptions, max: 4, connectionTimeoutMillis: 5000 });
   // Startup must fail closed when quota schema cannot be used.
   await pool.query(QUOTA_SCHEMA);
   reserveQuota = createPostgresQuota({ pool });

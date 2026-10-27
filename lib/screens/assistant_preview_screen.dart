@@ -62,11 +62,11 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
                     child: Text(
                       t(
                         'Offline prototype: reads tasks already on your '
-                        'device. It does not contact an AI model, share data, '
-                        'change deadlines, or schedule reminders.',
+                            'device. It does not contact an AI model, share data, '
+                            'change deadlines, or schedule reminders.',
                         'نموذج أولي يعمل محليًا: يقرأ المهام المحفوظة على '
-                        'جهازك فقط. لا يتصل بالذكاء الاصطناعي ولا يشارك '
-                        'البيانات أو يغير المواعيد أو يجدول إشعارات.',
+                            'جهازك فقط. لا يتصل بالذكاء الاصطناعي ولا يشارك '
+                            'البيانات أو يغير المواعيد أو يجدول إشعارات.',
                       ),
                     ),
                   ),
@@ -112,9 +112,8 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
               ),
               ActionChip(
                 label: Text(t('Overdue', 'المتأخرة')),
-                onPressed: () => _example(
-                  t('Show overdue tasks', 'اعرض مهامي المتأخرة'),
-                ),
+                onPressed: () =>
+                    _example(t('Show overdue tasks', 'اعرض مهامي المتأخرة')),
               ),
               ActionChip(
                 label: Text(t('Next 7 days', 'الأيام السبعة القادمة')),
@@ -156,16 +155,16 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
             minutes == null
                 ? t(
                     'Specify an interval such as "10 minutes before". '
-                    'Choose the task and reminder manually.',
+                        'Choose the task and reminder manually.',
                     'حدّد مدة مثل «قبل ١٠ دقائق»، ثم اختر المهمة '
-                    'والتذكير يدويًا.',
+                        'والتذكير يدويًا.',
                   )
                 : t(
                     'Suggested offset: $minutes minutes before the due '
-                    'time. No notification was created. Confirm the '
-                    'task and deadline manually.',
+                        'time. No notification was created. Confirm the '
+                        'task and deadline manually.',
                     'المدة المقترحة: قبل الموعد بـ$minutes دقيقة. '
-                    'لم يُنشأ أي إشعار. راجع المهمة والموعد يدويًا.',
+                        'لم يُنشأ أي إشعار. راجع المهمة والموعد يدويًا.',
                   ),
           ),
         ],
@@ -175,7 +174,7 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
       return Text(
         t(
           'This request is not supported in the local prototype. '
-          'No task has been modified.',
+              'No task has been modified.',
           'هذا الطلب غير مدعوم في النموذج المحلي، ولم تتغير أي مهمة.',
         ),
       );
@@ -228,7 +227,9 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               t(
-                'Showing the first 10 of ' + matches.length.toString() + ' tasks.',
+                'Showing the first 10 of ' +
+                    matches.length.toString() +
+                    ' tasks.',
                 'يُعرض أول 10 مهام من أصل ' + matches.length.toString() + '.',
               ),
             ),

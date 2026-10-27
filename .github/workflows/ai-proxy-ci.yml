@@ -47,5 +47,7 @@ jobs:
           docker compose -f server/ai-proxy/compose.oracle.yaml config --quiet
           docker compose -f server/ai-proxy/compose.oracle.yaml \
             -f server/ai-proxy/compose.oracle-caddy-network.yaml config --quiet
+          docker compose -f server/ai-proxy/compose.oracle.yaml \
+            -f server/ai-proxy/compose.oracle-postgres.yaml config --quiet
       - name: Smoke-build production container image
         run: docker build -t masari-ai-proxy:ci server/ai-proxy

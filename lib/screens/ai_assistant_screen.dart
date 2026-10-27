@@ -68,10 +68,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           'Sign in with Google first.',
           'سجّل الدخول بحساب Google أولاً.',
         );
+      case 'app_check_token_unavailable':
+        return t(
+          'Your device could not obtain an App Check token from Play Integrity. Check Firebase App Check settings and Google Play services.',
+          'تعذّر الحصول على رمز App Check من Play Integrity على جهازك. افحص إعدادات Firebase App Check وخدمات Google Play.',
+        );
       case 'app_check_failed':
         return t(
-          'App verification failed. Check Play Integrity registration or your device.',
-          'فشل التحقق من التطبيق. افحص تسجيل Play Integrity أو جهازك.',
+          'The server rejected the App Check token (HTTP 403). Verify the token and project registration.',
+          'رفض الخادم رمز App Check (HTTP 403). تحقق من تسجيل التطبيق والمشروع.',
         );
       case 'quota_exceeded':
         return t('Daily or minute limit reached.', 'وصلت إلى حد الاستخدام.');

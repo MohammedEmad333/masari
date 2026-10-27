@@ -105,10 +105,10 @@ class AiAssistantClient {
     try {
       appCheckToken = await _appCheckTokenProvider();
     } catch (_) {
-      throw const AiAssistantException('app_check_failed');
+      throw const AiAssistantException('app_check_token_unavailable');
     }
     if (appCheckToken == null || appCheckToken.isEmpty) {
-      throw const AiAssistantException('app_check_failed');
+      throw const AiAssistantException('app_check_token_unavailable');
     }
 
     http.Response response;

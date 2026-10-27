@@ -5,6 +5,8 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAppCheck } from 'firebase-admin/app-check';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createFirestoreQuota } from './firestore_quota.mjs';
+import { createPostgresQuota, QUOTA_SCHEMA } from './postgres_quota.mjs';
+import pg from 'pg';
 import { createRequestHandler } from './core.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -53,7 +55,30 @@ const complete = async ({ message, language }) => {
 // All verified Firebase users can use the pilot. Durable Firestore caps
 // prevent one account or the aggregate app from exhausting requests.
 // Provider-side spend limits and App Check are separate launch requirements.
-const reserveQuota = createFirestoreQuota({ db: getFirestore() });
+const quotaBackend = process.env.MASARI_QUOTA_BACKEND || 'firestore';
+let reserveQuota;
+if (quotaBackend === 'postgres') {
+  const passwordFile = process.env.MASARI_POSTGRES_PASSWORD_FILE;
+  const connectionString = process.env.MASARI_POSTGRES_URL;
+  if (!connectionString && !passwordFile) {
+    throw new Error('PostgreSQL credentials are required');
+  }
+  const pgOptions = passwordFile ? {
+    host: process.env.MASARI_POSTGRES_HOST || 'masari-ai-postgres',
+    port: 5432,
+    user: 'masari_ai',
+    database: 'masari_ai',
+    password: readFileSync(passwordFile, 'utf8').trim(),
+  } : { connectionString };
+  const pool = new pg.Pool({ ...pgOptions, max: 4, connectionTimeoutMillis: 5000 });
+  // Startup must fail closed when quota schema cannot be used.
+  await pool.query(QUOTA_SCHEMA);
+  reserveQuota = createPostgresQuota({ pool });
+} else if (quotaBackend === 'firestore') {
+  reserveQuota = createFirestoreQuota({ db: getFirestore() });
+} else {
+  throw new Error('Invalid MASARI_QUOTA_BACKEND');
+}
 const handler = createRequestHandler({
   authenticate: verifyToken,
   verifyAppCheck,

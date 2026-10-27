@@ -32,6 +32,7 @@ jobs:
           node --check server/ai-proxy/index.mjs
           node --check server/ai-proxy/core.mjs
           node --check server/ai-proxy/firestore_quota.mjs
+          node --check server/ai-proxy/postgres_quota.mjs
           node --check server/ai-proxy/test/core.test.mjs
           node --check server/ai-proxy/test/firestore_quota.test.mjs
       - name: Run isolated proxy tests
@@ -46,5 +47,7 @@ jobs:
           docker compose -f server/ai-proxy/compose.oracle.yaml config --quiet
           docker compose -f server/ai-proxy/compose.oracle.yaml \
             -f server/ai-proxy/compose.oracle-caddy-network.yaml config --quiet
+          docker compose -f server/ai-proxy/compose.oracle.yaml \
+            -f server/ai-proxy/compose.oracle-postgres.yaml config --quiet
       - name: Smoke-build production container image
         run: docker build -t masari-ai-proxy:ci server/ai-proxy

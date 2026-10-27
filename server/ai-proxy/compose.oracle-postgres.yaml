@@ -1,0 +1,46 @@
+# Add to compose.oracle.yaml only after provisioning both local password files.
+# Existing Masari proxy remains bound to localhost:8097.
+services:
+  masari-ai:
+    environment:
+      MASARI_QUOTA_BACKEND: postgres
+      MASARI_POSTGRES_HOST: masari-ai-postgres
+      MASARI_POSTGRES_PASSWORD_FILE: /run/secrets/postgres_client_password
+    volumes:
+      - type: bind
+        source: ./private/postgres_client_password
+        target: /run/secrets/postgres_client_password
+        read_only: true
+    depends_on:
+      masari-ai-postgres:
+        condition: service_healthy
+
+  masari-ai-postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: masari_ai
+      POSTGRES_DB: masari_ai
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_server_password
+    volumes:
+      - masari-ai-pgdata:/var/lib/postgresql/data
+      - type: bind
+        source: ./private/postgres_server_password
+        target: /run/secrets/postgres_server_password
+        read_only: true
+    # Database is reachable only on the Compose-internal network.
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masari_ai -d masari_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    mem_limit: 512m
+    cpus: 1.0
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  masari-ai-pgdata:

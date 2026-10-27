@@ -14,6 +14,7 @@ async function fixture(options = {}) {
       calls.push(request);
       return 'OK';
     },
+    reserveQuota: async () => true,
     ...options,
   }));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -83,4 +84,33 @@ test('returns health without revealing configuration', async () => {
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'ok' });
   } finally { await fx.close(); }
+});
+
+test('denies requests when the durable quota backend is unavailable', async () => {
+  const fx = await fixture({
+    reserveQuota: async () => { throw new Error('Firestore unavailable'); },
+  });
+  try {
+    const response = await ask(fx, body('Help me study'));
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { error: 'quota_service_unavailable' });
+    assert.equal(fx.calls.length, 0);
+  } finally { await fx.close(); }
+});
+test('enforces shared quota rejections before contacting TokenRouter', async () => {
+  const fx = await fixture({
+    reserveQuota: async () => { throw Object.assign(new Error('limited'), { code: 'ai_quota_exceeded' }); },
+  });
+  try {
+    const response = await ask(fx, body('Help me study'));
+    assert.equal(response.status, 429);
+    assert.deepEqual(await response.json(), { error: 'quota_exceeded' });
+    assert.equal(fx.calls.length, 0);
+  } finally { await fx.close(); }
+});
+test('refuses to start if durable quota enforcement is missing', () => {
+  assert.throws(() => createRequestHandler({
+    authenticate: async () => ({ uid: 'test' }),
+    complete: async () => 'OK',
+  }));
 });

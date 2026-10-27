@@ -3,13 +3,15 @@
 export function createRequestHandler({
   authenticate,
   complete,
+  reserveQuota,
   now = () => Date.now(),
   maxParallel = 4,
   maxPerMinute = 5,
   maxPerDay = 30,
 } = {}) {
-  if (typeof authenticate !== 'function' || typeof complete !== 'function') {
-    throw new TypeError('authenticate and complete are required');
+  if (typeof authenticate !== 'function' || typeof complete !== 'function' ||
+      typeof reserveQuota !== 'function') {
+    throw new TypeError('authenticate, complete and durable reserveQuota are required');
   }
 
   const limits = new Map();
@@ -120,6 +122,15 @@ export function createRequestHandler({
     limits.set(user.uid, stats);
     active++;
     try {
+      try {
+        await reserveQuota({ uid: user.uid, at: timestamp });
+      } catch (error) {
+        if (error?.code === 'ai_quota_exceeded') {
+          return reply(res, 429, { error: 'quota_exceeded' });
+        }
+        // Deny by default if Firestore or the budget limiter is unavailable.
+        return reply(res, 503, { error: 'quota_service_unavailable' });
+      }
       const answer = await complete({ message, language: payload.language });
       if (typeof answer !== 'string' || !answer.trim()) {
         return reply(res, 502, { error: 'empty_model_response' });

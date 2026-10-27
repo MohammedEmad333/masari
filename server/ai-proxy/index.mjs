@@ -1,6 +1,8 @@
 import http from 'node:http';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
+import { createFirestoreQuota } from './firestore_quota.mjs';
 import { createRequestHandler } from './core.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
@@ -42,7 +44,11 @@ const complete = async ({ message, language }) => {
   return answer;
 };
 
-const handler = createRequestHandler({ authenticate: verifyToken, complete });
+// All verified Firebase users can use the pilot. Durable Firestore caps
+// prevent one account or the aggregate app from exhausting requests.
+// Provider-side spend limits and App Check are separate launch requirements.
+const reserveQuota = createFirestoreQuota({ db: getFirestore() });
+const handler = createRequestHandler({ authenticate: verifyToken, complete, reserveQuota });
 const port = Number(process.env.PORT || 8096);
 const host = process.env.HOST || '127.0.0.1';
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');

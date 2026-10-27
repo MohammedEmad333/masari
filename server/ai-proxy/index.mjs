@@ -2,6 +2,7 @@ import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getAppCheck } from 'firebase-admin/app-check';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createFirestoreQuota } from './firestore_quota.mjs';
 import { createRequestHandler } from './core.mjs';
@@ -17,6 +18,7 @@ if (!projectId || !apiKey || apiKey.length < 10) {
 
 initializeApp({ credential: applicationDefault(), projectId });
 const verifyToken = async token => getAuth().verifyIdToken(token, true);
+const verifyAppCheck = async token => getAppCheck().verifyToken(token);
 
 const complete = async ({ message, language }) => {
   const response = await fetch('https://api.tokenrouter.com/v1/chat/completions', {
@@ -52,7 +54,12 @@ const complete = async ({ message, language }) => {
 // prevent one account or the aggregate app from exhausting requests.
 // Provider-side spend limits and App Check are separate launch requirements.
 const reserveQuota = createFirestoreQuota({ db: getFirestore() });
-const handler = createRequestHandler({ authenticate: verifyToken, complete, reserveQuota });
+const handler = createRequestHandler({
+  authenticate: verifyToken,
+  verifyAppCheck,
+  complete,
+  reserveQuota,
+});
 const port = Number(process.env.PORT || 8096);
 const host = process.env.HOST || '127.0.0.1';
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');

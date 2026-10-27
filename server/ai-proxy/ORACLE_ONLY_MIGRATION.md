@@ -18,6 +18,51 @@ Google backup, Google sync and Moodle calendar functions remain unchanged.
   have been changed. Leave the live backend on Firestore until the new isolated
   database is provisioned and migrations are verified.
 
+## Isolated database provisioning (not deployed automatically)
+
+This overlay does not touch any existing EduBridge/Postgres or Caddy containers.
+It creates `masari-ai-postgres` with its own named volume and **no published
+database port**. The client and server need two protected copies of the same
+generated password because their container UIDs differ.
+
+On Oracle, from `~/masari-ai-source/server/ai-proxy`:
+
+```bash
+cd ~/masari-ai-source/server/ai-proxy
+# Use the actual PostgreSQL user UID in postgres:17-alpine (normally 70).
+docker run --rm --entrypoint id postgres:17-alpine -u postgres
+# Confirm before using 70 in the chown command below.
+umask 077
+password="$(openssl rand -hex 32)"
+printf '%s' "$password" > private/postgres_client_password
+printf '%s' "$password" > private/postgres_server_password
+unset password
+chmod 600 private/postgres_client_password
+sudo chown 70:70 private/postgres_server_password
+sudo chmod 600 private/postgres_server_password
+# Do not print the passwords.
+docker compose -f compose.oracle.yaml -f compose.oracle-postgres.yaml config --quiet
+```
+
+**Important:** these commands prepare the password only. They do not switch
+the running proxy. The owner must verify the UID returned by `docker run`
+before setting the server-file ownership. The server file may not be readable
+by Ubuntu, and that is intentional.
+
+When ready to switch, run explicitly:
+
+```bash
+docker compose -f compose.oracle.yaml -f compose.oracle-postgres.yaml up -d --build
+docker compose -f compose.oracle.yaml -f compose.oracle-postgres.yaml ps
+curl -fsS http://127.0.0.1:8097/health
+```
+
+A working `/health` alone does not prove DB quota writes. Before release,
+validate quota reservations with an authenticated user and inspect the
+private Postgres logs. Retain the existing Firebase service credentials until
+the Oracle session-auth migration is completed. Do not delete Firestore
+counters during the transition.
+
 ## Stage 2: Oracle-issued owner sessions and pairing
 
 Implement a dedicated on-server owner account and short-lived, revocable

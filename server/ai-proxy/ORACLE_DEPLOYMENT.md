@@ -87,6 +87,22 @@ not Firebase or TokenRouter connectivity. Check sanitized logs with
 `docker logs --tail 40 masari-ai-proxy`; logs should never contain prompts
 or credentials.
 
+**Important when updating the container:** the key files are chmod 600 and
+must be owned by the same UID/GID as the container. Docker Compose defaults to
+1000:1000, which may **not** match Oracle's Ubuntu user (observed: 1001:1001).
+Persist the actual owner IDs once in a local ignored `.env` file:
+
+```bash
+cd ~/masari-ai-source/server/ai-proxy
+# Only if .env does not already exist:
+(umask 077; test -e .env || printf 'MASARI_UID=%s\\nMASARI_GID=%s\\n' "$(id -u)" "$(id -g)" > .env)
+grep -E '^MASARI_(UID|GID)=' .env
+```
+
+Do not chmod 644 or 777 on keys. A startup `EACCES` error for
+`/run/secrets/tokenrouter_api_key` usually indicates UID/GID mismatch.
+Keep the existing secret files and fix container user mapping instead.
+
 The port is restricted to host loopback; **do not** open 8097 in Oracle VCN
 or UFW. The container is capped at 512MB RAM and one CPU.
 
@@ -183,6 +199,22 @@ No real keys or App Check tokens should be pasted into chat/logs.
 - Roll back the **proxy** without affecting existing apps using
   `docker compose -f compose.oracle.yaml stop masari-ai`. Users retain local
   task and calendar functionality.
+
+## Signed pilot APK without public rollout
+
+GitHub Actions → **Masari AI signed pilot APK** → Run workflow (main) creates
+a signed `masari-ai-pilot.apk` under **Actions artifacts only** with:
+`--dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask`.
+
+The pilot uses the same stable signing certificate verified against Firebase.
+It does not create or overwrite a GitHub Release or Play Store upload.
+Do not test online queries until DNS/TLS, Play Integrity registration, and
+TokenRouter provider-side spending controls are verified. The API remains
+localhost-only until the operator explicitly configures Caddy.
+
+The ordinary `publish-release.yml` and `release.yml` intentionally still
+build without the public AI endpoint; never enable the public endpoint in
+those workflows until the pilot passes a real device end-to-end test.
 
 ## Operations and scale
 

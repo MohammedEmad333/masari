@@ -2,6 +2,7 @@
 // No prompts, auth tokens or upstream responses are logged or persisted.
 export function createRequestHandler({
   authenticate,
+  verifyAppCheck,
   complete,
   reserveQuota,
   now = () => Date.now(),
@@ -9,9 +10,9 @@ export function createRequestHandler({
   maxPerMinute = 5,
   maxPerDay = 30,
 } = {}) {
-  if (typeof authenticate !== 'function' || typeof complete !== 'function' ||
-      typeof reserveQuota !== 'function') {
-    throw new TypeError('authenticate, complete and durable reserveQuota are required');
+  if (typeof authenticate !== 'function' || typeof verifyAppCheck !== 'function' ||
+      typeof complete !== 'function' || typeof reserveQuota !== 'function') {
+    throw new TypeError('authentication, App Check, completion and durable quota are required');
   }
 
   const limits = new Map();
@@ -52,6 +53,17 @@ export function createRequestHandler({
     }
     if (typeof user?.uid !== 'string' || !user.uid) {
       return reply(res, 401, { error: 'invalid_authentication' });
+    }
+
+    const appCheckToken = req.headers['x-firebase-appcheck'];
+    if (typeof appCheckToken !== 'string' || !appCheckToken || appCheckToken.length > 4096) {
+      return reply(res, 403, { error: 'app_check_required' });
+    }
+    try {
+      await verifyAppCheck(appCheckToken);
+    } catch {
+      // Never forward unauthenticated app traffic to TokenRouter.
+      return reply(res, 403, { error: 'app_check_failed' });
     }
 
     const declaredLength = Number(req.headers['content-length'] || 0);

@@ -1,3 +1,21 @@
+// The private pilot is deliberately fail-closed when no UIDs are configured.
+export function createAllowedUserValidator(raw) {
+  if (typeof raw !== 'string' || !raw.trim() || raw.length > 4096) {
+    throw new Error('AI_ALLOWED_UIDS must name a trusted Firebase user');
+  }
+  const values = raw.split(',').map(uid => uid.trim());
+  if (values.some(uid => !/^[A-Za-z0-9:_-]{1,128}$/.test(uid))) {
+    throw new Error('Invalid Firebase UID allowlist');
+  }
+  const allowed = new Set(values);
+  return user => {
+    if (typeof user?.uid !== 'string' || !allowed.has(user.uid)) {
+      throw new Error('Unauthorized pilot user');
+    }
+    return user;
+  };
+}
+
 // Pure HTTP boundary; Firebase validation and TokenRouter transport are injected.
 // No prompts, auth tokens or upstream responses are logged or persisted.
 export function createRequestHandler({

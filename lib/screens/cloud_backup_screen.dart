@@ -175,39 +175,59 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
         ),
         const SizedBox(height: 16),
         SwitchListTile(
-          title: Text(t('Automatic Google sync', 'المزامنة التلقائية مع Google')),
-          subtitle: Text(t(
-            'Automatically merge missing personal tasks and plans on launch, when you return to the app, and after edits. Requires Google sign-in and internet. Deletions and simultaneous edits are not synchronized yet. Moodle calendar links remain encrypted and manual.',
-            'دمج المهام والخطط المفقودة تلقائيًا عند فتح التطبيق والعودة إليه وبعد التعديل. تتطلب حساب Google والإنترنت. حذف العناصر وتعديل العنصر نفسه على جهازين غير مدعومين بعد. روابط Moodle تبقى مشفّرة وبنسخ يدوي.',
-          )),
+          title: Text(
+            t('Automatic Google sync', 'المزامنة التلقائية مع Google'),
+          ),
+          subtitle: Text(
+            t(
+              'Automatically merge missing personal tasks and plans on launch, when you return to the app, and after edits. Requires Google sign-in and internet. Deletions and simultaneous edits are not synchronized yet. Moodle calendar links remain encrypted and manual.',
+              'دمج المهام والخطط المفقودة تلقائيًا عند فتح التطبيق والعودة إليه وبعد التعديل. تتطلب حساب Google والإنترنت. حذف العناصر وتعديل العنصر نفسه على جهازين غير مدعومين بعد. روابط Moodle تبقى مشفّرة وبنسخ يدوي.',
+            ),
+          ),
           value: widget.autoSync.enabled,
-          onChanged: _busy ? null : (enabled) async {
-            setState(() {
-              _busy = true;
-              _status = null;
-            });
-            try {
-              if (enabled && await _user() == null) {
-                if (!mounted) return;
-                setState(() => _status = t(
-                  'Sign in with Google before enabling sync.',
-                  'سجّل الدخول بحساب Google قبل تفعيل المزامنة.',
-                ));
-                return;
-              }
-              await widget.autoSync.setEnabled(enabled);
-              if (mounted) setState(() => _status = enabled
-                  ? t('Automatic sync enabled.', 'تم تفعيل المزامنة التلقائية.')
-                  : t('Automatic sync disabled.', 'تم إيقاف المزامنة التلقائية.'));
-            } catch (_) {
-              if (mounted) setState(() => _status = t(
-                'Unable to change automatic sync settings.',
-                'تعذّر تغيير إعدادات المزامنة التلقائية.',
-              ));
-            } finally {
-              if (mounted) setState(() => _busy = false);
-            }
-          },
+          onChanged: _busy
+              ? null
+              : (enabled) async {
+                  setState(() {
+                    _busy = true;
+                    _status = null;
+                  });
+                  try {
+                    if (enabled && await _user() == null) {
+                      if (!mounted) return;
+                      setState(
+                        () => _status = t(
+                          'Sign in with Google before enabling sync.',
+                          'سجّل الدخول بحساب Google قبل تفعيل المزامنة.',
+                        ),
+                      );
+                      return;
+                    }
+                    await widget.autoSync.setEnabled(enabled);
+                    if (mounted)
+                      setState(
+                        () => _status = enabled
+                            ? t(
+                                'Automatic sync enabled.',
+                                'تم تفعيل المزامنة التلقائية.',
+                              )
+                            : t(
+                                'Automatic sync disabled.',
+                                'تم إيقاف المزامنة التلقائية.',
+                              ),
+                      );
+                  } catch (_) {
+                    if (mounted)
+                      setState(
+                        () => _status = t(
+                          'Unable to change automatic sync settings.',
+                          'تعذّر تغيير إعدادات المزامنة التلقائية.',
+                        ),
+                      );
+                  } finally {
+                    if (mounted) setState(() => _busy = false);
+                  }
+                },
         ),
         const SizedBox(height: 24),
         FilledButton.icon(

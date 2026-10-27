@@ -28,12 +28,19 @@ docker --version
 docker compose version
 docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 docker network ls --format 'table {{.Name}}\t{{.Driver}}'
-sudo ss -lntp | grep -E ':80 |:443 |:8096 ' || true
+sudo ss -lntp | grep -E ':80 |:443 |:8096 |:8097 ' || true
+# Caddy is a container; check whether it uses host or Docker bridge networking.
+docker inspect caddy --format 'NetworkMode={{.HostConfig.NetworkMode}}'
+docker inspect caddy --format '{{range $name,$_ := .NetworkSettings.Networks}}{{println $name}}{{end}}'
 df -h /
 ```
 
-Do not proceed if port 8096 belongs to another service. In that case set
-`MASARI_AI_HOST_PORT` to an unused port; the container port remains 8096.
+**Observed server inventory (2026-10-27):** host port **8096 is used by
+`souq-qareeb-staging-wordpress-1`**. The new Masari default is **host 8097 →
+container 8096**, bound only to 127.0.0.1. Confirm 8097 is unused with
+`sudo ss -lntp | grep ':8097 ' || true` before starting. If 8097 is occupied,
+set `MASARI_AI_HOST_PORT` to another unused host port. **Never stop or rebind
+Souq staging**. Container port stays 8096.
 
 ## 2. Deploy a separate checkout (no changes to existing stacks)
 
@@ -72,7 +79,7 @@ export MASARI_GID="$(id -g)"
 docker compose -f compose.oracle.yaml config --quiet
 docker compose -f compose.oracle.yaml up -d --build
 docker compose -f compose.oracle.yaml ps
-curl -fsS http://127.0.0.1:8096/health
+curl -fsS http://127.0.0.1:8097/health
 ```
 
 Expected health response: `{"status":"ok"}`. This confirms the local process,
@@ -80,44 +87,54 @@ not Firebase or TokenRouter connectivity. Check sanitized logs with
 `docker logs --tail 40 masari-ai-proxy`; logs should never contain prompts
 or credentials.
 
-The port is restricted to host loopback; **do not** open 8096 in Oracle VCN
+The port is restricted to host loopback; **do not** open 8097 in Oracle VCN
 or UFW. The container is capped at 512MB RAM and one CPU.
 
-## 4. HTTPS through the EXISTING Caddy (choose one)
+## 4. HTTPS through the EXISTING Dockerized Caddy
 
-**Caddy is a host service:** create a DNS A record for a chosen hostname
-(e.g. `ai.edubridge.win`) pointing at Oracle. Only after DNS is verified,
-add an independent site block to the *existing* Caddy configuration:
-
-```caddyfile
-ai.edubridge.win {
-    reverse_proxy 127.0.0.1:8096
-}
-```
-
-Validate the current Caddy config before reloading. Back it up first. Do
-not replace the original file or reload blindly.
-
-**Caddy is a Docker container:** loopback on the Oracle host is NOT reachable
-from inside the Caddy container. Inspect its existing Docker networks first.
-After choosing a shared network, start with:
+The server inventory shows that `caddy` is a container with no ports
+published in `docker ps`. **This does not reveal its network mode.** Check:
 
 ```bash
-export CADDY_NETWORK='ACTUAL_NETWORK_FROM_DOCKER_INSPECT'
+docker inspect caddy --format 'NetworkMode={{.HostConfig.NetworkMode}}'
+docker inspect caddy --format '{{range $name,$_ := .NetworkSettings.Networks}}{{println $name}}{{end}}'
+docker inspect caddy --format '{{range .Mounts}}{{println .Source "->" .Destination}}{{end}}'
+```
+
+Choose the connection mode **based on the output**, not an assumption:
+
+**If `NetworkMode=host`:** Caddy shares Oracle's network namespace; use
+`reverse_proxy 127.0.0.1:8097`. No Docker network override needed.
+
+**If Caddy uses a Docker bridge network:** choose its actual bridge network
+and attach only the Masari container to it:
+
+```bash
+export CADDY_NETWORK='ACTUAL_EXISTING_CADDY_BRIDGE_NETWORK'
 docker compose -f compose.oracle.yaml \
   -f compose.oracle-caddy-network.yaml up -d
 ```
 
-In the container's existing Caddyfile, add only:
+Then use `reverse_proxy masari-ai-proxy:8096` in Caddy. Port 8097 remains
+bound on the host's loopback only, and 8096 remains private within Docker.
+Do **not** choose an isolated unrelated Docker network, and never guess
+`edubridge-net` without inspecting Caddy.
+
+Only when the service works locally, a chosen hostname (for example
+`ai.edubridge.win`) is confirmed under your control, its DNS resolves to
+Oracle, and public release security gates are satisfied, add one isolated
+site block to the existing Caddyfile:
 
 ```caddyfile
 ai.edubridge.win {
-    reverse_proxy masari-ai-proxy:8096
+    reverse_proxy 127.0.0.1:8097
 }
 ```
 
-Validate the live Caddy config and reload it through the procedure already
-used by that deployment. Existing application routing must remain unchanged.
+The above target is for Caddy **host-network** mode only. For Caddy
+**bridge-network** mode, use `masari-ai-proxy:8096` instead. Back up the
+original Caddyfile; validate changes before reload. Do not overwrite
+the current Caddy configuration or disrupt other applications.
 
 ## 5. End-to-end validation and mobile rollout
 

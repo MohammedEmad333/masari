@@ -25,9 +25,10 @@ services:
         source: ./private/firebase-admin.json
         target: /run/secrets/firebase-admin.json
         read_only: true
+    # Souq staging already uses host 8096; Masari uses host 8097.
     # Only the Oracle host can access this port; no public listening socket.
     ports:
-      - "127.0.0.1:${MASARI_AI_HOST_PORT:-8096}:8096"
+      - "127.0.0.1:${MASARI_AI_HOST_PORT:-8097}:8096"
     cap_drop:
       - ALL
     security_opt:

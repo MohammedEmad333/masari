@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { readFileSync } from 'node:fs';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -6,9 +7,12 @@ import { createFirestoreQuota } from './firestore_quota.mjs';
 import { createRequestHandler } from './core.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
-const apiKey = process.env.TOKENROUTER_API_KEY;
-if (!projectId || !apiKey) {
-  throw new Error('FIREBASE_PROJECT_ID and TOKENROUTER_API_KEY are required');
+const apiKeyFile = process.env.TOKENROUTER_API_KEY_FILE;
+const apiKey = apiKeyFile
+  ? readFileSync(apiKeyFile, 'utf8').trim()
+  : process.env.TOKENROUTER_API_KEY;
+if (!projectId || !apiKey || apiKey.length < 10) {
+  throw new Error('FIREBASE_PROJECT_ID and a TokenRouter API key are required');
 }
 
 initializeApp({ credential: applicationDefault(), projectId });

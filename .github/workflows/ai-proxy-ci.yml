@@ -37,3 +37,14 @@ jobs:
       - name: Run isolated proxy tests
         working-directory: server/ai-proxy
         run: node --test
+      - name: Validate Oracle Docker Compose configurations
+        env:
+          CADDY_NETWORK: ci-caddy-network
+          MASARI_UID: '1000'
+          MASARI_GID: '1000'
+        run: |
+          docker compose -f server/ai-proxy/compose.oracle.yaml config --quiet
+          docker compose -f server/ai-proxy/compose.oracle.yaml \
+            -f server/ai-proxy/compose.oracle-caddy-network.yaml config --quiet
+      - name: Smoke-build production container image
+        run: docker build -t masari-ai-proxy:ci server/ai-proxy

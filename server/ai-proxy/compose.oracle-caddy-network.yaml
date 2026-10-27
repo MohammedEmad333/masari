@@ -1,0 +1,13 @@
+# ONLY enable when the existing Caddy instance is a Docker container.
+# Inspect its actual network with:
+# docker inspect <caddy-container> --format '{{json .NetworkSettings.Networks}}'
+# Set CADDY_NETWORK to the existing network's name, not a guessed value.
+services:
+  masari-ai:
+    networks:
+      - default
+      - caddy_network
+networks:
+  caddy_network:
+    external: true
+    name: ${CADDY_NETWORK:?Set_CADDY_NETWORK_to_the_existing_Caddy_Docker_network}

@@ -1,0 +1,46 @@
+services:
+  masari-ai:
+    image: masari-ai-proxy:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: masari-ai-proxy
+    init: true
+    restart: unless-stopped
+    read_only: true
+    user: "${MASARI_UID:-1000}:${MASARI_GID:-1000}"
+    environment:
+      NODE_ENV: production
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-masari-bb658}
+      TOKENROUTER_API_KEY_FILE: /run/secrets/tokenrouter_api_key
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-admin.json
+      HOST: 0.0.0.0
+      PORT: "8096"
+    volumes:
+      - type: bind
+        source: ./private/tokenrouter_api_key
+        target: /run/secrets/tokenrouter_api_key
+        read_only: true
+      - type: bind
+        source: ./private/firebase-admin.json
+        target: /run/secrets/firebase-admin.json
+        read_only: true
+    # Souq staging already uses host 8096; Masari uses host 8097.
+    # Only the Oracle host can access this port; no public listening socket.
+    ports:
+      - "127.0.0.1:${MASARI_AI_HOST_PORT:-8097}:8096"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 64
+    mem_limit: 512m
+    cpus: 1.0
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8096/health').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s

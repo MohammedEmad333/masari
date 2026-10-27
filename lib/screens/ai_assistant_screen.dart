@@ -64,7 +64,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   String _message(String code) {
     switch (code) {
       case 'sign_in_required':
-        return t('Sign in with Google first.', 'سجّل الدخول بحساب Google أولاً.');
+        return t(
+          'Sign in with Google first.',
+          'سجّل الدخول بحساب Google أولاً.',
+        );
       case 'quota_exceeded':
         return t('Daily or minute limit reached.', 'وصلت إلى حد الاستخدام.');
       case 'invalid_message':
@@ -96,13 +99,13 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           Text(
             t(
               'Optional online assistant. Only the question you type is '
-              'sent to the Masari proxy and the external TokenRouter model. '
-              'Do not include private information. The assistant cannot '
-              'read tasks or schedule reminders.',
+                  'sent to the Masari proxy and the external TokenRouter model. '
+                  'Do not include private information. The assistant cannot '
+                  'read tasks or schedule reminders.',
               'مساعد اختياري عبر الإنترنت. يُرسل نص السؤال الذي تكتبه '
-              'فقط إلى خادم مساري ونموذج TokenRouter الخارجي. '
-              'لا تُدخل معلومات خاصة. لا يستطيع المساعد قراءة '
-              'المهام أو جدولة التذكيرات.',
+                  'فقط إلى خادم مساري ونموذج TokenRouter الخارجي. '
+                  'لا تُدخل معلومات خاصة. لا يستطيع المساعد قراءة '
+                  'المهام أو جدولة التذكيرات.',
             ),
           ),
           const SizedBox(height: 16),
@@ -122,9 +125,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           ),
           CheckboxListTile(
             value: _consent,
-            onChanged: _loading ? null : (value) {
-              setState(() => _consent = value ?? false);
-            },
+            onChanged: _loading
+                ? null
+                : (value) {
+                    setState(() => _consent = value ?? false);
+                  },
             controlAffinity: ListTileControlAffinity.leading,
             title: Text(
               t(

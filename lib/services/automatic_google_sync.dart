@@ -30,7 +30,7 @@ class AutomaticGoogleSync {
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     enabled = prefs.getBool(preferenceKey) ?? false;
-    if (enabled) await sync();
+    if (enabled && controller.initialized) await sync();
   }
 
   Future<void> setEnabled(bool value) async {
@@ -41,7 +41,7 @@ class AutomaticGoogleSync {
   }
 
   Future<void> checkForChanges() async {
-    if (!enabled || _running) return;
+    if (!enabled || _running || !controller.initialized) return;
     final plans = await _plans.loadAll();
     final fingerprint = jsonEncode({
       'tasks': controller.manualDeadlines.map((e) => e.toJson()).toList(),
@@ -52,7 +52,7 @@ class AutomaticGoogleSync {
   }
 
   Future<void> sync() async {
-    if (!enabled) return;
+    if (!enabled || !controller.initialized) return;
     if (_running) {
       _queued = true;
       return;

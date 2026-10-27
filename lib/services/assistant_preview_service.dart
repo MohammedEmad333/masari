@@ -150,12 +150,14 @@ class AssistantPreviewService {
       } else if (RegExp(r'[\u064b-\u065f\u0670]').hasMatch(character)) {
         continue;
       } else {
-        output.write(character
-            .replaceAll('أ', 'ا')
-            .replaceAll('إ', 'ا')
-            .replaceAll('آ', 'ا')
-            .replaceAll('ة', 'ه')
-            .replaceAll('ى', 'ي'));
+        output.write(
+          character
+              .replaceAll('أ', 'ا')
+              .replaceAll('إ', 'ا')
+              .replaceAll('آ', 'ا')
+              .replaceAll('ة', 'ه')
+              .replaceAll('ى', 'ي'),
+        );
       }
     }
     return output.toString().trim();

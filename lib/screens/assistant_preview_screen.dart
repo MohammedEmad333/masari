@@ -80,7 +80,9 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               icon: const Icon(Icons.auto_awesome_outlined),
-              label: Text(t('Online study assistant', 'المساعد الدراسي عبر الإنترنت')),
+              label: Text(
+                t('Online study assistant', 'المساعد الدراسي عبر الإنترنت'),
+              ),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => AiAssistantScreen(arabic: widget.arabic),

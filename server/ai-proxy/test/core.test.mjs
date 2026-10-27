@@ -15,6 +15,10 @@ async function fixture(options = {}) {
       return 'OK';
     },
     reserveQuota: async () => true,
+    verifyAppCheck: async token => {
+      if (token !== 'valid-app') throw new Error('not genuine');
+      return { appId: 'android:masari' };
+    },
     ...options,
   }));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -30,7 +34,11 @@ const body = (message = 'Help me study', fields = {}) =>
 async function ask(fx, data, token = 'valid') {
   return fetch(fx.url + '/v1/assistant/ask', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token,
+      'X-Firebase-AppCheck': 'valid-app',
+    },
     body: data,
   });
 }
@@ -112,5 +120,37 @@ test('refuses to start if durable quota enforcement is missing', () => {
   assert.throws(() => createRequestHandler({
     authenticate: async () => ({ uid: 'test' }),
     complete: async () => 'OK',
+    verifyAppCheck: async () => ({}),
   }));
+});
+
+test('rejects a missing App Check token even with valid Firebase authentication', async () => {
+  const fx = await fixture();
+  try {
+    const response = await fetch(fx.url + '/v1/assistant/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid' },
+      body: body('Help with homework'),
+    });
+    assert.equal(response.status, 403);
+    assert.deepEqual(await response.json(), { error: 'app_check_required' });
+    assert.equal(fx.calls.length, 0);
+  } finally { await fx.close(); }
+});
+test('rejects a forged App Check token without billing upstream', async () => {
+  const fx = await fixture();
+  try {
+    const response = await fetch(fx.url + '/v1/assistant/ask', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer valid',
+        'X-Firebase-AppCheck': 'forged',
+      },
+      body: body('Help'),
+    });
+    assert.equal(response.status, 403);
+    assert.deepEqual(await response.json(), { error: 'app_check_failed' });
+    assert.equal(fx.calls.length, 0);
+  } finally { await fx.close(); }
 });

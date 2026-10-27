@@ -32,6 +32,7 @@ jobs:
           node --check server/ai-proxy/index.mjs
           node --check server/ai-proxy/core.mjs
           node --check server/ai-proxy/firestore_quota.mjs
+          node --check server/ai-proxy/postgres_quota.mjs
           node --check server/ai-proxy/test/core.test.mjs
           node --check server/ai-proxy/test/firestore_quota.test.mjs
       - name: Run isolated proxy tests

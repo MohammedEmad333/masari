@@ -47,7 +47,9 @@ class AiAssistantClient {
 
   static Future<String?> _firebaseToken() async {
     await GoogleAccountService.instance.initialize();
-    return GoogleAccountService.instance.currentUser?.getIdToken();
+    final user = GoogleAccountService.instance.currentUser;
+    if (user == null) return null;
+    return user.getIdToken();
   }
 
   Future<String> ask({

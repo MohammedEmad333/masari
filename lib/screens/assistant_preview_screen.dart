@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/deadline.dart';
 import '../services/assistant_preview_service.dart';
+import '../services/ai_assistant_client.dart';
+import 'ai_assistant_screen.dart';
 
 /// Safe, offline assistant concept. A live AI proxy is not connected yet.
 class AssistantPreviewScreen extends StatefulWidget {
@@ -74,6 +76,18 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
               ),
             ),
           ),
+          if (AiAssistantClient.isConfigured) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.auto_awesome_outlined),
+              label: Text(t('Online study assistant', 'المساعد الدراسي عبر الإنترنت')),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => AiAssistantScreen(arabic: widget.arabic),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           TextField(
             controller: _input,

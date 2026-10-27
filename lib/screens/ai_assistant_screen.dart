@@ -68,6 +68,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           'Sign in with Google first.',
           'سجّل الدخول بحساب Google أولاً.',
         );
+      case 'app_check_failed':
+        return t(
+          'App verification failed. Check Play Integrity registration or your device.',
+          'فشل التحقق من التطبيق. افحص تسجيل Play Integrity أو جهازك.',
+        );
       case 'quota_exceeded':
         return t('Daily or minute limit reached.', 'وصلت إلى حد الاستخدام.');
       case 'invalid_message':

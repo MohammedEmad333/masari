@@ -204,7 +204,7 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
                       return;
                     }
                     await widget.autoSync.setEnabled(enabled);
-                    if (mounted)
+                    if (mounted) {
                       setState(
                         () => _status = enabled
                             ? t(
@@ -216,6 +216,7 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
                                 'تم إيقاف المزامنة التلقائية.',
                               ),
                       );
+                    }
                   } catch (_) {
                     if (mounted)
                       setState(
@@ -224,6 +225,7 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
                           'تعذّر تغيير إعدادات المزامنة التلقائية.',
                         ),
                       );
+                    }
                   } finally {
                     if (mounted) setState(() => _busy = false);
                   }

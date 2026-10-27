@@ -110,7 +110,9 @@ class AutomaticGoogleSync {
       );
       _lastLocalState = jsonEncode({
         'tasks': controller.manualDeadlines.map((e) => e.toJson()).toList(),
-        'plans': combinedPlans.map((key, value) => MapEntry(key, value.toJson())),
+        'plans': combinedPlans.map(
+          (key, value) => MapEntry(key, value.toJson()),
+        ),
       });
     } catch (_) {
       // Offline and permission failures must never disrupt local task editing.

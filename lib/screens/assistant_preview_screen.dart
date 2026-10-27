@@ -199,7 +199,7 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$heading (' + matches.length.toString() + ')',
+          '$heading (${matches.length})',
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
@@ -227,10 +227,8 @@ class _AssistantPreviewScreenState extends State<AssistantPreviewScreen> {
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               t(
-                'Showing the first 10 of ' +
-                    matches.length.toString() +
-                    ' tasks.',
-                'يُعرض أول 10 مهام من أصل ' + matches.length.toString() + '.',
+                'Showing the first 10 of ${matches.length} tasks.',
+                'يُعرض أول 10 مهام من أصل ${matches.length}.',
               ),
             ),
           ),

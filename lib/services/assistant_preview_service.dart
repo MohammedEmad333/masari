@@ -118,10 +118,10 @@ class AssistantPreviewService {
 
   static int? _extractMinutes(String text) {
     final leading = RegExp(
-      r'(?:قبل|before)\\s+(\\d{1,4})\\s*(دق(?:يق|ائ)\\S*|minute\\S*|min\\b|ساع\\S*|hour\\S*)',
+      r'(?:قبل|before)\s+(\d{1,4})\s*(دق(?:يق|ائ)\S*|minute\S*|min\b|ساع\S*|hour\S*)',
     ).firstMatch(text);
     final trailing = RegExp(
-      r'(\\d{1,4})\\s*(minute\\S*|min\\b|hour\\S*)\\s+before',
+      r'(\d{1,4})\s*(minute\S*|min\b|hour\S*)\s+before',
     ).firstMatch(text);
     final match = leading ?? trailing;
     if (match == null) return null;

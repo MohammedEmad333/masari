@@ -110,39 +110,39 @@ void main() {
       ),
     );
   });
+
+  test('fails closed before HTTP when App Check is missing', () async {
+    var calls = 0;
+    final service = AiAssistantClient(
+      client: MockClient((request) async {
+        calls++;
+        return http.Response('{"answer":"not expected"}', 200);
+      }),
+      endpoint: endpoint,
+      tokenProvider: () async => 'firebase-id-token',
+      appCheckTokenProvider: () async => null,
+    );
+    await expectLater(
+      service.ask(message: 'Can you help?', language: 'en', consent: true),
+      throwsA(isA<AiAssistantException>().having(
+        (e) => e.code, 'code', 'app_check_failed',
+      )),
+    );
+    expect(calls, 0);
+  });
+  
+  test('maps server invalid App Check response to client error', () async {
+    final service = AiAssistantClient(
+      client: MockClient((_) async => http.Response('{"error":"app_check_failed"}', 403)),
+      endpoint: endpoint,
+      tokenProvider: () async => 'firebase-id-token',
+      appCheckTokenProvider: () async => 'valid-app-check-token',
+    );
+    await expectLater(
+      service.ask(message: 'Can you help?', language: 'en', consent: true),
+      throwsA(isA<AiAssistantException>().having(
+        (e) => e.code, 'code', 'app_check_failed',
+      )),
+    );
+  });
 }
-
-test('fails closed before HTTP when App Check is missing', () async {
-  var calls = 0;
-  final service = AiAssistantClient(
-    client: MockClient((request) async {
-      calls++;
-      return http.Response('{"answer":"not expected"}', 200);
-    }),
-    endpoint: endpoint,
-    tokenProvider: () async => 'firebase-id-token',
-    appCheckTokenProvider: () async => null,
-  );
-  await expectLater(
-    service.ask(message: 'Can you help?', language: 'en', consent: true),
-    throwsA(isA<AiAssistantException>().having(
-      (e) => e.code, 'code', 'app_check_failed',
-    )),
-  );
-  expect(calls, 0);
-});
-
-test('maps server invalid App Check response to client error', () async {
-  final service = AiAssistantClient(
-    client: MockClient((_) async => http.Response('{"error":"app_check_failed"}', 403)),
-    endpoint: endpoint,
-    tokenProvider: () async => 'firebase-id-token',
-    appCheckTokenProvider: () async => 'valid-app-check-token',
-  );
-  await expectLater(
-    service.ask(message: 'Can you help?', language: 'en', consent: true),
-    throwsA(isA<AiAssistantException>().having(
-      (e) => e.code, 'code', 'app_check_failed',
-    )),
-  );
-});

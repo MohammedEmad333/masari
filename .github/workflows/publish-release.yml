@@ -130,7 +130,7 @@ jobs:
 
       - name: Upload official signed APK to Actions artifacts
         if: steps.latest.outputs.publish == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: masari-${{ steps.version.outputs.tag }}-signed-apk
           path: |

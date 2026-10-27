@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { createRequestHandler } from '../core.mjs';
+import { createRequestHandler, createAllowedUserValidator } from '../core.mjs';
 
 async function fixture(options = {}) {
   const calls = [];
@@ -82,5 +82,30 @@ test('returns health without revealing configuration', async () => {
     const response = await fetch(fx.url + '/health');
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'ok' });
+  } finally { await fx.close(); }
+});
+
+test('private pilot rejects missing and malformed UID allowlists', () => {
+  assert.throws(() => createAllowedUserValidator(undefined));
+  assert.throws(() => createAllowedUserValidator('  '));
+  assert.throws(() => createAllowedUserValidator('student-1, bad user'));
+  assert.throws(() => createAllowedUserValidator('student-1,'));
+});
+test('private pilot only accepts allowlisted verified Firebase users', () => {
+  const allow = createAllowedUserValidator(' student-1 , student-2 ');
+  assert.equal(allow({ uid: 'student-1' }).uid, 'student-1');
+  assert.equal(allow({ uid: 'student-2' }).uid, 'student-2');
+  assert.throws(() => allow({ uid: 'student-3' }));
+  assert.throws(() => allow({ uid: '' }));
+  assert.throws(() => allow(null));
+});
+test('valid Firebase token for non-allowlisted user receives 401', async () => {
+  const allow = createAllowedUserValidator('student-2');
+  const fx = await fixture({
+    authenticate: async token => allow(token === 'valid' ? { uid: 'student-1' } : null),
+  });
+  try {
+    assert.equal((await ask(fx, body('Hello'))).status, 401);
+    assert.equal(fx.calls.length, 0);
   } finally { await fx.close(); }
 });

@@ -1,7 +1,7 @@
 # Masari AI proxy (optional, NOT deployed)
 
 A small HTTPS-reverse-proxied **read-only** backend to connect Masari's opt-in
-study chat to \`openai/gpt-oss-120b\` on TokenRouter without exposing the
+study chat to `openai/gpt-oss-120b` on TokenRouter without exposing the
 provider key in the Android APK.
 
 ## Security model
@@ -26,14 +26,14 @@ provider key in the Android APK.
 
 ## First-time setup on a trusted server
 
-Prerequisites: Node.js >= 20, Firebase project \`masari-bb658\`, an Admin SDK
+Prerequisites: Node.js >= 20, Firebase project `masari-bb658`, an Admin SDK
 credential configured through Application Default Credentials (ADC), a
 TokenRouter key and a TLS-terminating reverse proxy. Never commit a Firebase
-service account private key or \`TOKENROUTER_API_KEY\` to GitHub.
+service account private key or `TOKENROUTER_API_KEY` to GitHub.
 
-From \`server/ai-proxy\`:
+From `server/ai-proxy`:
 
-\`\`\`bash
+```bash
 npm install --omit=dev
 export FIREBASE_PROJECT_ID=masari-bb658
 export TOKENROUTER_API_KEY='(set as a protected environment secret)'
@@ -41,7 +41,7 @@ export GOOGLE_APPLICATION_CREDENTIALS='/secure/path/to/service-account.json'
 export HOST=127.0.0.1
 export PORT=8096
 npm start
-\`\`\`
+```
 
 The example above documents the necessary environment variables. Prefer
 a process manager, protected secret injection and workload identity instead
@@ -50,36 +50,36 @@ committed files or a client build.** Configure key rotation and remove any
 temporary terminal history with secrets.
 
 Use Caddy/Nginx HTTPS reverse proxy at a hostname **you control**, forwarding
-to \`127.0.0.1:8096\` (not a publicly open backend port). A sample Caddy
+to `127.0.0.1:8096` (not a publicly open backend port). A sample Caddy
 virtual host (replace the hostname only after DNS/TLS is ready):
 
-\`\`\`caddyfile
+```caddyfile
 ai.your-domain.example {
     reverse_proxy 127.0.0.1:8096
 }
-\`\`\`
+```
 
 Android Flutter builds enable the optional button only when the PUBLIC proxy
 URL is configured:
 
-\`\`\`bash
+```bash
 flutter build apk --release \
   --dart-define=MASARI_AI_PROXY_URL=https://ai.your-domain.example/v1/assistant/ask
-\`\`\`
+```
 
-It must be exactly an HTTPS URL ending \`/v1/assistant/ask\`, without query
+It must be exactly an HTTPS URL ending `/v1/assistant/ask`, without query
 params. The URL is not a secret. The endpoint rejects unauthenticated
 requests. Standard release workflows do not configure this yet, so the online
 assistant stays disabled by default.
 
 ## Run tests
 
-\`\`\`bash
+```bash
 cd server/ai-proxy
 node --check core.mjs
 node --check index.mjs
 node --test
-\`\`\`
+```
 
 No real Firebase or TokenRouter API key is required for the isolated tests.
 
@@ -97,5 +97,5 @@ No real Firebase or TokenRouter API key is required for the isolated tests.
    sharing to users; obtain consent before external transmission.
 6. Do not advertise AI-generated task scheduling: no write endpoints exist.
 
-Keep \`npm install\` dependencies locked before a repeatable production
+Keep `npm install` dependencies locked before a repeatable production
 deployment; an exact package-lock is not part of this initial scaffold.

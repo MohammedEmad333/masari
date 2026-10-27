@@ -926,8 +926,10 @@ class _HomeShellState extends State<HomeShell> {
                 for (var i = 0; i < extras.length; i++) ...[
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: Text(widget.controller.calendarLabels[extras[i]] ??
-                        t('Calendar ${i + 2}', 'تقويم ${i + 2}')),
+                    label: Text(
+                      widget.controller.calendarLabels[extras[i]] ??
+                          t('Calendar ${i + 2}', 'تقويم ${i + 2}'),
+                    ),
                     selected: _courseCalendarFilter == 'extra-$i',
                     onSelected: (_) =>
                         setState(() => _courseCalendarFilter = 'extra-$i'),
@@ -1228,8 +1230,10 @@ class _HomeShellState extends State<HomeShell> {
               for (final url in controller.additionalCalendarUrls)
                 ListTile(
                   leading: const Icon(Icons.event_note_outlined),
-                  title: Text(controller.calendarLabels[url] ??
-                      t('Moodle calendar', 'تقويم Moodle')),
+                  title: Text(
+                    controller.calendarLabels[url] ??
+                        t('Moodle calendar', 'تقويم Moodle'),
+                  ),
                   subtitle: Text(t('Private link saved', 'رابط خاص محفوظ')),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

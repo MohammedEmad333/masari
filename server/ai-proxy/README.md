@@ -10,6 +10,9 @@ provider key in the Android APK.
   per-request consent, never task objects, ICS URLs, tokens, descriptions or
   Google cloud-backup content.
 - The proxy verifies Firebase ID tokens using Firebase Admin and checks UID.
+- Pilot access requires an explicit `AI_ALLOWED_UIDS` comma-separated
+  list. An absent or invalid allowlist prevents server startup; valid Firebase
+  logins not in the allowlist cannot call TokenRouter.
 - No changes to local tasks, calendars, reminders or Google synchronization.
 - System prompt disallows claims of calendar access. This is not a substitute
   for validating any future structured commands.
@@ -36,6 +39,7 @@ From `server/ai-proxy`:
 ```bash
 npm install --omit=dev
 export FIREBASE_PROJECT_ID=masari-bb658
+export AI_ALLOWED_UIDS='(your Firebase Authentication UID from the Firebase Console)'
 export TOKENROUTER_API_KEY='(set as a protected environment secret)'
 export GOOGLE_APPLICATION_CREDENTIALS='/secure/path/to/service-account.json'
 export HOST=127.0.0.1
@@ -99,3 +103,10 @@ No real Firebase or TokenRouter API key is required for the isolated tests.
 
 Keep `npm install` dependencies locked before a repeatable production
 deployment; an exact package-lock is not part of this initial scaffold.
+
+For the **private pilot**, find the account UID under Firebase Console →
+Authentication → Users after signing in with Google on a physical device.
+Set `AI_ALLOWED_UIDS` in server-only configuration. Do not use a Google email
+address or a Google OAuth client ID here. Do not expose a public service without
+budget restrictions and durable quotas; a UID allowlist reduces, but does not
+eliminate, resource-abuse risks.

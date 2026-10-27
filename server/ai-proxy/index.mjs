@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { createRequestHandler } from './core.mjs';
+import { createRequestHandler, createAllowedUserValidator } from './core.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const apiKey = process.env.TOKENROUTER_API_KEY;
@@ -9,8 +9,9 @@ if (!projectId || !apiKey) {
   throw new Error('FIREBASE_PROJECT_ID and TOKENROUTER_API_KEY are required');
 }
 
+const allowUser = createAllowedUserValidator(process.env.AI_ALLOWED_UIDS);
 initializeApp({ credential: applicationDefault(), projectId });
-const verifyToken = async token => getAuth().verifyIdToken(token, true);
+const verifyToken = async token => allowUser(await getAuth().verifyIdToken(token, true));
 
 const complete = async ({ message, language }) => {
   const response = await fetch('https://api.tokenrouter.com/v1/chat/completions', {

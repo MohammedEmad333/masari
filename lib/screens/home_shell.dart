@@ -23,6 +23,7 @@ import 'local_courses_screen.dart';
 import 'task_plans_screen.dart';
 import 'google_account_screen.dart';
 import 'cloud_backup_screen.dart';
+import 'assistant_preview_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -690,6 +691,19 @@ class _HomeShellState extends State<HomeShell> {
           onPressed: _addManualTask,
           icon: const Icon(Icons.add_task_rounded),
           label: Text(t('Add task', 'إضافة مهمة')),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.auto_awesome_outlined),
+          label: Text(t('Assistant preview', 'معاينة المساعد')),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => AssistantPreviewScreen(
+                deadlines: widget.controller.activeDeadlines,
+                arabic: _ar,
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         _section(

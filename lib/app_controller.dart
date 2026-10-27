@@ -39,6 +39,7 @@ class AppController extends ChangeNotifier {
   List<Deadline> apiDeadlines = const [];
   List<Deadline> sessionDeadlines = const [];
   List<String> additionalCalendarUrls = const [];
+  Map<String, String> calendarLabels = {};
 
   List<Deadline> get allDeadlines => DeadlineCollection.combine(
     calendar: deadlines,
@@ -105,6 +106,7 @@ class AppController extends ChangeNotifier {
       _repository.loadCachedApiDeadlines(),
       _repository.loadSessionDeadlines(),
       _repository.loadOfflineMode(),
+      _repository.loadCalendarLabels(),
     ]);
 
     calendarConnected = results[0] != null;
@@ -120,6 +122,7 @@ class AppController extends ChangeNotifier {
     apiDeadlines = results[10] as List<Deadline>;
     sessionDeadlines = results[11] as List<Deadline>;
     offlineMode = results[12] as bool;
+    calendarLabels = results[13] as Map<String, String>;
     apiConnected = await _hasApiCredentials();
     initialized = true;
     await _publishWidget();
@@ -317,9 +320,16 @@ class AppController extends ChangeNotifier {
     if (calendarConnected) await sync();
   }
 
+  Future<void> renameCalendarSource(String url, String name) async {
+    await _repository.saveCalendarLabel(url, name);
+    calendarLabels = await _repository.loadCalendarLabels();
+    notifyListeners();
+  }
+
   Future<void> removeCalendarSource(String url) async {
     await _repository.removeAdditionalCalendarUrl(url);
     additionalCalendarUrls = await _repository.loadAdditionalCalendarUrls();
+    calendarLabels = await _repository.loadCalendarLabels();
     notifyListeners();
     if (calendarConnected) await sync();
   }
@@ -485,6 +495,7 @@ class AppController extends ChangeNotifier {
     await _repository.saveTaskReminderOffsets(retainedTaskOffsets);
     deadlines = const [];
     additionalCalendarUrls = const [];
+    calendarLabels = {};
     completedIds = retainedCompleted;
     taskReminderOffsets = retainedTaskOffsets;
     lastSync = null;

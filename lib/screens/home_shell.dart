@@ -973,7 +973,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 for (var i = 0; i < extras.length; i++) ...[
                   const SizedBox(width: 8),
                   ChoiceChip(
-                    label: Text(t('Calendar ${i + 2}', 'تقويم ${i + 2}')),
+                    label: Text(
+                      widget.controller.calendarLabels[extras[i]] ??
+                          t('Calendar ${i + 2}', 'تقويم ${i + 2}'),
+                    ),
                     selected: _courseCalendarFilter == 'extra-$i',
                     onSelected: (_) =>
                         setState(() => _courseCalendarFilter = 'extra-$i'),
@@ -1028,6 +1031,43 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           }),
       ],
     );
+  }
+
+  Future<void> _renameCalendarSource(String url) async {
+    final field = TextEditingController(
+      text: widget.controller.calendarLabels[url] ?? '',
+    );
+    try {
+      final name = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t('Rename calendar', 'تسمية التقويم')),
+          content: TextField(
+            controller: field,
+            maxLength: 60,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: t('Calendar name', 'اسم التقويم'),
+              hintText: t('My second semester', 'الفصل الدراسي الثاني'),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(t('Cancel', 'إلغاء')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, field.text.trim()),
+              child: Text(t('Save', 'حفظ')),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || name == null || name.isEmpty) return;
+      await widget.controller.renameCalendarSource(url, name);
+    } finally {
+      field.dispose();
+    }
   }
 
   Future<void> _addCalendarSource() async {
@@ -1237,12 +1277,25 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               for (final url in controller.additionalCalendarUrls)
                 ListTile(
                   leading: const Icon(Icons.event_note_outlined),
-                  title: Text(t('Moodle calendar', 'تقويم Moodle')),
+                  title: Text(
+                    controller.calendarLabels[url] ??
+                        t('Moodle calendar', 'تقويم Moodle'),
+                  ),
                   subtitle: Text(t('Private link saved', 'رابط خاص محفوظ')),
-                  trailing: IconButton(
-                    tooltip: t('Remove calendar', 'حذف التقويم'),
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: () => controller.removeCalendarSource(url),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: t('Rename calendar', 'تسمية التقويم'),
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () => _renameCalendarSource(url),
+                      ),
+                      IconButton(
+                        tooltip: t('Remove calendar', 'حذف التقويم'),
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => controller.removeCalendarSource(url),
+                      ),
+                    ],
                   ),
                 ),
               OutlinedButton.icon(

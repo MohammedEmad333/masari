@@ -26,6 +26,7 @@ class CalendarRepository {
 
   static const _secureCalendarUrlKey = 'moodle_calendar_url';
   static const _calendarSourcesKey = 'moodle_calendar_sources_v1';
+  static const _calendarLabelsKey = 'moodle_calendar_labels_v1';
   static const _legacyCalendarUrlKey = 'calendar_url';
   static const _cacheKey = 'deadline_cache_v2';
   static const _manualKey = 'manual_deadlines_v1';
@@ -83,6 +84,7 @@ class CalendarRepository {
   }
 
   Future<void> clearAdditionalCalendarUrls() async {
+    await _secureStorage.delete(key: _calendarLabelsKey);
     await _secureStorage.delete(key: _calendarSourcesKey);
   }
 
@@ -121,7 +123,44 @@ class CalendarRepository {
     );
   }
 
+  Future<Map<String, String>> loadCalendarLabels() async {
+    final encoded = await _secureStorage.read(key: _calendarLabelsKey);
+    if (encoded == null || encoded.isEmpty) return {};
+    try {
+      final value = jsonDecode(encoded);
+      if (value is! Map) return {};
+      return value.map<String, String>(
+        (key, label) => MapEntry(key.toString(), label.toString()),
+      );
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> saveCalendarLabel(String url, String label) async {
+    final name = label.trim();
+    if (name.isEmpty || name.length > 60) {
+      throw const FormatException('Calendar name must be 1–60 characters.');
+    }
+    final sources = await loadAdditionalCalendarUrls();
+    if (!sources.contains(url)) {
+      throw const FormatException('Unknown calendar source.');
+    }
+    final names = await loadCalendarLabels();
+    names[url] = name;
+    await _secureStorage.write(
+      key: _calendarLabelsKey,
+      value: jsonEncode(names),
+    );
+  }
+
   Future<void> removeAdditionalCalendarUrl(String value) async {
+    final labels = await loadCalendarLabels();
+    labels.remove(value);
+    await _secureStorage.write(
+      key: _calendarLabelsKey,
+      value: jsonEncode(labels),
+    );
     final sources = await loadAdditionalCalendarUrls();
     await _secureStorage.write(
       key: _calendarSourcesKey,

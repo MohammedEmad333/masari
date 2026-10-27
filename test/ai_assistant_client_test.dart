@@ -18,6 +18,7 @@ void main() {
       client: mock,
       endpoint: endpoint,
       tokenProvider: () async => 'firebase-id-token',
+      appCheckTokenProvider: () async => 'app-check-test-token',
     );
     final answer = await service.ask(
       message: 'How do I revise?',
@@ -26,6 +27,7 @@ void main() {
     );
     expect(answer, 'Try spaced repetition.');
     expect(captured!.headers['authorization'], 'Bearer firebase-id-token');
+    expect(captured!.headers['x-firebase-appcheck'], 'app-check-test-token');
     expect(jsonDecode(captured!.body), {
       'message': 'How do I revise?',
       'language': 'en',
@@ -44,6 +46,7 @@ void main() {
       client: mock,
       endpoint: endpoint,
       tokenProvider: () async => null,
+      appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
       service.ask(message: 'Hello', language: 'en', consent: false),
@@ -66,6 +69,7 @@ void main() {
       client: mock,
       endpoint: endpoint,
       tokenProvider: () async => 'token',
+      appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
       service.ask(
@@ -79,6 +83,7 @@ void main() {
       client: mock,
       endpoint: Uri.parse('http://ai.example.org/v1/assistant/ask'),
       tokenProvider: () async => 'token',
+      appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
       insecure.ask(message: 'Test', language: 'en', consent: true),
@@ -92,6 +97,7 @@ void main() {
       client: MockClient((_) async => http.Response('{}', 429)),
       endpoint: endpoint,
       tokenProvider: () async => 'token',
+      appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
       service.ask(message: 'Test', language: 'ar', consent: true),

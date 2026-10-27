@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
 import 'google_account_service.dart';
 
@@ -22,10 +24,12 @@ class AiAssistantClient {
     http.Client? client,
     Uri? endpoint,
     Future<String?> Function()? tokenProvider,
+    Future<String?> Function()? appCheckTokenProvider,
   }) : _http = client ?? http.Client(),
        _ownsClient = client == null,
        _endpoint = endpoint ?? Uri.tryParse(configuredUrl),
-       _tokenProvider = tokenProvider ?? _firebaseToken;
+       _tokenProvider = tokenProvider ?? _firebaseToken,
+       _appCheckTokenProvider = appCheckTokenProvider ?? _appCheckToken;
 
   static const configuredUrl = String.fromEnvironment('MASARI_AI_PROXY_URL');
 
@@ -35,6 +39,8 @@ class AiAssistantClient {
   final bool _ownsClient;
   final Uri? _endpoint;
   final Future<String?> Function() _tokenProvider;
+  final Future<String?> Function() _appCheckTokenProvider;
+  static Future<void>? _appCheckInitialization;
 
   static bool _validEndpoint(Uri? uri) =>
       uri != null &&
@@ -50,6 +56,17 @@ class AiAssistantClient {
     final user = GoogleAccountService.instance.currentUser;
     if (user == null) return null;
     return user.getIdToken();
+  }
+
+  static Future<String?> _appCheckToken() async {
+    await GoogleAccountService.instance.initialize();
+    _appCheckInitialization ??= FirebaseAppCheck.instance.activate(
+      providerAndroid: kReleaseMode
+          ? const AndroidPlayIntegrityProvider()
+          : const AndroidDebugProvider(),
+    );
+    await _appCheckInitialization;
+    return FirebaseAppCheck.instance.getToken();
   }
 
   Future<String> ask({
@@ -84,6 +101,15 @@ class AiAssistantClient {
     if (idToken == null || idToken.isEmpty) {
       throw const AiAssistantException('sign_in_required');
     }
+    final String? appCheckToken;
+    try {
+      appCheckToken = await _appCheckTokenProvider();
+    } catch (_) {
+      throw const AiAssistantException('app_check_failed');
+    }
+    if (appCheckToken == null || appCheckToken.isEmpty) {
+      throw const AiAssistantException('app_check_failed');
+    }
 
     http.Response response;
     try {
@@ -93,6 +119,7 @@ class AiAssistantClient {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $idToken',
+              'X-Firebase-AppCheck': appCheckToken,
             },
             body: jsonEncode({
               'message': prompt,
@@ -108,6 +135,9 @@ class AiAssistantClient {
     }
     if (response.statusCode == 401) {
       throw const AiAssistantException('sign_in_required');
+    }
+    if (response.statusCode == 403) {
+      throw const AiAssistantException('app_check_failed');
     }
     if (response.statusCode == 429) {
       throw const AiAssistantException('quota_exceeded');

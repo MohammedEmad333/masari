@@ -136,6 +136,35 @@ The above target is for Caddy **host-network** mode only. For Caddy
 original Caddyfile; validate changes before reload. Do not overwrite
 the current Caddy configuration or disrupt other applications.
 
+## 4a. Firebase App Check — required before enabling online AI
+
+The proxy enforces BOTH Firebase Authentication and Firebase App Check on
+`POST /v1/assistant/ask`. Every request must have:
+- `Authorization: Bearer <Firebase ID token>`
+- `X-Firebase-AppCheck: <App Check token>`
+
+The Android client obtains the App Check token with the official FlutterFire
+`firebase_app_check` plugin. Android **release builds use Play Integrity**;
+debug builds use Firebase's debug provider. Register debug tokens only for
+controlled development devices, never in a production build.
+
+Before exposing the API via Caddy:
+1. Firebase Console → `masari-bb658` → **App Check** → register Android
+   application ID `com.mohammedemad333.masari` with **Play Integrity**.
+2. Complete the official Play Integrity API configuration and add the
+   appropriate Android app signing certificate SHA-256 fingerprints for the
+   distributed APK/Play app-signing identities. A CI-only smoke APK uses
+   temporary signing and cannot be used to verify production attestation.
+3. Test a signed Android release using the intended distribution channel.
+4. Maintain request-count quotas in Firestore and establish a **provider-side
+   TokenRouter spending limit** plus alerts. App Check reduces abuse but does
+   not make costs impossible.
+5. Preserve localhost binding until these conditions are met. Do not enable
+   Firebase-wide App Check enforcement on other products without evaluating
+   all existing Masari clients and their compatibility.
+
+No real keys or App Check tokens should be pasted into chat/logs.
+
 ## 5. End-to-end validation and mobile rollout
 
 - Verify `https://ai.edubridge.win/health` over TLS returns 200.
@@ -143,7 +172,8 @@ the current Caddy configuration or disrupt other applications.
   returns **401**. Use fake prompt text; do not send real keys.
 - Confirm Firebase Auth token verification and transactional Firestore
   counters with a TEST account only after budget controls are present.
-- Add verified Firebase App Check enforcement before enabling for everyone.
+- Verify Firebase App Check's Play Integrity registration, the client token
+  header and server verification before enabling for everyone.
 - Build the **signed** Flutter release through the project's normal release
   workflow with the public build define
   `MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask`.

@@ -130,16 +130,20 @@ class AiAssistantClient {
       }
     }
 
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $bearer',
+    };
+    if (appCheckToken != null) {
+      headers['X-Firebase-AppCheck'] = appCheckToken;
+    }
+
     http.Response response;
     try {
       response = await _http
           .post(
             _endpoint!,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $bearer',
-              if (appCheckToken != null) 'X-Firebase-AppCheck': appCheckToken,
-            },
+            headers: headers,
             body: jsonEncode({
               'message': prompt,
               'language': language,

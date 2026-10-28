@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/ai_assistant_client.dart';
+import '../services/oracle_ai_session_store.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
 
@@ -19,8 +20,20 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final _client = AiAssistantClient();
   bool _consent = false;
   bool _loading = false;
-  String? _answer;
+  final List<({String question, String answer})> _history = [];
   String? _error;
+  bool _oracleConnected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshConnection();
+  }
+
+  Future<void> _refreshConnection() async {
+    final session = await OracleAiSessionStore().read();
+    if (mounted) setState(() => _oracleConnected = session?.isValid ?? false);
+  }
 
   String t(String en, String ar) => widget.arabic ? ar : en;
 
@@ -36,16 +49,19 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _loading = true;
-      _answer = null;
       _error = null;
     });
+    final question = _question.text.trim();
     try {
       final answer = await _client.ask(
         message: _question.text,
         language: widget.arabic ? 'ar' : 'en',
         consent: _consent,
       );
-      if (mounted) setState(() => _answer = answer);
+      if (mounted) {
+        setState(() => _history.add((question: question, answer: answer)));
+        _question.clear();
+      }
     } on AiAssistantException catch (error) {
       if (mounted) setState(() => _error = _message(error.code));
     } catch (_) {
@@ -58,6 +74,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           _loading = false;
           _consent = false;
         });
+        await _refreshConnection();
       }
     }
   }
@@ -105,6 +122,37 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     }
   }
 
+  // Lightweight display formatting for model responses. Do not interpret HTML
+  // or execute links: all content remains plain, selectable text.
+  Widget _answerText(String value) {
+    final base = DefaultTextStyle.of(context).style;
+    final spans = <TextSpan>[];
+    final pattern = RegExp(r'\\*\\*(.+?)\\*\\*|\\*([^*\\n]+)\\*');
+    var cursor = 0;
+    for (final match in pattern.allMatches(value)) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(text: value.substring(cursor, match.start)));
+      }
+      spans.add(TextSpan(
+        text: match.group(1) ?? match.group(2) ?? '',
+        style: match.group(1) != null
+            ? base.copyWith(fontWeight: FontWeight.bold)
+            : base.copyWith(fontStyle: FontStyle.italic),
+      ));
+      cursor = match.end;
+    }
+    if (cursor < value.length) {
+      spans.add(TextSpan(text: value.substring(cursor)));
+    }
+    return Directionality(
+      textDirection: widget.arabic ? TextDirection.rtl : TextDirection.ltr,
+      child: SelectableText.rich(
+        TextSpan(style: base, children: spans),
+        textAlign: TextAlign.start,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,15 +173,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ),
           ),
           const SizedBox(height: 12),
+          Text(_oracleConnected
+              ? t('Connected with Oracle', 'متصل عبر Oracle')
+              : t('Oracle not paired — Google sign-in may be required', 'Oracle غير مرتبط — قد يلزم تسجيل Google')),
+          const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _loading
                 ? null
-                : () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          OracleAiPairingScreen(arabic: widget.arabic),
-                    ),
-                  ),
+                : () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => OracleAiPairingScreen(arabic: widget.arabic),
+                      ),
+                    );
+                    await _refreshConnection();
+                  },
             icon: const Icon(Icons.phonelink_lock_outlined),
             label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
           ),
@@ -194,9 +248,24 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 label: Text(t('Google account', 'حساب Google')),
               ),
           ],
-          if (_answer != null) ...[
+          for (final item in _history) ...[
             const SizedBox(height: 16),
-            SelectableText(_answer!),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SelectableText(item.question),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: _answerText(item.answer),
+              ),
+            ),
           ],
         ],
       ),

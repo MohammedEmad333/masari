@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 import 'ai_assistant_client.dart';
 import 'google_account_service.dart';
@@ -39,8 +39,12 @@ class GoogleAiSessionClient {
 
   static Uri? _defaultEndpoint() {
     final uri = Uri.tryParse(AiAssistantClient.configuredUrl);
-    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty ||
-        uri.userInfo.isNotEmpty || uri.hasQuery || uri.hasFragment ||
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
         uri.path != '/v1/assistant/ask') {
       return null;
     }
@@ -65,10 +69,12 @@ class GoogleAiSessionClient {
 
   /// The caller initiates Google sign-in explicitly via the Google UI first.
   Future<void> exchange() async {
-    if (_endpoint == null || _endpoint!.scheme != 'https' ||
+    if (_endpoint == null ||
+        _endpoint!.scheme != 'https' ||
         _endpoint!.userInfo.isNotEmpty ||
         _endpoint!.path != '/v1/assistant/google-session' ||
-        _endpoint!.hasQuery || _endpoint!.hasFragment) {
+        _endpoint!.hasQuery ||
+        _endpoint!.hasFragment) {
       throw const AiAssistantException('not_configured');
     }
     final String? token;
@@ -88,13 +94,15 @@ class GoogleAiSessionClient {
 
     final http.Response response;
     try {
-      response = await _http.post(
-        _endpoint!,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'X-Firebase-AppCheck': appCheck,
-        },
-      ).timeout(const Duration(seconds: 15));
+      response = await _http
+          .post(
+            _endpoint!,
+            headers: {
+              'Authorization': 'Bearer $token',
+              'X-Firebase-AppCheck': appCheck,
+            },
+          )
+          .timeout(const Duration(seconds: 15));
     } on TimeoutException {
       throw const AiAssistantException('timeout');
     } catch (_) {

@@ -56,7 +56,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     } catch (_) {
       if (mounted && !silent) {
         setState(
-          () => _error = t('Google connection failed.', 'تعذّر ربط حساب Google.'),
+          () =>
+              _error = t('Google connection failed.', 'تعذّر ربط حساب Google.'),
         );
       }
     } finally {
@@ -225,7 +226,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   ? null
                   : () => _connectGoogle(),
               icon: const Icon(Icons.account_circle_outlined),
-              label: Text(t('Continue with Google', 'المتابعة باستخدام Google')),
+              label: Text(
+                t('Continue with Google', 'المتابعة باستخدام Google'),
+              ),
             ),
           if (!GoogleOracleAuthClient.enabled)
             OutlinedButton.icon(

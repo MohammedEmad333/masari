@@ -79,7 +79,7 @@ if (quotaBackend === 'postgres') {
   pool = new pg.Pool({ ...pgOptions, max: 4, connectionTimeoutMillis: 5000 });
   // Startup must fail closed when quota schema cannot be used.
   await pool.query(QUOTA_SCHEMA);
-  reserveQuota = createPostgresQuota({ pool });
+  reserveQuota = createPostgresQuota({ pool, perDay: 20 });
 } else if (quotaBackend === 'firestore') {
   reserveQuota = createFirestoreQuota({ db: getFirestore() });
 } else {

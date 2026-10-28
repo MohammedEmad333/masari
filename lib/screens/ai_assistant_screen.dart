@@ -41,7 +41,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     try {
       await GoogleAccountService.instance.initialize();
       if (GoogleAccountService.instance.currentUser == null) {
-        if (silent) return;
+        if (silent || !mounted) return;
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => GoogleAccountScreen(arabic: widget.arabic),

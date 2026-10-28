@@ -18,7 +18,8 @@ class GoogleOracleAuthClient {
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
        _store = store ?? OracleAiSessionStore(),
-       _endpoint = assistantEndpoint ?? Uri.tryParse(AiAssistantClient.configuredUrl);
+       _endpoint =
+           assistantEndpoint ?? Uri.tryParse(AiAssistantClient.configuredUrl);
 
   static const enabled = bool.fromEnvironment(
     'MASARI_GOOGLE_ORACLE_AUTH_ENABLED',

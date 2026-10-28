@@ -4,7 +4,7 @@ import http from 'node:http';
 import { createPairingHandler } from '../oracle_pairing_http.mjs';
 const code = 'pair_' + 'a'.repeat(64);
 async function fixture({ enabled = false, redeemCode = async () => null, perWindow = 5 } = {}) {
-  const handler = createPairingHandler({ enabled, redeemCode, perWindow });
+  const handler = createPairingHandler({ enabled, redeemCode, perWindow, reserveAttempt: async () => 1 });
   const server = http.createServer(async (req, res) => {
     if (!(await handler(req, res))) {
       res.writeHead(404);
@@ -67,4 +67,33 @@ test('database failure fails closed', async () => {
     assert.equal(r.status, 503);
     assert(!((await r.text()).includes('db secret')));
   } finally { await fx.close(); }
+});
+
+test('refuses to enable pairing without durable rate limit protection', () => {
+  assert.throws(() => createPairingHandler({
+    enabled: true, redeemCode: async () => null,
+  }), /Durable pairing rate limiter required/);
+});
+test('durable rejection happens before pairing code redemption', async () => {
+  let redeemed = false;
+  const handler = createPairingHandler({
+    enabled: true,
+    redeemCode: async () => { redeemed = true; return null; },
+    reserveAttempt: async () => {
+      throw Object.assign(new Error('limited'), { code: 'pairing_rate_exceeded' });
+    },
+  });
+  const server = http.createServer((req, res) => { void handler(req, res); });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const response = await fetch('http://127.0.0.1:' + server.address().port + '/v1/assistant/pair', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    assert.equal(response.status, 429);
+    assert.equal(redeemed, false);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
 });

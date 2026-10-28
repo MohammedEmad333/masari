@@ -137,7 +137,7 @@ http.createServer(async (req, res) => {
       res.end(JSON.stringify(body));
     };
     if (req.method !== 'POST') return reply(405, { error: 'method_not_allowed' });
-    if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+    if (!String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) {
       return reply(415, { error: 'content_type' });
     }
     const authorization = req.headers.authorization || '';

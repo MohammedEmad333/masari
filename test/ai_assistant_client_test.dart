@@ -121,7 +121,8 @@ void main() {
         return http.Response('{"answer":"Oracle works"}', 200);
       }),
       endpoint: endpoint,
-      tokenProvider: () async => throw StateError('Do not access Firebase'),
+      tokenProvider: () async =>
+          throw StateError('Do not access Firebase'),
       appCheckTokenProvider: () async =>
           throw StateError('Do not access App Check'),
       oracleSessionProvider: () async => OracleAiSession(

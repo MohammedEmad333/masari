@@ -133,12 +133,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       if (match.start > cursor) {
         spans.add(TextSpan(text: value.substring(cursor, match.start)));
       }
-      spans.add(TextSpan(
-        text: match.group(1) ?? match.group(2) ?? '',
-        style: match.group(1) != null
-            ? base.copyWith(fontWeight: FontWeight.bold)
-            : base.copyWith(fontStyle: FontStyle.italic),
-      ));
+      spans.add(
+        TextSpan(
+          text: match.group(1) ?? match.group(2) ?? '',
+          style: match.group(1) != null
+              ? base.copyWith(fontWeight: FontWeight.bold)
+              : base.copyWith(fontStyle: FontStyle.italic),
+        ),
+      );
       cursor = match.end;
     }
     if (cursor < value.length) {
@@ -173,9 +175,14 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Text(_oracleConnected
-              ? t('Connected with Oracle', 'متصل عبر Oracle')
-              : t('Oracle not paired — Google sign-in may be required', 'Oracle غير مرتبط — قد يلزم تسجيل Google')),
+          Text(
+            _oracleConnected
+                ? t('Connected with Oracle', 'متصل عبر Oracle')
+                : t(
+                    'Oracle not paired — Google sign-in may be required',
+                    'Oracle غير مرتبط — قد يلزم تسجيل Google',
+                  ),
+          ),
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: _loading
@@ -183,7 +190,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 : () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => OracleAiPairingScreen(arabic: widget.arabic),
+                        builder: (_) =>
+                            OracleAiPairingScreen(arabic: widget.arabic),
                       ),
                     );
                     await _refreshConnection();

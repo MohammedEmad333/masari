@@ -19,6 +19,7 @@ class OracleAiSessionStore {
 
   static const _tokenKey = 'masari_ai_oracle_session_token';
   static const _expiryKey = 'masari_ai_oracle_session_expiry';
+  static const _googleUidKey = 'masari_ai_oracle_google_uid';
   final FlutterSecureStorage _storage;
 
   Future<OracleAiSession?> read() async {
@@ -41,20 +42,39 @@ class OracleAiSessionStore {
     }
   }
 
+  /// Only allow a session issued to the currently signed-in Google identity.
+  /// Legacy SSH-paired sessions have no UID binding and are never accepted here.
+  Future<OracleAiSession?> readForGoogle(String? googleUid) async {
+    if (googleUid == null || googleUid.isEmpty) return null;
+    try {
+      final bound = await _storage.read(key: _googleUidKey);
+      if (bound != googleUid) return null;
+      return read();
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> save({
     required String token,
     required DateTime expiresAt,
+    String? googleUid,
   }) async {
     final session = OracleAiSession(token, expiresAt.toUtc());
     if (!session.isValid) {
       throw ArgumentError('Invalid or expired Oracle session');
     }
     try {
+      // Remove any previous account binding before replacing the bearer.
+      await _storage.delete(key: _googleUidKey);
       await _storage.write(key: _tokenKey, value: token);
       await _storage.write(
         key: _expiryKey,
         value: expiresAt.toUtc().toIso8601String(),
       );
+      if (googleUid != null && googleUid.isNotEmpty) {
+        await _storage.write(key: _googleUidKey, value: googleUid);
+      }
     } catch (_) {
       await clear();
       rethrow;
@@ -64,5 +84,6 @@ class OracleAiSessionStore {
   Future<void> clear() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _expiryKey);
+    await _storage.delete(key: _googleUidKey);
   }
 }

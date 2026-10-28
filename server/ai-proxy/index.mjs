@@ -8,6 +8,10 @@ import { createFirestoreQuota } from './firestore_quota.mjs';
 import { createPostgresQuota, QUOTA_SCHEMA } from './postgres_quota.mjs';
 import pg from 'pg';
 import { createRequestHandler } from './core.mjs';
+import { createOracleSessions, SESSION_SCHEMA } from './oracle_sessions.mjs';
+import { createOraclePairing, PAIRING_SCHEMA } from './oracle_pairing.mjs';
+import { createPairingRateLimiter, PAIRING_RATE_SCHEMA } from './oracle_pairing_rate.mjs';
+import { createPairingHandler } from './oracle_pairing_http.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const apiKeyFile = process.env.TOKENROUTER_API_KEY_FILE;
@@ -57,6 +61,7 @@ const complete = async ({ message, language }) => {
 // Provider-side spend limits and App Check are separate launch requirements.
 const quotaBackend = process.env.MASARI_QUOTA_BACKEND || 'firestore';
 let reserveQuota;
+let pool;
 if (quotaBackend === 'postgres') {
   const passwordFile = process.env.MASARI_POSTGRES_PASSWORD_FILE;
   const connectionString = process.env.MASARI_POSTGRES_URL;
@@ -70,7 +75,7 @@ if (quotaBackend === 'postgres') {
     database: 'masari_ai',
     password: readFileSync(passwordFile, 'utf8').trim(),
   } : { connectionString };
-  const pool = new pg.Pool({ ...pgOptions, max: 4, connectionTimeoutMillis: 5000 });
+  pool = new pg.Pool({ ...pgOptions, max: 4, connectionTimeoutMillis: 5000 });
   // Startup must fail closed when quota schema cannot be used.
   await pool.query(QUOTA_SCHEMA);
   reserveQuota = createPostgresQuota({ pool });
@@ -79,8 +84,37 @@ if (quotaBackend === 'postgres') {
 } else {
   throw new Error('Invalid MASARI_QUOTA_BACKEND');
 }
+// Default-off until pairing/recovery and client secure-storage rollout are ready.
+const oracleEnabled = process.env.MASARI_ORACLE_AUTH_ENABLED === 'true';
+if (oracleEnabled && !pool) throw new Error('Oracle auth requires PostgreSQL');
+let oracleSessions;
+let pairingHandler;
+if (oracleEnabled) {
+  await pool.query(SESSION_SCHEMA);
+  await pool.query(PAIRING_SCHEMA);
+  await pool.query(PAIRING_RATE_SCHEMA);
+  oracleSessions = createOracleSessions({ pool });
+  const pairing = createOraclePairing({ pool });
+  // This fixed shared bucket limits all requests via the Caddy proxy regardless
+  // of untrusted client forwarding headers. Edge-level limits also required.
+  const sharedLimit = createPairingRateLimiter({ pool, maxAttempts: 10, windowSeconds: 60 });
+  pairingHandler = createPairingHandler({
+    enabled: true,
+    redeemCode: pairing.redeemCode,
+    reserveAttempt: () => sharedLimit('masari-public-pairing'),
+  });
+}
+const authenticate = async token => {
+  if (token.startsWith('msr_')) {
+    if (!oracleEnabled) throw new Error('Oracle sessions disabled');
+    const session = await oracleSessions.authenticate(token);
+    if (!session) throw new Error('Invalid Oracle session');
+    return { uid: 'oracle:' + session.uid, authMethod: 'oracle' };
+  }
+  return verifyToken(token);
+};
 const handler = createRequestHandler({
-  authenticate: verifyToken,
+  authenticate,
   verifyAppCheck,
   complete,
   reserveQuota,
@@ -88,6 +122,9 @@ const handler = createRequestHandler({
 const port = Number(process.env.PORT || 8096);
 const host = process.env.HOST || '127.0.0.1';
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
-http.createServer(handler).listen(port, host, () => {
+http.createServer(async (req, res) => {
+  if (pairingHandler && await pairingHandler(req, res)) return;
+  await handler(req, res);
+}).listen(port, host, () => {
   process.stdout.write('Masari AI proxy listening on ' + host + ':' + port + '\n');
 });

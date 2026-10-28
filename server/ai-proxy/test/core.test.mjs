@@ -154,3 +154,40 @@ test('rejects a forged App Check token without billing upstream', async () => {
     assert.equal(fx.calls.length, 0);
   } finally { await fx.close(); }
 });
+
+test('verified Oracle sessions bypass Firebase App Check only after database authentication', async () => {
+  const fx = await fixture({
+    authenticate: async token => {
+      if (token !== 'msr_valid') throw Error('invalid Oracle token');
+      return { uid: 'oracle:account-1', authMethod: 'oracle' };
+    },
+    verifyAppCheck: async () => { throw Error('Firebase must not be called'); },
+  });
+  try {
+    const ok = await fetch(fx.url + '/v1/assistant/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer msr_valid' },
+      body: body('Hello'),
+    });
+    assert.equal(ok.status, 200);
+    const denied = await fetch(fx.url + '/v1/assistant/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer msr_invalid' },
+      body: body('Hello'),
+    });
+    assert.equal(denied.status, 401);
+    assert.equal(fx.calls.length, 1);
+  } finally { await fx.close(); }
+});
+test('Firebase sessions still need App Check after Oracle integration', async () => {
+  const fx = await fixture();
+  try {
+    const response = await fetch(fx.url + '/v1/assistant/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer valid' },
+      body: body('Hello'),
+    });
+    assert.equal(response.status, 403);
+    assert.equal(fx.calls.length, 0);
+  } finally { await fx.close(); }
+});

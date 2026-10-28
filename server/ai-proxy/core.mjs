@@ -55,6 +55,9 @@ export function createRequestHandler({
       return reply(res, 401, { error: 'invalid_authentication' });
     }
 
+    // Oracle sessions are verified in PostgreSQL and cannot be forged via
+    // request body/headers. Firebase tokens still require App Check.
+    if (user.authMethod !== 'oracle') {
     const appCheckToken = req.headers['x-firebase-appcheck'];
     if (typeof appCheckToken !== 'string' || !appCheckToken || appCheckToken.length > 4096) {
       return reply(res, 403, { error: 'app_check_required' });
@@ -64,6 +67,8 @@ export function createRequestHandler({
     } catch {
       // Never forward unauthenticated app traffic to TokenRouter.
       return reply(res, 403, { error: 'app_check_failed' });
+    }
+
     }
 
     const declaredLength = Number(req.headers['content-length'] || 0);

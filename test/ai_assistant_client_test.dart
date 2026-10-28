@@ -111,6 +111,7 @@ void main() {
       ),
     );
   });
+
   test('Oracle session uses bearer without calling Firebase/App Check', () async {
     http.Request? captured;
     final token = 'msr_${List.filled(64, 'a').join()}';
@@ -121,14 +122,17 @@ void main() {
       }),
       endpoint: endpoint,
       tokenProvider: () async => throw StateError('Do not access Firebase'),
-      appCheckTokenProvider: () async => throw StateError('Do not access App Check'),
+      appCheckTokenProvider: () async =>
+          throw StateError('Do not access App Check'),
       oracleSessionProvider: () async => OracleAiSession(
         token,
         DateTime.now().toUtc().add(const Duration(minutes: 30)),
       ),
     );
     final answer = await client.ask(
-      message: 'Hello', language: 'en', consent: true,
+      message: 'Hello',
+      language: 'en',
+      consent: true,
     );
     expect(answer, 'Oracle works');
     expect(captured!.headers['authorization'], 'Bearer $token');
@@ -151,11 +155,14 @@ void main() {
     );
     await expectLater(
       client.ask(message: 'Hello', language: 'en', consent: true),
-      throwsA(isA<AiAssistantException>().having(
-        (e) => e.code, 'code', 'oracle_session_expired',
-      )),
+      throwsA(
+        isA<AiAssistantException>().having(
+          (e) => e.code,
+          'code',
+          'oracle_session_expired',
+        ),
+      ),
     );
     expect(firebaseCalls, 0);
   });
-
 }

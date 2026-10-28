@@ -127,7 +127,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   Widget _answerText(String value) {
     final base = DefaultTextStyle.of(context).style;
     final spans = <TextSpan>[];
-    final pattern = RegExp(r'\\*\\*(.+?)\\*\\*|\\*([^*\\n]+)\\*');
+    final pattern = RegExp(r'\*\*(.+?)\*\*|\*([^*\n]+)\*');
     var cursor = 0;
     for (final match in pattern.allMatches(value)) {
       if (match.start > cursor) {

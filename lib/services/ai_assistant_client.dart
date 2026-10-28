@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 
 import 'google_account_service.dart';
+import 'oracle_ai_session_store.dart';
 
 class AiAssistantException implements Exception {
   const AiAssistantException(this.code);
@@ -25,11 +26,14 @@ class AiAssistantClient {
     Uri? endpoint,
     Future<String?> Function()? tokenProvider,
     Future<String?> Function()? appCheckTokenProvider,
+    Future<OracleAiSession?> Function()? oracleSessionProvider,
   }) : _http = client ?? http.Client(),
        _ownsClient = client == null,
        _endpoint = endpoint ?? Uri.tryParse(configuredUrl),
        _tokenProvider = tokenProvider ?? _firebaseToken,
-       _appCheckTokenProvider = appCheckTokenProvider ?? _appCheckToken;
+       _appCheckTokenProvider = appCheckTokenProvider ?? _appCheckToken,
+       _oracleSessionProvider =
+           oracleSessionProvider ?? OracleAiSessionStore().read;
 
   static const configuredUrl = String.fromEnvironment('MASARI_AI_PROXY_URL');
 
@@ -40,6 +44,7 @@ class AiAssistantClient {
   final Uri? _endpoint;
   final Future<String?> Function() _tokenProvider;
   final Future<String?> Function() _appCheckTokenProvider;
+  final Future<OracleAiSession?> Function() _oracleSessionProvider;
   static Future<void>? _appCheckInitialization;
 
   static bool _validEndpoint(Uri? uri) =>
@@ -92,23 +97,45 @@ class AiAssistantClient {
       throw const AiAssistantException('sensitive_content');
     }
 
-    final String? idToken;
+    // A valid, encrypted Oracle AI session avoids Firebase App Check for the
+    // assistant only. Google backup and calendar authentication are untouched.
+    OracleAiSession? oracleSession;
     try {
-      idToken = await _tokenProvider();
+      oracleSession = await _oracleSessionProvider();
     } catch (_) {
-      throw const AiAssistantException('sign_in_required');
+      throw const AiAssistantException('session_storage_error');
     }
-    if (idToken == null || idToken.isEmpty) {
-      throw const AiAssistantException('sign_in_required');
+    String bearer;
+    String? appCheckToken;
+    if (oracleSession != null && oracleSession.isValid) {
+      bearer = oracleSession.token;
+    } else {
+      final String? idToken;
+      try {
+        idToken = await _tokenProvider();
+      } catch (_) {
+        throw const AiAssistantException('sign_in_required');
+      }
+      if (idToken == null || idToken.isEmpty) {
+        throw const AiAssistantException('sign_in_required');
+      }
+      bearer = idToken;
+      try {
+        appCheckToken = await _appCheckTokenProvider();
+      } catch (_) {
+        throw const AiAssistantException('app_check_failed');
+      }
+      if (appCheckToken == null || appCheckToken.isEmpty) {
+        throw const AiAssistantException('app_check_failed');
+      }
     }
-    final String? appCheckToken;
-    try {
-      appCheckToken = await _appCheckTokenProvider();
-    } catch (_) {
-      throw const AiAssistantException('app_check_failed');
-    }
-    if (appCheckToken == null || appCheckToken.isEmpty) {
-      throw const AiAssistantException('app_check_failed');
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $bearer',
+    };
+    if (appCheckToken != null) {
+      headers['X-Firebase-AppCheck'] = appCheckToken;
     }
 
     http.Response response;
@@ -116,11 +143,7 @@ class AiAssistantClient {
       response = await _http
           .post(
             _endpoint!,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $idToken',
-              'X-Firebase-AppCheck': appCheckToken,
-            },
+            headers: headers,
             body: jsonEncode({
               'message': prompt,
               'language': language,
@@ -134,6 +157,11 @@ class AiAssistantClient {
       throw const AiAssistantException('network_error');
     }
     if (response.statusCode == 401) {
+      if (oracleSession != null) {
+        // Server may have revoked the session. Never silently retry using
+        // Firebase: require explicit re-pairing or sign-in.
+        throw const AiAssistantException('oracle_session_expired');
+      }
       throw const AiAssistantException('sign_in_required');
     }
     if (response.statusCode == 403) {

@@ -6,7 +6,9 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund && npm cache clean --force
 
-COPY index.mjs core.mjs firestore_quota.mjs postgres_quota.mjs ./
+COPY index.mjs core.mjs firestore_quota.mjs postgres_quota.mjs \
+     oracle_sessions.mjs oracle_pairing.mjs oracle_pairing_rate.mjs \
+     oracle_pairing_http.mjs oracle_provision.mjs ./
 
 USER 1000:1000
 EXPOSE 8096

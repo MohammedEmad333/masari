@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/ai_assistant_client.dart';
 import 'google_account_screen.dart';
+import 'oracle_ai_pairing_screen.dart';
 
 /// Opt-in text-only AI chat. No calendar events or tokens are included.
 class AiAssistantScreen extends StatefulWidget {
@@ -73,6 +74,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           'App verification failed. Check Play Integrity registration or your device.',
           'فشل التحقق من التطبيق. افحص تسجيل Play Integrity أو جهازك.',
         );
+      case 'oracle_session_expired':
+        return t(
+          'Your Oracle AI session has expired or was revoked. Re-pair the device.',
+          'انتهت جلسة مساعد Oracle أو أُلغيت. يلزم إعادة ربط الجهاز.',
+        );
+      case 'session_storage_error':
+        return t(
+          'Secure session storage is unavailable.',
+          'تعذّر الوصول إلى التخزين الآمن لجلسة المساعد.',
+        );
       case 'quota_exceeded':
         return t('Daily or minute limit reached.', 'وصلت إلى حد الاستخدام.');
       case 'invalid_message':
@@ -112,6 +123,19 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   'لا تُدخل معلومات خاصة. لا يستطيع المساعد قراءة '
                   'المهام أو جدولة التذكيرات.',
             ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _loading
+                ? null
+                : () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          OracleAiPairingScreen(arabic: widget.arabic),
+                    ),
+                  ),
+            icon: const Icon(Icons.phonelink_lock_outlined),
+            label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
           ),
           const SizedBox(height: 16),
           TextField(

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.16
+
+- Add optional Oracle AI device pairing with a one-time code and encrypted Android session storage.
+- Use a validated Oracle session for the AI assistant without Firebase App Check; retain Google calendar and backup authentication unchanged.
+- Display Arabic and English pairing/session errors. Oracle authentication must be enabled and securely provisioned on the server before pairing works.
+
 ## 2.2.15
 
 - Enable the optional TokenRouter-powered online study assistant in the normally signed Masari release, behind Firebase Google sign-in, Firebase App Check (Play Integrity) and explicit per-question consent.

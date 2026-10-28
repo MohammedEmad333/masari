@@ -55,7 +55,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       if (mounted && !silent) setState(() => _error = _message(error.code));
     } catch (_) {
       if (mounted && !silent) {
-        setState(() => _error = t('Google connection failed.', 'تعذّر ربط حساب Google.'));
+        setState(
+          () => _error = t('Google connection failed.', 'تعذّر ربط حساب Google.'),
+        );
       }
     } finally {
       client.dispose();
@@ -226,21 +228,21 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               label: Text(t('Continue with Google', 'المتابعة باستخدام Google')),
             ),
           if (!GoogleOracleAuthClient.enabled)
-          OutlinedButton.icon(
-            onPressed: _loading
-                ? null
-                : () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) =>
-                            OracleAiPairingScreen(arabic: widget.arabic),
-                      ),
-                    );
-                    await _refreshConnection();
-                  },
-            icon: const Icon(Icons.phonelink_lock_outlined),
-            label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
-          ),
+            OutlinedButton.icon(
+              onPressed: _loading
+                  ? null
+                  : () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              OracleAiPairingScreen(arabic: widget.arabic),
+                        ),
+                      );
+                      await _refreshConnection();
+                    },
+              icon: const Icon(Icons.phonelink_lock_outlined),
+              label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
+            ),
           const SizedBox(height: 16),
           TextField(
             controller: _question,

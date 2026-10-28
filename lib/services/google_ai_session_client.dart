@@ -70,11 +70,11 @@ class GoogleAiSessionClient {
   /// The caller initiates Google sign-in explicitly via the Google UI first.
   Future<void> exchange() async {
     if (_endpoint == null ||
-        _endpoint!.scheme != 'https' ||
-        _endpoint!.userInfo.isNotEmpty ||
-        _endpoint!.path != '/v1/assistant/google-session' ||
-        _endpoint!.hasQuery ||
-        _endpoint!.hasFragment) {
+        _endpoint.scheme != 'https' ||
+        _endpoint.userInfo.isNotEmpty ||
+        _endpoint.path != '/v1/assistant/google-session' ||
+        _endpoint.hasQuery ||
+        _endpoint.hasFragment) {
       throw const AiAssistantException('not_configured');
     }
     final String? token;
@@ -96,7 +96,7 @@ class GoogleAiSessionClient {
     try {
       response = await _http
           .post(
-            _endpoint!,
+            _endpoint,
             headers: {
               'Authorization': 'Bearer $token',
               'X-Firebase-AppCheck': appCheck,

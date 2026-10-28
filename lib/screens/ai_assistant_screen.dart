@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/ai_assistant_client.dart';
+import '../services/google_ai_session_client.dart';
+import '../services/google_account_service.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
 
@@ -17,6 +19,8 @@ class AiAssistantScreen extends StatefulWidget {
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final _question = TextEditingController();
   final _client = AiAssistantClient();
+  final _googleSessionClient = GoogleAiSessionClient();
+  bool _googleLoginBusy = false;
   bool _consent = false;
   bool _loading = false;
   String? _answer;
@@ -28,6 +32,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   void dispose() {
     _question.dispose();
     _client.dispose();
+    _googleSessionClient.dispose();
     super.dispose();
   }
 
@@ -59,6 +64,37 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           _consent = false;
         });
       }
+    }
+  }
+
+  Future<void> _connectGoogle() async {
+    if (_googleLoginBusy) return;
+    setState(() {
+      _googleLoginBusy = true;
+      _error = null;
+    });
+    try {
+      await GoogleAccountService.instance.signIn();
+      await _googleSessionClient.exchange();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t(
+            'Google account connected to Masari AI.',
+            'تم ربط حساب Google بمساعد مساري.',
+          ))),
+        );
+      }
+    } on AiAssistantException catch (error) {
+      if (mounted) setState(() => _error = _message(error.code));
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = t(
+          'Google sign-in could not be completed.',
+          'تعذر إكمال تسجيل الدخول باستخدام Google.',
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _googleLoginBusy = false);
     }
   }
 
@@ -125,18 +161,28 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _loading
-                ? null
-                : () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          OracleAiPairingScreen(arabic: widget.arabic),
+          if (GoogleAiSessionClient.enabled)
+            OutlinedButton.icon(
+              onPressed: _loading || _googleLoginBusy ? null : _connectGoogle,
+              icon: const Icon(Icons.account_circle_outlined),
+              label: Text(t(
+                'Continue with Google',
+                'المتابعة باستخدام Google',
+              )),
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: _loading
+                  ? null
+                  : () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            OracleAiPairingScreen(arabic: widget.arabic),
+                      ),
                     ),
-                  ),
-            icon: const Icon(Icons.phonelink_lock_outlined),
-            label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
-          ),
+              icon: const Icon(Icons.phonelink_lock_outlined),
+              label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
+            ),
           const SizedBox(height: 16),
           TextField(
             controller: _question,

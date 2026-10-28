@@ -125,7 +125,13 @@ class GoogleAiSessionClient {
       }
       final date = DateTime.tryParse(expiry);
       if (date == null) throw const FormatException();
-      await _store.save(token: token, expiresAt: date);
+      final googleUid = GoogleAccountService.instance.currentUser?.uid;
+      if (googleUid == null || googleUid.isEmpty) {
+        throw const AiAssistantException('sign_in_required');
+      }
+      await _store.save(token: token, expiresAt: date, googleUid: googleUid);
+    } on AiAssistantException {
+      rethrow;
     } on FormatException {
       throw const AiAssistantException('invalid_response');
     } catch (_) {

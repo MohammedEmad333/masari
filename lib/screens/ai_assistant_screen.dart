@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/ai_assistant_client.dart';
+import '../services/google_oracle_auth_client.dart';
+import '../services/google_account_service.dart';
 import '../services/oracle_ai_session_store.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
@@ -23,11 +25,42 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final List<({String question, String answer})> _history = [];
   String? _error;
   bool _oracleConnected = false;
+  bool _connectingGoogle = false;
 
   @override
   void initState() {
     super.initState();
     _refreshConnection();
+    if (GoogleOracleAuthClient.enabled) _connectGoogle(silent: true);
+  }
+
+  Future<void> _connectGoogle({bool silent = false}) async {
+    if (_connectingGoogle) return;
+    setState(() => _connectingGoogle = true);
+    final client = GoogleOracleAuthClient();
+    try {
+      await GoogleAccountService.instance.initialize();
+      if (GoogleAccountService.instance.currentUser == null) {
+        if (silent) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => GoogleAccountScreen(arabic: widget.arabic),
+          ),
+        );
+      }
+      if (GoogleAccountService.instance.currentUser == null) return;
+      await client.exchange();
+      await _refreshConnection();
+    } on AiAssistantException catch (error) {
+      if (mounted && !silent) setState(() => _error = _message(error.code));
+    } catch (_) {
+      if (mounted && !silent) {
+        setState(() => _error = t('Google connection failed.', 'تعذّر ربط حساب Google.'));
+      }
+    } finally {
+      client.dispose();
+      if (mounted) setState(() => _connectingGoogle = false);
+    }
   }
 
   Future<void> _refreshConnection() async {
@@ -184,6 +217,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   ),
           ),
           const SizedBox(height: 12),
+          if (GoogleOracleAuthClient.enabled)
+            OutlinedButton.icon(
+              onPressed: _loading || _connectingGoogle
+                  ? null
+                  : () => _connectGoogle(),
+              icon: const Icon(Icons.account_circle_outlined),
+              label: Text(t('Continue with Google', 'المتابعة باستخدام Google')),
+            ),
+          if (!GoogleOracleAuthClient.enabled)
           OutlinedButton.icon(
             onPressed: _loading
                 ? null

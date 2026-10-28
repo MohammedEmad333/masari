@@ -33,7 +33,7 @@ class AiAssistantClient {
        _tokenProvider = tokenProvider ?? _firebaseToken,
        _appCheckTokenProvider = appCheckTokenProvider ?? _appCheckToken,
        _oracleSessionProvider =
-           oracleSessionProvider ?? OracleAiSessionStore().read;
+           oracleSessionProvider ?? _currentOracleSession;
 
   static const configuredUrl = String.fromEnvironment('MASARI_AI_PROXY_URL');
 
@@ -55,6 +55,18 @@ class AiAssistantClient {
       !uri.hasQuery &&
       !uri.hasFragment &&
       uri.path == '/v1/assistant/ask';
+
+  static const _googleOnlyAi = bool.fromEnvironment(
+    'MASARI_GOOGLE_AI_LOGIN_ENABLED',
+    defaultValue: false,
+  );
+
+  static Future<OracleAiSession?> _currentOracleSession() async {
+    final store = OracleAiSessionStore();
+    if (!_googleOnlyAi) return store.read();
+    await GoogleAccountService.instance.initialize();
+    return store.readForGoogle(GoogleAccountService.instance.currentUser?.uid);
+  }
 
   static Future<String?> _firebaseToken() async {
     await GoogleAccountService.instance.initialize();
@@ -110,6 +122,9 @@ class AiAssistantClient {
     if (oracleSession != null && oracleSession.isValid) {
       bearer = oracleSession.token;
     } else {
+      if (_googleOnlyAi) {
+        throw const AiAssistantException('sign_in_required');
+      }
       final String? idToken;
       try {
         idToken = await _tokenProvider();

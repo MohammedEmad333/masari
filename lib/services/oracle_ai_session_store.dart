@@ -49,7 +49,7 @@ class OracleAiSessionStore {
     try {
       final bound = await _storage.read(key: _googleUidKey);
       if (bound != googleUid) return null;
-      return read();
+      return await read();
     } catch (_) {
       return null;
     }

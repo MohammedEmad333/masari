@@ -112,58 +112,63 @@ void main() {
     );
   });
 
-  test('Oracle session uses bearer without calling Firebase/App Check', () async {
-    http.Request? captured;
-    final token = 'msr_${List.filled(64, 'a').join()}';
-    final client = AiAssistantClient(
-      client: MockClient((request) async {
-        captured = request;
-        return http.Response('{"answer":"Oracle works"}', 200);
-      }),
-      endpoint: endpoint,
-      tokenProvider: () async =>
-          throw StateError('Do not access Firebase'),
-      appCheckTokenProvider: () async =>
-          throw StateError('Do not access App Check'),
-      oracleSessionProvider: () async => OracleAiSession(
-        token,
-        DateTime.now().toUtc().add(const Duration(minutes: 30)),
-      ),
-    );
-    final answer = await client.ask(
-      message: 'Hello',
-      language: 'en',
-      consent: true,
-    );
-    expect(answer, 'Oracle works');
-    expect(captured!.headers['authorization'], 'Bearer $token');
-    expect(captured!.headers.containsKey('x-firebase-appcheck'), false);
-  });
-
-  test('revoked Oracle bearer does not silently fall back to Firebase', () async {
-    var firebaseCalls = 0;
-    final client = AiAssistantClient(
-      client: MockClient((_) async => http.Response('{}', 401)),
-      endpoint: endpoint,
-      tokenProvider: () async {
-        firebaseCalls++;
-        return 'firebase';
-      },
-      oracleSessionProvider: () async => OracleAiSession(
-        'msr_${List.filled(64, 'b').join()}',
-        DateTime.now().toUtc().add(const Duration(minutes: 15)),
-      ),
-    );
-    await expectLater(
-      client.ask(message: 'Hello', language: 'en', consent: true),
-      throwsA(
-        isA<AiAssistantException>().having(
-          (e) => e.code,
-          'code',
-          'oracle_session_expired',
+  test(
+    'Oracle session uses bearer without calling Firebase/App Check',
+    () async {
+      http.Request? captured;
+      final token = 'msr_${List.filled(64, 'a').join()}';
+      final client = AiAssistantClient(
+        client: MockClient((request) async {
+          captured = request;
+          return http.Response('{"answer":"Oracle works"}', 200);
+        }),
+        endpoint: endpoint,
+        tokenProvider: () async => throw StateError('Do not access Firebase'),
+        appCheckTokenProvider: () async =>
+            throw StateError('Do not access App Check'),
+        oracleSessionProvider: () async => OracleAiSession(
+          token,
+          DateTime.now().toUtc().add(const Duration(minutes: 30)),
         ),
-      ),
-    );
-    expect(firebaseCalls, 0);
-  });
+      );
+      final answer = await client.ask(
+        message: 'Hello',
+        language: 'en',
+        consent: true,
+      );
+      expect(answer, 'Oracle works');
+      expect(captured!.headers['authorization'], 'Bearer $token');
+      expect(captured!.headers.containsKey('x-firebase-appcheck'), false);
+    },
+  );
+
+  test(
+    'revoked Oracle bearer does not silently fall back to Firebase',
+    () async {
+      var firebaseCalls = 0;
+      final client = AiAssistantClient(
+        client: MockClient((_) async => http.Response('{}', 401)),
+        endpoint: endpoint,
+        tokenProvider: () async {
+          firebaseCalls++;
+          return 'firebase';
+        },
+        oracleSessionProvider: () async => OracleAiSession(
+          'msr_${List.filled(64, 'b').join()}',
+          DateTime.now().toUtc().add(const Duration(minutes: 15)),
+        ),
+      );
+      await expectLater(
+        client.ask(message: 'Hello', language: 'en', consent: true),
+        throwsA(
+          isA<AiAssistantException>().having(
+            (e) => e.code,
+            'code',
+            'oracle_session_expired',
+          ),
+        ),
+      );
+      expect(firebaseCalls, 0);
+    },
+  );
 }

@@ -14,7 +14,8 @@ class OracleAiSession {
 
 class OracleAiSessionStore {
   OracleAiSessionStore({FlutterSecureStorage? storage})
-    : _storage = storage ?? const FlutterSecureStorage(aOptions: AndroidOptions());
+    : _storage =
+          storage ?? const FlutterSecureStorage(aOptions: AndroidOptions());
 
   static const _tokenKey = 'masari_ai_oracle_session_token';
   static const _expiryKey = 'masari_ai_oracle_session_expiry';
@@ -40,7 +41,10 @@ class OracleAiSessionStore {
     }
   }
 
-  Future<void> save({required String token, required DateTime expiresAt}) async {
+  Future<void> save({
+    required String token,
+    required DateTime expiresAt,
+  }) async {
     final session = OracleAiSession(token, expiresAt.toUtc());
     if (!session.isValid) {
       throw ArgumentError('Invalid or expired Oracle session');

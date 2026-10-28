@@ -113,7 +113,7 @@ void main() {
   });
   test('Oracle session uses bearer without calling Firebase/App Check', () async {
     http.Request? captured;
-    final token = 'msr_${'a' * 64}';
+    final token = 'msr_${List.filled(64, 'a').join()}';
     final client = AiAssistantClient(
       client: MockClient((request) async {
         captured = request;
@@ -145,7 +145,7 @@ void main() {
         return 'firebase';
       },
       oracleSessionProvider: () async => OracleAiSession(
-        'msr_${'b' * 64}',
+        'msr_${List.filled(64, 'b').join()}',
         DateTime.now().toUtc().add(const Duration(minutes: 15)),
       ),
     );

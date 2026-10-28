@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/google_account_service.dart';
+import '../services/oracle_ai_session_store.dart';
 
 class GoogleAccountScreen extends StatefulWidget {
   const GoogleAccountScreen({super.key, required this.arabic});
@@ -83,6 +84,7 @@ class _GoogleAccountScreenState extends State<GoogleAccountScreen> {
     setState(() => _busy = true);
     try {
       await _account.signOut();
+      await OracleAiSessionStore().clear();
       if (mounted) setState(() => _user = null);
     } catch (_) {
       if (mounted) {

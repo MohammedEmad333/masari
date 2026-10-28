@@ -130,7 +130,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 ? null
                 : () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => OracleAiPairingScreen(arabic: widget.arabic),
+                      builder: (_) => OracleAiPairingScreen(
+                        arabic: widget.arabic,
+                      ),
                     ),
                   ),
             icon: const Icon(Icons.phonelink_lock_outlined),

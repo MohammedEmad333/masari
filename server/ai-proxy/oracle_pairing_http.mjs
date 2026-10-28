@@ -3,12 +3,16 @@
 // No credentials, IPs, or tokens are logged.
 export function createPairingHandler({
   redeemCode,
+  reserveAttempt,
   enabled = false,
   now = () => Date.now(),
   perWindow = 5,
   windowMs = 60000,
 } = {}) {
   if (typeof redeemCode !== 'function') throw new TypeError('redeemCode required');
+  if (enabled && typeof reserveAttempt !== 'function') {
+    throw new TypeError('Durable pairing rate limiter required');
+  }
   if (!Number.isSafeInteger(perWindow) || perWindow < 1 ||
       !Number.isSafeInteger(windowMs) || windowMs < 1000) {
     throw new TypeError('Invalid pairing limits');
@@ -32,7 +36,18 @@ export function createPairingHandler({
       reply(res, 405, { error: 'method_not_allowed' });
       return true;
     }
+    // Only trust the TCP peer, not caller-controlled forwarding headers.
+    // Production deployments also require edge-wide anti-abuse controls.
     const identity = req.socket.remoteAddress || 'unknown';
+    try {
+      await reserveAttempt(identity);
+    } catch (error) {
+      const limited = error?.code === 'pairing_rate_exceeded';
+      reply(res, limited ? 429 : 503, {
+        error: limited ? 'too_many_attempts' : 'pairing_unavailable',
+      });
+      return true;
+    }
     const slot = Math.floor(now() / windowMs);
     const existing = attempts.get(identity);
     const count = existing?.slot === slot ? existing.count : 0;

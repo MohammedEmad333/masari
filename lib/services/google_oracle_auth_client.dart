@@ -44,6 +44,8 @@ class GoogleOracleAuthClient {
       throw const AiAssistantException('not_configured');
     }
     try {
+      // Never retain a session belonging to a previously connected account.
+      await _store.clear();
       await GoogleAccountService.instance.initialize();
       final user = GoogleAccountService.instance.currentUser;
       if (user == null) {

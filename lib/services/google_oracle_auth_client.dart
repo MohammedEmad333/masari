@@ -18,8 +18,7 @@ class GoogleOracleAuthClient {
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
        _store = store ?? OracleAiSessionStore(),
-       _endpoint = assistantEndpoint ??
-           Uri.tryParse(AiAssistantClient.configuredUrl);
+       _endpoint = assistantEndpoint ?? Uri.tryParse(AiAssistantClient.configuredUrl);
 
   static const enabled = bool.fromEnvironment(
     'MASARI_GOOGLE_ORACLE_AUTH_ENABLED',
@@ -64,15 +63,17 @@ class GoogleOracleAuthClient {
       if (appCheck == null || appCheck.isEmpty) {
         throw const AiAssistantException('app_check_failed');
       }
-      final response = await _client.post(
-        endpoint.replace(path: '/v1/auth/google'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',
-          'X-Firebase-AppCheck': appCheck,
-        },
-        body: '{}',
-      ).timeout(const Duration(seconds: 20));
+      final response = await _client
+          .post(
+            endpoint.replace(path: '/v1/auth/google'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
+              'X-Firebase-AppCheck': appCheck,
+            },
+            body: '{}',
+          )
+          .timeout(const Duration(seconds: 20));
       if (response.statusCode == 401 || response.statusCode == 403) {
         throw const AiAssistantException('sign_in_required');
       }

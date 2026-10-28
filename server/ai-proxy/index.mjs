@@ -12,6 +12,8 @@ import { createOracleSessions, SESSION_SCHEMA } from './oracle_sessions.mjs';
 import { createOraclePairing, PAIRING_SCHEMA } from './oracle_pairing.mjs';
 import { createPairingRateLimiter, PAIRING_RATE_SCHEMA } from './oracle_pairing_rate.mjs';
 import { createPairingHandler } from './oracle_pairing_http.mjs';
+import { createGoogleAccounts, GOOGLE_IDENTITY_SCHEMA } from './oracle_google_accounts.mjs';
+import { createGoogleSessionHandler } from './oracle_google_http.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const apiKeyFile = process.env.TOKENROUTER_API_KEY_FILE;
@@ -89,11 +91,21 @@ const oracleEnabled = process.env.MASARI_ORACLE_AUTH_ENABLED === 'true';
 if (oracleEnabled && !pool) throw new Error('Oracle auth requires PostgreSQL');
 let oracleSessions;
 let pairingHandler;
+let googleSessionHandler;
 if (oracleEnabled) {
   await pool.query(SESSION_SCHEMA);
   await pool.query(PAIRING_SCHEMA);
   await pool.query(PAIRING_RATE_SCHEMA);
   oracleSessions = createOracleSessions({ pool });
+  if (process.env.MASARI_GOOGLE_ACCOUNT_EXCHANGE_ENABLED === 'true') {
+    await pool.query(GOOGLE_IDENTITY_SCHEMA);
+    googleSessionHandler = createGoogleSessionHandler({
+      verifyIdToken: verifyToken,
+      verifyAppCheck,
+      findOrCreate: createGoogleAccounts({ pool }),
+      issueSession: oracleSessions.issueSession,
+    });
+  }
   const pairing = createOraclePairing({ pool });
   // This fixed shared bucket limits all requests via the Caddy proxy regardless
   // of untrusted client forwarding headers. Edge-level limits also required.
@@ -123,6 +135,7 @@ const port = Number(process.env.PORT || 8096);
 const host = process.env.HOST || '127.0.0.1';
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
 http.createServer(async (req, res) => {
+  if (googleSessionHandler && await googleSessionHandler(req, res)) return;
   if (pairingHandler && await pairingHandler(req, res)) return;
   await handler(req, res);
 }).listen(port, host, () => {

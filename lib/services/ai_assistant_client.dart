@@ -65,9 +65,7 @@ class AiAssistantClient {
     final store = OracleAiSessionStore();
     if (!_googleOnlyAi) return store.read();
     await GoogleAccountService.instance.initialize();
-    return store.readForGoogle(
-      GoogleAccountService.instance.currentUser?.uid,
-    );
+    return store.readForGoogle(GoogleAccountService.instance.currentUser?.uid);
   }
 
   static Future<String?> _firebaseToken() async {

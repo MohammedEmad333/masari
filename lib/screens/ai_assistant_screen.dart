@@ -78,20 +78,26 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       await _googleSessionClient.exchange();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(
-            'Google account connected to Masari AI.',
-            'تم ربط حساب Google بمساعد مساري.',
-          ))),
+          SnackBar(
+            content: Text(
+              t(
+                'Google account connected to Masari AI.',
+                'تم ربط حساب Google بمساعد مساري.',
+              ),
+            ),
+          ),
         );
       }
     } on AiAssistantException catch (error) {
       if (mounted) setState(() => _error = _message(error.code));
     } catch (_) {
       if (mounted) {
-        setState(() => _error = t(
-          'Google sign-in could not be completed.',
-          'تعذر إكمال تسجيل الدخول باستخدام Google.',
-        ));
+        setState(
+          () => _error = t(
+            'Google sign-in could not be completed.',
+            'تعذر إكمال تسجيل الدخول باستخدام Google.',
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _googleLoginBusy = false);
@@ -165,10 +171,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             OutlinedButton.icon(
               onPressed: _loading || _googleLoginBusy ? null : _connectGoogle,
               icon: const Icon(Icons.account_circle_outlined),
-              label: Text(t(
-                'Continue with Google',
-                'المتابعة باستخدام Google',
-              )),
+              label: Text(
+                t('Continue with Google', 'المتابعة باستخدام Google'),
+              ),
             )
           else
             OutlinedButton.icon(

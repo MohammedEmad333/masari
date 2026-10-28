@@ -12,6 +12,7 @@ import { createOracleSessions, SESSION_SCHEMA } from './oracle_sessions.mjs';
 import { createOraclePairing, PAIRING_SCHEMA } from './oracle_pairing.mjs';
 import { createPairingRateLimiter, PAIRING_RATE_SCHEMA } from './oracle_pairing_rate.mjs';
 import { createPairingHandler } from './oracle_pairing_http.mjs';
+import { createGoogleAccounts, GOOGLE_ACCOUNT_SCHEMA } from './oracle_google_accounts.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const apiKeyFile = process.env.TOKENROUTER_API_KEY_FILE;
@@ -89,11 +90,14 @@ const oracleEnabled = process.env.MASARI_ORACLE_AUTH_ENABLED === 'true';
 if (oracleEnabled && !pool) throw new Error('Oracle auth requires PostgreSQL');
 let oracleSessions;
 let pairingHandler;
+let googleExchange;
 if (oracleEnabled) {
   await pool.query(SESSION_SCHEMA);
   await pool.query(PAIRING_SCHEMA);
   await pool.query(PAIRING_RATE_SCHEMA);
   oracleSessions = createOracleSessions({ pool });
+  await pool.query(GOOGLE_ACCOUNT_SCHEMA);
+  googleExchange = createGoogleAccounts({ pool, createAccount: oracleSessions.createAccount, issueSession: oracleSessions.issueSession });
   const pairing = createOraclePairing({ pool });
   // This fixed shared bucket limits all requests via the Caddy proxy regardless
   // of untrusted client forwarding headers. Edge-level limits also required.
@@ -123,6 +127,65 @@ const port = Number(process.env.PORT || 8096);
 const host = process.env.HOST || '127.0.0.1';
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
 http.createServer(async (req, res) => {
+  if (oracleEnabled && req.url === '/v1/auth/google') {
+    const reply = (status, body) => {
+      res.writeHead(status, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+      });
+      res.end(JSON.stringify(body));
+    };
+    if (req.method !== 'POST') return reply(405, { error: 'method_not_allowed' });
+    if (!/^application\\/json(?:\\s*;|$)/i.test(req.headers['content-type'] || '')) {
+      return reply(415, { error: 'content_type' });
+    }
+    const authorization = req.headers.authorization || '';
+    if (!authorization.startsWith('Bearer ') || authorization.length > 4103) {
+      return reply(401, { error: 'sign_in_required' });
+    }
+    const appCheck = req.headers['x-firebase-appcheck'];
+    if (typeof appCheck !== 'string' || !appCheck || appCheck.length > 4096) {
+      return reply(403, { error: 'app_check_required' });
+    }
+    try {
+      await verifyAppCheck(appCheck);
+    } catch {
+      return reply(403, { error: 'app_check_failed' });
+    }
+    let user;
+    try {
+      user = await verifyToken(authorization.slice(7));
+      if (user.firebase?.sign_in_provider !== 'google.com') {
+        return reply(403, { error: 'google_required' });
+      }
+    } catch {
+      return reply(401, { error: 'invalid_authentication' });
+    }
+    // A bounded, empty JSON object prevents accidental token or profile
+    // submission; no identity is trusted from the request body.
+    let bytes = 0;
+    const chunks = [];
+    try {
+      for await (const chunk of req) {
+        bytes += chunk.length;
+        if (bytes > 32) return reply(413, { error: 'request_too_large' });
+        chunks.push(chunk);
+      }
+      const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      if (!body || Array.isArray(body) || Object.keys(body).length !== 0) {
+        return reply(400, { error: 'invalid_body' });
+      }
+    } catch {
+      return reply(400, { error: 'invalid_body' });
+    }
+    try {
+      const session = await googleExchange(user);
+      return reply(200, session);
+    } catch {
+      return reply(503, { error: 'account_unavailable' });
+    }
+  }
   if (pairingHandler && await pairingHandler(req, res)) return;
   await handler(req, res);
 }).listen(port, host, () => {

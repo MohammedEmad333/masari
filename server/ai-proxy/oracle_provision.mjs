@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs';
-import pg from 'pg';
 import { createOracleSessions, SESSION_SCHEMA } from './oracle_sessions.mjs';
 import { createOraclePairing, PAIRING_SCHEMA } from './oracle_pairing.mjs';
 
@@ -34,6 +33,9 @@ if (process.argv[1] && import.meta.url === new URL('file://' + process.argv[1]).
       process.exitCode = 1;
     } else {
       const password = readFileSync(passwordFile, 'utf8').trim();
+      // CI imports this module for isolated tests without installed runtime deps.
+      // Load PostgreSQL only for an actual interactive provisioning run.
+      const { default: pg } = await import('pg');
       const pool = new pg.Pool({
         host: process.env.MASARI_POSTGRES_HOST || 'masari-ai-postgres',
         user: 'masari_ai',

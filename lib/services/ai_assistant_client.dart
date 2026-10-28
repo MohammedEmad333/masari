@@ -32,7 +32,8 @@ class AiAssistantClient {
        _endpoint = endpoint ?? Uri.tryParse(configuredUrl),
        _tokenProvider = tokenProvider ?? _firebaseToken,
        _appCheckTokenProvider = appCheckTokenProvider ?? _appCheckToken,
-       _oracleSessionProvider = oracleSessionProvider ?? OracleAiSessionStore().read;
+       _oracleSessionProvider =
+           oracleSessionProvider ?? OracleAiSessionStore().read;
 
   static const configuredUrl = String.fromEnvironment('MASARI_AI_PROXY_URL');
 

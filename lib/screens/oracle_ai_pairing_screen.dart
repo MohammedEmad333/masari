@@ -38,9 +38,7 @@ class _OracleAiPairingScreenState extends State<OracleAiPairingScreen> {
       if (!mounted) return;
       _code.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(tr('Device paired.', 'تم ربط الجهاز بنجاح.')),
-        ),
+        SnackBar(content: Text(tr('Device paired.', 'تم ربط الجهاز بنجاح.'))),
       );
       Navigator.of(context).pop(true);
     } on AiAssistantException catch (error) {
@@ -55,10 +53,7 @@ class _OracleAiPairingScreenState extends State<OracleAiPairingScreen> {
               'Too many attempts. Try later.',
               'محاولات كثيرة. حاول لاحقًا.',
             ),
-            _ => tr(
-              'Unable to pair this device.',
-              'تعذّر ربط هذا الجهاز.',
-            ),
+            _ => tr('Unable to pair this device.', 'تعذّر ربط هذا الجهاز.'),
           };
         });
       }
@@ -70,9 +65,7 @@ class _OracleAiPairingScreenState extends State<OracleAiPairingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('Pair AI assistant', 'ربط مساعد مساري')),
-      ),
+      appBar: AppBar(title: Text(tr('Pair AI assistant', 'ربط مساعد مساري'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

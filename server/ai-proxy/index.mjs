@@ -91,6 +91,8 @@ if (oracleEnabled && !pool) throw new Error('Oracle auth requires PostgreSQL');
 let oracleSessions;
 let pairingHandler;
 let googleExchange;
+let reserveGoogleGlobal;
+let reserveGoogleUser;
 if (oracleEnabled) {
   await pool.query(SESSION_SCHEMA);
   await pool.query(PAIRING_SCHEMA);
@@ -98,6 +100,12 @@ if (oracleEnabled) {
   oracleSessions = createOracleSessions({ pool });
   await pool.query(GOOGLE_ACCOUNT_SCHEMA);
   googleExchange = createGoogleAccounts({ pool, createAccount: oracleSessions.createAccount, issueSession: oracleSessions.issueSession });
+  // Durable limits cover concurrent workers and restart; caller IP headers are
+  // intentionally not trusted. Count both accepted and rejected requests.
+  const globalGoogleLimit = createPairingRateLimiter({ pool, maxAttempts: 100, windowSeconds: 60 });
+  const accountGoogleLimit = createPairingRateLimiter({ pool, maxAttempts: 5, windowSeconds: 60 });
+  reserveGoogleGlobal = () => globalGoogleLimit('masari-google-exchange-global');
+  reserveGoogleUser = uid => accountGoogleLimit('masari-google-exchange-uid:' + uid);
   const pairing = createOraclePairing({ pool });
   // This fixed shared bucket limits all requests via the Caddy proxy regardless
   // of untrusted client forwarding headers. Edge-level limits also required.
@@ -137,6 +145,13 @@ http.createServer(async (req, res) => {
       res.end(JSON.stringify(body));
     };
     if (req.method !== 'POST') return reply(405, { error: 'method_not_allowed' });
+    try {
+      await reserveGoogleGlobal();
+    } catch (error) {
+      return reply(error?.code === 'pairing_rate_exceeded' ? 429 : 503, {
+        error: error?.code === 'pairing_rate_exceeded' ? 'quota_exceeded' : 'quota_service_unavailable',
+      });
+    }
     if (!String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) {
       return reply(415, { error: 'content_type' });
     }
@@ -161,6 +176,13 @@ http.createServer(async (req, res) => {
       }
     } catch {
       return reply(401, { error: 'invalid_authentication' });
+    }
+    try {
+      await reserveGoogleUser(user.uid);
+    } catch (error) {
+      return reply(error?.code === 'pairing_rate_exceeded' ? 429 : 503, {
+        error: error?.code === 'pairing_rate_exceeded' ? 'quota_exceeded' : 'quota_service_unavailable',
+      });
     }
     // A bounded, empty JSON object prevents accidental token or profile
     // submission; no identity is trusted from the request body.

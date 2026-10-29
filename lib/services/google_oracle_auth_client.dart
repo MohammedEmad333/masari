@@ -53,23 +53,12 @@ class GoogleOracleAuthClient {
       if (idToken == null || idToken.isEmpty) {
         throw const AiAssistantException('sign_in_required');
       }
-      final String? appCheck;
-      try {
-        appCheck = await AiAssistantClient.getAppCheckToken();
-      } catch (_) {
-        // Never expose provider exception details, tokens, or device identifiers.
-        throw const AiAssistantException('app_check_failed');
-      }
-      if (appCheck == null || appCheck.isEmpty) {
-        throw const AiAssistantException('app_check_failed');
-      }
       final response = await _client
           .post(
             endpoint.replace(path: '/v1/auth/google'),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $idToken',
-              'X-Firebase-AppCheck': appCheck,
             },
             body: '{}',
           )

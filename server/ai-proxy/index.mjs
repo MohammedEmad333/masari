@@ -159,15 +159,9 @@ http.createServer(async (req, res) => {
     if (!authorization.startsWith('Bearer ') || authorization.length > 4103) {
       return reply(401, { error: 'sign_in_required' });
     }
-    const appCheck = req.headers['x-firebase-appcheck'];
-    if (typeof appCheck !== 'string' || !appCheck || appCheck.length > 4096) {
-      return reply(403, { error: 'app_check_required' });
-    }
-    try {
-      await verifyAppCheck(appCheck);
-    } catch {
-      return reply(403, { error: 'app_check_failed' });
-    }
+    // Google account exchange authenticates the verified Firebase ID token,
+    // not the APK. App Check is intentionally not a prerequisite here.
+    // Durable global/per-user limits and Google provider verification remain.
     let user;
     try {
       user = await verifyToken(authorization.slice(7));

@@ -49,6 +49,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Diagnose OIDC formatting
+        if: github.event_name == 'pull_request'
+        run: |
+          dart format lib/services/ai_assistant_client.dart lib/services/google_oracle_auth_client.dart
+          git diff -- lib/services/ai_assistant_client.dart lib/services/google_oracle_auth_client.dart
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

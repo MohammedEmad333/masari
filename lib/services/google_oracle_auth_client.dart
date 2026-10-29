@@ -90,7 +90,11 @@ class GoogleOracleAuthClient {
       if (token is! String || expiry == null) {
         throw const AiAssistantException('invalid_response');
       }
-      await _store.save(token: token, expiresAt: expiry);
+      final currentUid = GoogleAccountService.instance.currentUser?.uid;
+      if (currentUid == null || currentUid != user.uid) {
+        throw const AiAssistantException('sign_in_required');
+      }
+      await _store.save(token: token, expiresAt: expiry, googleUid: user.uid);
     } on AiAssistantException {
       rethrow;
     } on TimeoutException {

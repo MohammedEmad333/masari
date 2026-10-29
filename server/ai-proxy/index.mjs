@@ -13,6 +13,8 @@ import { createOraclePairing, PAIRING_SCHEMA } from './oracle_pairing.mjs';
 import { createPairingRateLimiter, PAIRING_RATE_SCHEMA } from './oracle_pairing_rate.mjs';
 import { createPairingHandler } from './oracle_pairing_http.mjs';
 import { createGoogleAccounts, GOOGLE_ACCOUNT_SCHEMA } from './oracle_google_accounts.mjs';
+import { createGoogleOidcVerifier } from './google_oidc.mjs';
+import { createGoogleOidcAccounts, GOOGLE_OIDC_ACCOUNT_SCHEMA } from './oracle_google_oidc_accounts.mjs';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const apiKeyFile = process.env.TOKENROUTER_API_KEY_FILE;
@@ -91,6 +93,8 @@ if (oracleEnabled && !pool) throw new Error('Oracle auth requires PostgreSQL');
 let oracleSessions;
 let pairingHandler;
 let googleExchange;
+let googleOidcExchange;
+let verifyGoogleOidc;
 let reserveGoogleGlobal;
 let reserveGoogleUser;
 if (oracleEnabled) {
@@ -100,6 +104,11 @@ if (oracleEnabled) {
   oracleSessions = createOracleSessions({ pool });
   await pool.query(GOOGLE_ACCOUNT_SCHEMA);
   googleExchange = createGoogleAccounts({ pool, createAccount: oracleSessions.createAccount, issueSession: oracleSessions.issueSession });
+  if (process.env.MASARI_GOOGLE_OIDC_ENABLED === 'true') {
+    verifyGoogleOidc = createGoogleOidcVerifier({ audience: process.env.MASARI_GOOGLE_OAUTH_CLIENT_ID });
+    await pool.query(GOOGLE_OIDC_ACCOUNT_SCHEMA);
+    googleOidcExchange = createGoogleOidcAccounts({ pool, issueSession: oracleSessions.issueSession });
+  }
   // Durable limits cover concurrent workers and restart; caller IP headers are
   // intentionally not trusted. Count both accepted and rejected requests.
   const globalGoogleLimit = createPairingRateLimiter({ pool, maxAttempts: 100, windowSeconds: 60 });
@@ -135,7 +144,8 @@ const port = Number(process.env.PORT || 8096);
 const host = process.env.HOST || '127.0.0.1';
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
 http.createServer(async (req, res) => {
-  if (oracleEnabled && req.url === '/v1/auth/google') {
+  if (oracleEnabled && (req.url === '/v1/auth/google' || req.url === '/v1/auth/google-oidc')) {
+    const directOidc = req.url === '/v1/auth/google-oidc';
     const reply = (status, body) => {
       res.writeHead(status, {
         'Content-Type': 'application/json; charset=utf-8',
@@ -162,11 +172,17 @@ http.createServer(async (req, res) => {
     // Google account exchange authenticates the verified Firebase ID token,
     // not the APK. App Check is intentionally not a prerequisite here.
     // Durable global/per-user limits and Google provider verification remain.
+    if (directOidc && !verifyGoogleOidc) return reply(404, { error: 'not_found' });
     let user;
     try {
-      user = await verifyToken(authorization.slice(7));
-      if (user.firebase?.sign_in_provider !== 'google.com') {
-        return reply(403, { error: 'google_required' });
+      if (directOidc) {
+        const identity = await verifyGoogleOidc(authorization.slice(7));
+        user = { uid: identity.sub };
+      } else {
+        user = await verifyToken(authorization.slice(7));
+        if (user.firebase?.sign_in_provider !== 'google.com') {
+          return reply(403, { error: 'google_required' });
+        }
       }
     } catch {
       return reply(401, { error: 'invalid_authentication' });
@@ -196,7 +212,7 @@ http.createServer(async (req, res) => {
       return reply(400, { error: 'invalid_body' });
     }
     try {
-      const session = await googleExchange(user);
+      const session = directOidc ? await googleOidcExchange(user.uid) : await googleExchange(user);
       return reply(200, session);
     } catch {
       return reply(503, { error: 'account_unavailable' });

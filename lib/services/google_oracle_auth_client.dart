@@ -127,7 +127,11 @@ class GoogleOracleAuthClient {
       if (currentUid == null || currentUid != expectedUid) {
         throw const AiAssistantException('sign_in_required');
       }
-      await _store.save(token: token, expiresAt: expiry, googleUid: expectedUid);
+      await _store.save(
+        token: token,
+        expiresAt: expiry,
+        googleUid: expectedUid,
+      );
     } on AiAssistantException {
       rethrow;
     } on TimeoutException {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'ai_assistant_client.dart';
 import 'google_account_service.dart';
@@ -21,6 +22,11 @@ class GoogleOracleAuthClient {
 
   static const enabled = bool.fromEnvironment(
     'MASARI_GOOGLE_ORACLE_AUTH_ENABLED',
+    defaultValue: false,
+  );
+
+  static const directOidcEnabled = bool.fromEnvironment(
+    'MASARI_GOOGLE_DIRECT_OIDC_ENABLED',
     defaultValue: false,
   );
 
@@ -45,17 +51,31 @@ class GoogleOracleAuthClient {
       // Prevent a previous account's Oracle token from surviving a switch.
       await _store.clear();
       await GoogleAccountService.instance.initialize();
-      final user = GoogleAccountService.instance.currentUser;
-      if (user == null) {
+      // Direct mode obtains a Google-issued ID token, never a Firebase ID token.
+      // Silent authentication is attempted first; explicit user interaction
+      // remains the responsibility of the sign-in UI.
+      final GoogleSignInAccount? directAccount = directOidcEnabled
+          ? await GoogleSignIn.instance.attemptLightweightAuthentication()
+          : null;
+      final user = directOidcEnabled
+          ? null
+          : GoogleAccountService.instance.currentUser;
+      if (directOidcEnabled ? directAccount == null : user == null) {
         throw const AiAssistantException('sign_in_required');
       }
-      final idToken = await user.getIdToken();
+      final idToken = directOidcEnabled
+          ? directAccount!.authentication.idToken
+          : await user!.getIdToken();
       if (idToken == null || idToken.isEmpty) {
         throw const AiAssistantException('sign_in_required');
       }
       final response = await _client
           .post(
-            endpoint.replace(path: '/v1/auth/google'),
+            endpoint.replace(
+              path: directOidcEnabled
+                  ? '/v1/auth/google-oidc'
+                  : '/v1/auth/google',
+            ),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $idToken',
@@ -100,11 +120,18 @@ class GoogleOracleAuthClient {
       if (token is! String || expiry == null) {
         throw const AiAssistantException('invalid_response');
       }
-      final currentUid = GoogleAccountService.instance.currentUser?.uid;
-      if (currentUid == null || currentUid != user.uid) {
+      final currentUid = directOidcEnabled
+          ? directAccount!.id
+          : GoogleAccountService.instance.currentUser?.uid;
+      final expectedUid = directOidcEnabled ? directAccount!.id : user!.uid;
+      if (currentUid == null || currentUid != expectedUid) {
         throw const AiAssistantException('sign_in_required');
       }
-      await _store.save(token: token, expiresAt: expiry, googleUid: user.uid);
+      await _store.save(
+        token: token,
+        expiresAt: expiry,
+        googleUid: expectedUid,
+      );
     } on AiAssistantException {
       rethrow;
     } on TimeoutException {

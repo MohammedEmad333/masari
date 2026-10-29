@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 
 import 'google_account_service.dart';
+import 'google_oracle_auth_client.dart';
 import 'oracle_ai_session_store.dart';
 
 class AiAssistantException implements Exception {
@@ -63,6 +64,8 @@ class AiAssistantClient {
     return user.getIdToken();
   }
 
+  static Future<String?> getAppCheckToken() => _appCheckToken();
+
   static Future<String?> _appCheckToken() async {
     await GoogleAccountService.instance.initialize();
     _appCheckInitialization ??= FirebaseAppCheck.instance.activate(
@@ -78,6 +81,7 @@ class AiAssistantClient {
     required String message,
     required String language,
     required bool consent,
+    bool retryAfterRenewal = true,
   }) async {
     if (!consent) throw const AiAssistantException('consent_required');
     if (!_validEndpoint(_endpoint)) {
@@ -104,6 +108,18 @@ class AiAssistantClient {
       oracleSession = await _oracleSessionProvider();
     } catch (_) {
       throw const AiAssistantException('session_storage_error');
+    }
+    if (GoogleOracleAuthClient.enabled && oracleSession == null) {
+      final renewal = GoogleOracleAuthClient();
+      try {
+        await renewal.exchange();
+        oracleSession = await _oracleSessionProvider();
+      } finally {
+        renewal.dispose();
+      }
+      if (oracleSession == null || !oracleSession.isValid) {
+        throw const AiAssistantException('sign_in_required');
+      }
     }
     String bearer;
     String? appCheckToken;
@@ -158,8 +174,20 @@ class AiAssistantClient {
     }
     if (response.statusCode == 401) {
       if (oracleSession != null) {
-        // Server may have revoked the session. Never silently retry using
-        // Firebase: require explicit re-pairing or sign-in.
+        if (GoogleOracleAuthClient.enabled && retryAfterRenewal) {
+          final renewal = GoogleOracleAuthClient();
+          try {
+            await renewal.exchange();
+          } finally {
+            renewal.dispose();
+          }
+          return ask(
+            message: message,
+            language: language,
+            consent: consent,
+            retryAfterRenewal: false,
+          );
+        }
         throw const AiAssistantException('oracle_session_expired');
       }
       throw const AiAssistantException('sign_in_required');

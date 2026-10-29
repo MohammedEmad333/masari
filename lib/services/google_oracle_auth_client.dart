@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'ai_assistant_client.dart';
@@ -44,7 +42,7 @@ class GoogleOracleAuthClient {
       throw const AiAssistantException('not_configured');
     }
     try {
-      // Never retain a session belonging to a previously connected account.
+      // Prevent a previous account's Oracle token from surviving a switch.
       await _store.clear();
       await GoogleAccountService.instance.initialize();
       final user = GoogleAccountService.instance.currentUser;
@@ -55,12 +53,7 @@ class GoogleOracleAuthClient {
       if (idToken == null || idToken.isEmpty) {
         throw const AiAssistantException('sign_in_required');
       }
-      await FirebaseAppCheck.instance.activate(
-        providerAndroid: kReleaseMode
-            ? const AndroidPlayIntegrityProvider()
-            : const AndroidDebugProvider(),
-      );
-      final appCheck = await FirebaseAppCheck.instance.getToken();
+      final appCheck = await AiAssistantClient.getAppCheckToken();
       if (appCheck == null || appCheck.isEmpty) {
         throw const AiAssistantException('app_check_failed');
       }

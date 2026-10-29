@@ -1,0 +1,73 @@
+name: Google Oracle pilot APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pilot:
+    name: Build signed Google Oracle pilot APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Restore official signing key
+        env:
+          PLAY_UPLOAD_KEYSTORE_BASE64: ${{ secrets.PLAY_UPLOAD_KEYSTORE_BASE64 }}
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in PLAY_UPLOAD_KEYSTORE_BASE64 PLAY_STORE_PASSWORD PLAY_KEY_ALIAS PLAY_KEY_PASSWORD; do
+            test -n "${!name}" || { echo "::error::Missing signing secret $name"; exit 1; }
+          done
+          umask 077
+          printf '%s' "$PLAY_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/masari-upload.jks"
+          SIGNER_SHA256="$(keytool -list -keystore "$RUNNER_TEMP/masari-upload.jks" -storepass "$PLAY_STORE_PASSWORD" -alias "$PLAY_KEY_ALIAS" -v | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          test "$SIGNER_SHA256" = "bff786abee97d6a467103b95fed08ce536a683edc362d9f3a712ab77932230d4"
+      - name: Analyze and test
+        run: |
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test
+      - name: Build pilot APK
+        env:
+          PLAY_STORE_BUILD: 'true'
+          PLAY_KEYSTORE_PATH: ${{ runner.temp }}/masari-upload.jks
+          PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
+          PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
+          PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          flutter build apk --release \
+            --dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask \
+            --dart-define=MASARI_GOOGLE_ORACLE_AUTH_ENABLED=true
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          test -s "$APK"
+          TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          "$TOOLS/apksigner" verify "$APK"
+          mkdir -p dist
+          cp "$APK" dist/masari-google-oracle-pilot.apk
+          (cd dist && sha256sum masari-google-oracle-pilot.apk > masari-google-oracle-pilot.apk.sha256)
+      - uses: actions/upload-artifact@v7
+        with:
+          name: masari-google-oracle-pilot-signed-apk
+          path: |
+            dist/masari-google-oracle-pilot.apk
+            dist/masari-google-oracle-pilot.apk.sha256
+          if-no-files-found: error
+          retention-days: 14

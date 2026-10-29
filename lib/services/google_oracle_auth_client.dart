@@ -89,7 +89,8 @@ class GoogleOracleAuthClient {
         throw const AiAssistantException('google_auth_rejected');
       }
       if (response.statusCode == 403) {
-        final appCheckRejected = serverError == 'app_check_required' ||
+        final appCheckRejected =
+            serverError == 'app_check_required' ||
             serverError == 'app_check_failed';
         throw AiAssistantException(
           appCheckRejected ? 'app_check_failed' : 'google_auth_forbidden',

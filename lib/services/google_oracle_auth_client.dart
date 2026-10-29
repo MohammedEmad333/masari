@@ -42,6 +42,8 @@ class GoogleOracleAuthClient {
       throw const AiAssistantException('not_configured');
     }
     try {
+      // Prevent a previous account's Oracle token from surviving a switch.
+      await _store.clear();
       await GoogleAccountService.instance.initialize();
       final user = GoogleAccountService.instance.currentUser;
       if (user == null) {
@@ -81,7 +83,6 @@ class GoogleOracleAuthClient {
       if (token is! String || expiry == null) {
         throw const AiAssistantException('invalid_response');
       }
-      // Replace credentials only after the new session has been verified.
       await _store.save(token: token, expiresAt: expiry);
     } on AiAssistantException {
       rethrow;

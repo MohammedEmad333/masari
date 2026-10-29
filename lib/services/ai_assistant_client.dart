@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'google_account_service.dart';
 import 'google_oracle_auth_client.dart';
@@ -60,6 +61,10 @@ class AiAssistantClient {
     final store = OracleAiSessionStore();
     if (!GoogleOracleAuthClient.enabled) return store.read();
     await GoogleAccountService.instance.initialize();
+    if (GoogleOracleAuthClient.directOidcEnabled) {
+      final account = await GoogleSignIn.instance.attemptLightweightAuthentication();
+      return store.readForGoogle(account?.id);
+    }
     return store.readForGoogle(GoogleAccountService.instance.currentUser?.uid);
   }
 

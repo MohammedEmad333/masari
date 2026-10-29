@@ -89,11 +89,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     });
     final question = _question.text.trim();
     try {
-      final answer = await _client.ask(
-        message: _question.text,
-        language: widget.arabic ? 'ar' : 'en',
-        consent: _consent,
-      );
+      final answer = await _askWithGoogleRenewal();
       if (mounted) {
         setState(() => _history.add((question: question, answer: answer)));
         _question.clear();
@@ -112,6 +108,43 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         });
         await _refreshConnection();
       }
+    }
+  }
+
+  /// Refresh the Google-linked Oracle session when missing or rejected.
+  /// Only Google-backed sessions are automatically renewed; legacy pairing
+  /// tokens continue to require explicit re-pairing.
+  Future<String> _askWithGoogleRenewal() async {
+    if (GoogleOracleAuthClient.enabled) {
+      final session = await OracleAiSessionStore().read();
+      if (session == null) {
+        final google = GoogleOracleAuthClient();
+        try {
+          await google.exchange();
+        } finally {
+          google.dispose();
+        }
+      }
+    }
+    Future<String> send() => _client.ask(
+      message: _question.text,
+      language: widget.arabic ? 'ar' : 'en',
+      consent: _consent,
+    );
+    try {
+      return await send();
+    } on AiAssistantException catch (error) {
+      if (!GoogleOracleAuthClient.enabled ||
+          error.code != 'oracle_session_expired') {
+        rethrow;
+      }
+      final google = GoogleOracleAuthClient();
+      try {
+        await google.exchange();
+      } finally {
+        google.dispose();
+      }
+      return send(); // Retry exactly once after authenticated renewal.
     }
   }
 

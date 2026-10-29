@@ -26,7 +26,8 @@ class GoogleOracleAuthClient {
   );
 
   static const directOidcEnabled = bool.fromEnvironment(
-    'MASARI_GOOGLE_DIRECT_OIDC_ENABLED', defaultValue: false,
+    'MASARI_GOOGLE_DIRECT_OIDC_ENABLED',
+    defaultValue: false,
   );
 
   final http.Client _client;
@@ -56,7 +57,9 @@ class GoogleOracleAuthClient {
       final GoogleSignInAccount? directAccount = directOidcEnabled
           ? await GoogleSignIn.instance.attemptLightweightAuthentication()
           : null;
-      final user = directOidcEnabled ? null : GoogleAccountService.instance.currentUser;
+      final user = directOidcEnabled
+          ? null
+          : GoogleAccountService.instance.currentUser;
       if (directOidcEnabled ? directAccount == null : user == null) {
         throw const AiAssistantException('sign_in_required');
       }
@@ -68,8 +71,11 @@ class GoogleOracleAuthClient {
       }
       final response = await _client
           .post(
-            endpoint.replace(path: directOidcEnabled
-                ? '/v1/auth/google-oidc' : '/v1/auth/google'),
+            endpoint.replace(
+              path: directOidcEnabled
+                  ? '/v1/auth/google-oidc'
+                  : '/v1/auth/google',
+            ),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $idToken',

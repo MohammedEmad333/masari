@@ -5,6 +5,8 @@ services:
     environment:
       MASARI_QUOTA_BACKEND: postgres
       MASARI_ORACLE_AUTH_ENABLED: ${MASARI_ORACLE_AUTH_ENABLED:-false}
+      MASARI_GOOGLE_OIDC_ENABLED: ${MASARI_GOOGLE_OIDC_ENABLED:-false}
+      MASARI_GOOGLE_OAUTH_CLIENT_ID: ${MASARI_GOOGLE_OAUTH_CLIENT_ID:-}
       MASARI_POSTGRES_HOST: masari-ai-postgres
       MASARI_POSTGRES_PASSWORD_FILE: /run/secrets/postgres_client_password
     volumes:

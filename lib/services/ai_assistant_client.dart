@@ -62,8 +62,8 @@ class AiAssistantClient {
     if (!GoogleOracleAuthClient.enabled) return store.read();
     await GoogleAccountService.instance.initialize();
     if (GoogleOracleAuthClient.directOidcEnabled) {
-      final account =
-          await GoogleSignIn.instance.attemptLightweightAuthentication();
+      final account = await GoogleSignIn.instance
+          .attemptLightweightAuthentication();
       return store.readForGoogle(account?.id);
     }
     return store.readForGoogle(GoogleAccountService.instance.currentUser?.uid);

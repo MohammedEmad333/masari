@@ -164,6 +164,31 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           'Sign in with Google first.',
           'سجّل الدخول بحساب Google أولاً.',
         );
+      case 'google_auth_rejected':
+        return t(
+          'Google identity was rejected by Oracle. Check Firebase sign-in and token verification.',
+          'رفض Oracle هوية Google. تحقق من إعدادات Firebase والتحقق من رمز الدخول.',
+        );
+      case 'google_auth_forbidden':
+        return t(
+          'Oracle denied Google account access. Check the Google provider configuration.',
+          'رفض Oracle صلاحية حساب Google. تحقق من إعدادات مزوّد Google.',
+        );
+      case 'network_error':
+        return t(
+          'Could not reach Oracle. Check your connection and try again.',
+          'تعذّر الاتصال بخادم Oracle. تحقق من الإنترنت وحاول مجددًا.',
+        );
+      case 'invalid_response':
+        return t(
+          'Oracle returned an invalid response.',
+          'أعاد خادم Oracle استجابة غير صالحة.',
+        );
+      case 'not_configured':
+        return t(
+          'The assistant connection is not configured in this build.',
+          'اتصال المساعد غير مُعدّ في هذه النسخة.',
+        );
       case 'app_check_failed':
         return t(
           'App verification failed. Check Play Integrity registration or your device.',

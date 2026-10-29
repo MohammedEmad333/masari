@@ -152,7 +152,7 @@ http.createServer(async (req, res) => {
         error: error?.code === 'pairing_rate_exceeded' ? 'quota_exceeded' : 'quota_service_unavailable',
       });
     }
-    if (!String(req.headers['content-type' || '').toLowerCase().startsWith('application/json')) {
+    if (!String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) {
       return reply(415, { error: 'content_type' });
     }
     const authorization = req.headers.authorization || '';

@@ -70,7 +70,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     await GoogleAccountService.instance.initialize();
     final store = OracleAiSessionStore();
     final session = GoogleOracleAuthClient.enabled
-        ? await store.readForGoogle(GoogleAccountService.instance.currentUser?.uid)
+        ? await store.readForGoogle(
+            GoogleAccountService.instance.currentUser?.uid,
+          )
         : await store.read();
     if (mounted) setState(() => _oracleConnected = session?.isValid ?? false);
   }

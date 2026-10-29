@@ -67,7 +67,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Future<void> _refreshConnection() async {
-    final session = await OracleAiSessionStore().read();
+    await GoogleAccountService.instance.initialize();
+    final store = OracleAiSessionStore();
+    final session = GoogleOracleAuthClient.enabled
+        ? await store.readForGoogle(GoogleAccountService.instance.currentUser?.uid)
+        : await store.read();
     if (mounted) setState(() => _oracleConnected = session?.isValid ?? false);
   }
 
@@ -116,7 +120,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   /// tokens continue to require explicit re-pairing.
   Future<String> _askWithGoogleRenewal() async {
     if (GoogleOracleAuthClient.enabled) {
-      final session = await OracleAiSessionStore().read();
+      await GoogleAccountService.instance.initialize();
+      final session = await OracleAiSessionStore().readForGoogle(
+        GoogleAccountService.instance.currentUser?.uid,
+      );
       if (session == null) {
         final google = GoogleOracleAuthClient();
         try {

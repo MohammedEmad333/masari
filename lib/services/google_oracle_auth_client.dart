@@ -53,7 +53,13 @@ class GoogleOracleAuthClient {
       if (idToken == null || idToken.isEmpty) {
         throw const AiAssistantException('sign_in_required');
       }
-      final appCheck = await AiAssistantClient.getAppCheckToken();
+      final String? appCheck;
+      try {
+        appCheck = await AiAssistantClient.getAppCheckToken();
+      } catch (_) {
+        // Never expose provider exception details, tokens, or device identifiers.
+        throw const AiAssistantException('app_check_failed');
+      }
       if (appCheck == null || appCheck.isEmpty) {
         throw const AiAssistantException('app_check_failed');
       }
@@ -68,8 +74,30 @@ class GoogleOracleAuthClient {
             body: '{}',
           )
           .timeout(const Duration(seconds: 20));
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        throw const AiAssistantException('sign_in_required');
+      // Only recognize a fixed allowlist of server errors; never surface
+      // arbitrary response text or authentication credentials to the UI.
+      String? serverError;
+      try {
+        final body = jsonDecode(response.body);
+        if (body is Map<String, dynamic> && body['error'] is String) {
+          serverError = body['error'] as String;
+        }
+      } catch (_) {
+        // Non-JSON gateway responses are treated by HTTP status below.
+      }
+      if (response.statusCode == 401) {
+        throw const AiAssistantException('google_auth_rejected');
+      }
+      if (response.statusCode == 403) {
+        final appCheckRejected =
+            serverError == 'app_check_required' ||
+            serverError == 'app_check_failed';
+        throw AiAssistantException(
+          appCheckRejected ? 'app_check_failed' : 'google_auth_forbidden',
+        );
+      }
+      if (response.statusCode == 429) {
+        throw const AiAssistantException('quota_exceeded');
       }
       if (response.statusCode != 200) {
         throw const AiAssistantException('service_unavailable');

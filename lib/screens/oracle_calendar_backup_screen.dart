@@ -10,10 +10,12 @@ class OracleCalendarBackupScreen extends StatefulWidget {
   final bool arabic;
 
   @override
-  State<OracleCalendarBackupScreen> createState() => _OracleCalendarBackupScreenState();
+  State<OracleCalendarBackupScreen> createState() =>
+      _OracleCalendarBackupScreenState();
 }
 
-class _OracleCalendarBackupScreenState extends State<OracleCalendarBackupScreen> {
+class _OracleCalendarBackupScreenState
+    extends State<OracleCalendarBackupScreen> {
   final OracleAccountClient _client = OracleAccountClient();
   bool _busy = false;
   String? _message;
@@ -162,7 +164,9 @@ class _OracleCalendarBackupScreenState extends State<OracleCalendarBackupScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(t('Delete encrypted Oracle backup?', 'حذف نسخة Oracle المشفّرة؟')),
+        title: Text(
+          t('Delete encrypted Oracle backup?', 'حذف نسخة Oracle المشفّرة؟'),
+        ),
         content: Text(
           t(
             'This removes only the encrypted server backup. Calendar links on your device remain unchanged.',
@@ -195,9 +199,7 @@ class _OracleCalendarBackupScreenState extends State<OracleCalendarBackupScreen>
       }
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _message = t('Deletion failed.', 'تعذّر الحذف.'),
-        );
+        setState(() => _message = t('Deletion failed.', 'تعذّر الحذف.'));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -238,7 +240,9 @@ class _OracleCalendarBackupScreenState extends State<OracleCalendarBackupScreen>
         OutlinedButton.icon(
           onPressed: _busy ? null : _deleteCloudBackup,
           icon: const Icon(Icons.delete_outline),
-          label: Text(t('Delete encrypted Oracle backup', 'حذف نسخة Oracle المشفّرة')),
+          label: Text(
+            t('Delete encrypted Oracle backup', 'حذف نسخة Oracle المشفّرة'),
+          ),
         ),
         if (_busy)
           const Padding(

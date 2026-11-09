@@ -88,10 +88,13 @@ class OracleAccountClient {
     await initialize();
     final account = await GoogleSignIn.instance.authenticate();
     await _sessions.clear();
-    await _exchangeGoogle(account);
+    await _exchangeGoogle(account, enroll: true);
   }
 
-  Future<void> _exchangeGoogle(GoogleSignInAccount account) async {
+  Future<void> _exchangeGoogle(
+    GoogleSignInAccount account, {
+    bool enroll = false,
+  }) async {
     final idToken = account.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
       throw StateError('Google identity token unavailable.');
@@ -102,7 +105,8 @@ class OracleAccountClient {
       'Authorization': 'Bearer $idToken',
       'Content-Type': 'application/json',
     });
-    exchangeRequest.body = '{}';
+    // Only explicit, interactive sign-in may create a new Oracle account.
+    exchangeRequest.body = enroll ? '{"enroll":true}' : '{}';
     final exchangeStream = await _client
         .send(exchangeRequest)
         .timeout(const Duration(seconds: 20));

@@ -139,7 +139,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => OracleAccountClient.enabled
-                    ? OracleAccountScreen(arabic: _ar, autoSync: _oracleAutoSync)
+                    ? OracleAccountScreen(
+                        arabic: _ar,
+                        autoSync: _oracleAutoSync,
+                      )
                     : GoogleAccountScreen(arabic: _ar),
               ),
             ),

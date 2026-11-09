@@ -77,6 +77,32 @@ body size, use TLS and add reverse-proxy abuse controls before public use.
    user disclosures and privacy policy, and only then consider removing
    Firebase dependencies.
 
+## Backup concurrency and Oracle session renewal
+
+- Each document has a PostgreSQL `revision` counter. A `GET` returns
+  `{ data, revision }`; a missing document is HTTP 404 (revision zero).
+- Oracle automatic synchronization passes `X-Backup-Revision` on `PUT`.
+  PostgreSQL checks the revision in one atomic statement; stale uploads
+  return **409 backup_conflict**, prompting the client to fetch and merge
+  again (up to three attempts). Explicit manual "replace backup" retains
+  user-confirmed overwrite semantics.
+- Personal backup payloads use a strict allowlist for task and plan fields,
+  reject unexpected credential fields and token-bearing URLs, and enforce
+  size and item-count limits.
+- Sessions expire after one hour. After a successful, explicit account
+  login, the app retains only the selected Google account subject as a
+  renewal marker. It can silently obtain a fresh Google OIDC identity token
+  and Oracle session when possible. Logout or deletion clears this marker.
+  If silent Google renewal fails, users must sign in interactively.
+- The AI service must use **the same Masari PostgreSQL database** and
+  enable `MASARI_ORACLE_AUTH_ENABLED=true` plus
+  `MASARI_QUOTA_BACKEND=postgres` to accept account bearer tokens.
+  Do **not** enable AI for Oracle-only builds until this is verified.
+- CI runs actual PostgreSQL integration tests using an isolated disposable
+  database to cover owner isolation, real atomic concurrent writes,
+  account deletion and session revocation. These tests do not certify
+  production TLS, Android OAuth or server deployment.
+
 ## Authentication and deletion safeguards
 
 - Google is only the identity provider; account IDs, sessions, backups and
@@ -98,7 +124,8 @@ body size, use TLS and add reverse-proxy abuse controls before public use.
 
 Run `node --test` from `server/ai-proxy` and build the production Docker image.
 The new API has isolated tests for verified Google sign-in, account ownership,
-profile changes, encrypted calendar shape, logout, and explicit deletion.
+profile changes, encrypted calendar shape, logout, concurrency and explicit deletion.
+The CI workflow also provisions disposable PostgreSQL for integration tests.
 Flutter must pass `dart format`, `flutter analyze`, `flutter test`, APK
 smoke build and test AAB build.
 

@@ -185,7 +185,9 @@ class _OracleAccountScreenState extends State<OracleAccountScreen> {
               FilledButton.icon(
                 onPressed: _signIn,
                 icon: const Icon(Icons.login),
-                label: Text(t('Continue with Google', 'المتابعة باستخدام Google')),
+                label: Text(
+                  t('Continue with Google', 'المتابعة باستخدام Google'),
+                ),
               )
             else ...[
               OutlinedButton(

@@ -1,0 +1,13 @@
+# Optional: only for an existing Caddy container on a Docker bridge network.
+# Use together with compose.oracle.yaml AND compose.oracle-postgres.yaml.
+# Inspect the real network name; never guess an EduBridge network.
+services:
+  masari-accounts:
+    networks:
+      - default
+      - caddy_network
+
+networks:
+  caddy_network:
+    external: true
+    name: ${CADDY_NETWORK:?Inspect_the_actual_Caddy_Docker_network}

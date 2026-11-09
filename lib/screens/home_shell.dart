@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
+import '../services/oracle_account_client.dart';
 import '../services/automatic_google_sync.dart';
 import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
@@ -24,7 +25,9 @@ import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
 import 'task_plans_screen.dart';
 import 'google_account_screen.dart';
+import 'oracle_account_screen.dart';
 import 'cloud_backup_screen.dart';
+import 'oracle_cloud_backup_screen.dart';
 import 'assistant_preview_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -45,7 +48,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     _autoSync = AutomaticGoogleSync(widget.controller);
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_onDataChanged);
-    unawaited(_autoSync.initialize());
+    if (!OracleAccountClient.enabled) unawaited(_autoSync.initialize());
   }
 
   void _onDataChanged() => unawaited(_autoSync.checkForChanges());
@@ -100,11 +103,16 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             icon: const Icon(Icons.cloud_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => CloudBackupScreen(
-                  controller: controller,
-                  arabic: _ar,
-                  autoSync: _autoSync,
-                ),
+                builder: (_) => OracleAccountClient.enabled
+                    ? OracleCloudBackupScreen(
+                        controller: controller,
+                        arabic: _ar,
+                      )
+                    : CloudBackupScreen(
+                        controller: controller,
+                        arabic: _ar,
+                        autoSync: _autoSync,
+                      ),
               ),
             ),
           ),
@@ -113,7 +121,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => GoogleAccountScreen(arabic: _ar),
+                builder: (_) => OracleAccountClient.enabled
+                    ? OracleAccountScreen(arabic: _ar)
+                    : GoogleAccountScreen(arabic: _ar),
               ),
             ),
           ),

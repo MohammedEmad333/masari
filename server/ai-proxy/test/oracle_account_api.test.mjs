@@ -151,6 +151,26 @@ test('calendar backups only accept encrypted envelope; unsafe bodies rejected', 
   assert.equal((await f.request('POST', '/v1/backups/calendar', tokenA)).status, 405);
 });
 
+test('personal backups reject unexpected credential fields and suspicious values', async () => {
+  const f = fixture();
+  for (const unsafe of [
+    { ...personal, manualTasks: [{ uid: 't-1', title: 'Read', due: '2026-11-12T00:00:00Z', priority: 1, password: 'private' }] },
+    { ...personal, manualTasks: [{ uid: 't-1', title: 'https://example.test/?authtoken=secret', due: '2026-11-12T00:00:00Z', priority: 1 }] },
+    { ...personal, plans: [{ deadlineId: 'p-1', steps: [{ id: 's-1', title: 'Read', scheduledFor: '2026-11-12T00:00:00Z', status: 'notStarted', oauthToken: 'private' }] }] },
+    { ...personal, plans: [{ deadlineId: 'p-1', steps: 'not-an-array' }] },
+  ]) {
+    assert.equal((await f.request('PUT', '/v1/backups/personal', tokenA,
+      { data: unsafe })).status, 400);
+  }
+  const good = {
+    ...personal,
+    manualTasks: [{ uid: 't-1', title: 'Read', due: '2026-11-12T00:00:00Z', priority: 1, description: 'Lecture 4', course: 'Math' }],
+    plans: [{ deadlineId: 't-1', steps: [{ id: 'step-1', title: 'Exercise', scheduledFor: '2026-11-12T00:00:00Z', status: 'notStarted' }] }],
+  };
+  assert.equal((await f.request('PUT', '/v1/backups/personal', tokenA,
+    { data: good })).status, 200);
+});
+
 test('Oracle session required; logout invalidates token', async () => {
   const f = fixture();
   assert.equal((await f.request('GET', '/v1/account/me', null)).status, 401);

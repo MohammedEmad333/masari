@@ -10,17 +10,12 @@ class OracleEncryptedCalendarCodec {
 
   static final _aes = AesGcm.with256bits();
 
-  static Future<SecretKey> _deriveKey(
-    String passphrase,
-    List<int> salt,
-  ) => Pbkdf2(
-    macAlgorithm: Hmac.sha256(),
-    iterations: 210000,
-    bits: 256,
-  ).deriveKey(
-    secretKey: SecretKey(utf8.encode(passphrase)),
-    nonce: salt,
-  );
+  static Future<SecretKey> _deriveKey(String passphrase, List<int> salt) =>
+      Pbkdf2(
+        macAlgorithm: Hmac.sha256(),
+        iterations: 210000,
+        bits: 256,
+      ).deriveKey(secretKey: SecretKey(utf8.encode(passphrase)), nonce: salt);
 
   static void _validatePassphrase(String passphrase) {
     if (passphrase.length < 12) {
@@ -84,7 +79,8 @@ class OracleEncryptedCalendarCodec {
       ),
     );
     final decoded = jsonDecode(utf8.decode(plain));
-    if (decoded is! List) throw const FormatException('Invalid calendar archive.');
+    if (decoded is! List)
+      throw const FormatException('Invalid calendar archive.');
     final urls = decoded.cast<String>();
     for (final url in urls) {
       _validateUrl(url);

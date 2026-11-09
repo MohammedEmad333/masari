@@ -13,6 +13,7 @@ import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
 import '../services/oracle_account_client.dart';
+import '../services/oracle_automatic_sync.dart';
 import '../services/automatic_google_sync.dart';
 import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
@@ -41,25 +42,40 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late final AutomaticGoogleSync _autoSync;
+  late final OracleAutomaticSync _oracleAutoSync;
 
   @override
   void initState() {
     super.initState();
     _autoSync = AutomaticGoogleSync(widget.controller);
+    _oracleAutoSync = OracleAutomaticSync(widget.controller);
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_onDataChanged);
-    if (!OracleAccountClient.enabled) unawaited(_autoSync.initialize());
+    if (OracleAccountClient.enabled) {
+      unawaited(_oracleAutoSync.initialize());
+    } else {
+      unawaited(_autoSync.initialize());
+    }
   }
 
-  void _onDataChanged() => unawaited(_autoSync.checkForChanges());
+  void _onDataChanged() => unawaited(
+    OracleAccountClient.enabled
+        ? _oracleAutoSync.checkForChanges()
+        : _autoSync.checkForChanges(),
+  );
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_autoSync.sync());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(
+        OracleAccountClient.enabled ? _oracleAutoSync.sync() : _autoSync.sync(),
+      );
+    }
   }
 
   @override
   void dispose() {
+    _oracleAutoSync.dispose();
     widget.controller.removeListener(_onDataChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -107,6 +123,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     ? OracleCloudBackupScreen(
                         controller: controller,
                         arabic: _ar,
+                        autoSync: _oracleAutoSync,
                       )
                     : CloudBackupScreen(
                         controller: controller,

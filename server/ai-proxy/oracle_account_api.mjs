@@ -141,9 +141,9 @@ export function createOracleAccountHandler({
       }
       const kind = path.slice('/v1/backups/'.length);
       if (req.method === 'GET') {
-        const found = await store.getDocument(id, kind);
+        const found = await store.getDocumentWithRevision(id, kind);
         return found === null ? reply(res, 404, { error: 'backup_not_found' }) :
-          reply(res, 200, { data: found });
+          reply(res, 200, found);
       }
       if (req.method === 'PUT') {
         const body = await readJson(req, 128 * 1024);
@@ -152,15 +152,25 @@ export function createOracleAccountHandler({
             !validPayload(kind, body.value.data)) {
           return reply(res, 400, { error: 'invalid_backup' });
         }
-        await store.putDocument(id, kind, body.value.data);
-        return reply(res, 200, { status: 'saved' });
+        const precondition = req.headers['x-backup-revision'];
+        if (precondition !== undefined &&
+            (typeof precondition !== 'string' ||
+             !/^(0|[1-9][0-9]{0,14})$/.test(precondition))) {
+          return reply(res, 400, { error: 'invalid_revision' });
+        }
+        const expectedRevision = precondition === undefined ? null : Number(precondition);
+        const revision = await store.putDocument(id, kind, body.value.data, expectedRevision);
+        return reply(res, 200, { status: 'saved', revision });
       }
       if (req.method === 'DELETE') {
         await store.deleteDocument(id, kind);
         return reply(res, 200, { status: 'deleted' });
       }
       return reply(res, 405, { error: 'method_not_allowed' });
-    } catch {
+    } catch (error) {
+      if (error?.code === 'backup_conflict') {
+        return reply(res, 409, { error: 'backup_conflict' });
+      }
       // Never leak PostgreSQL, tokens or private backup data in errors.
       return reply(res, 503, { error: 'service_unavailable' });
     }

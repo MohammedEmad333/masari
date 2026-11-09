@@ -15,6 +15,7 @@ const calendar = {
 
 function fixture() {
   const documents = new Map();
+  const revisions = new Map();
   const profiles = new Map();
   const revoked = new Set();
   let accountDeleted = false;
@@ -40,8 +41,26 @@ function fixture() {
         return { accountId: id, displayName: name.trim() };
       },
       getDocument: async (id, kind) => documents.get(id + ':' + kind) ?? null,
-      putDocument: async (id, kind, value) => { documents.set(id + ':' + kind, value); },
-      deleteDocument: async (id, kind) => { documents.delete(id + ':' + kind); },
+      getDocumentWithRevision: async (id, kind) => {
+        const key = id + ':' + kind;
+        return documents.has(key) ? { data: documents.get(key), revision: revisions.get(key) } : null;
+      },
+      putDocument: async (id, kind, value, expected = null) => {
+        const key = id + ':' + kind;
+        const current = revisions.get(key) ?? 0;
+        if (expected !== null && expected !== current) {
+          const error = new Error('conflict');
+          error.code = 'backup_conflict';
+          throw error;
+        }
+        documents.set(key, value);
+        revisions.set(key, current + 1);
+        return current + 1;
+      },
+      deleteDocument: async (id, kind) => {
+        documents.delete(id + ':' + kind);
+        revisions.delete(id + ':' + kind);
+      },
       deleteAccount: async id => {
         assert.equal(id, a);
         accountDeleted = true;
@@ -94,6 +113,33 @@ test('profile and backup access use only the authenticated account', async () =>
   assert.deepEqual((await f.request('GET', '/v1/backups/personal', tokenA)).body.data, personal);
 });
 
+test('concurrent device revisions prevent lost task/plan updates', async () => {
+  const f = fixture();
+  const initial = await f.request('GET', '/v1/backups/personal', tokenA);
+  assert.equal(initial.status, 404);
+  const first = await f.request('PUT', '/v1/backups/personal', tokenA,
+    { data: personal }, { 'x-backup-revision': '0' });
+  assert.equal(first.status, 200);
+  assert.equal(first.body.revision, 1);
+  const staleNew = await f.request('PUT', '/v1/backups/personal', tokenA,
+    { data: personal }, { 'x-backup-revision': '0' });
+  assert.equal(staleNew.status, 409);
+  const snapshot = await f.request('GET', '/v1/backups/personal', tokenA);
+  assert.equal(snapshot.body.revision, 1);
+  const second = await f.request('PUT', '/v1/backups/personal', tokenA,
+    { data: { ...personal, manualTasks: [{ uid: 'one' }] } },
+    { 'x-backup-revision': '1' });
+  assert.equal(second.status, 200);
+  assert.equal(second.body.revision, 2);
+  const stale = await f.request('PUT', '/v1/backups/personal', tokenA,
+    { data: personal }, { 'x-backup-revision': '1' });
+  assert.equal(stale.status, 409);
+  assert.equal((await f.request('GET', '/v1/backups/personal', tokenA)).body.data.manualTasks.length, 1);
+  assert.equal((await f.request('PUT', '/v1/backups/personal', tokenA,
+    { data: personal }, { 'x-backup-revision': 'wat' })).status, 400);
+  assert.equal((await f.request('GET', '/v1/backups/personal', tokenB)).status, 404);
+});
+
 test('calendar backups only accept encrypted envelope; unsafe bodies rejected', async () => {
   const f = fixture();
   assert.equal((await f.request('PUT', '/v1/backups/calendar', tokenA, { data: calendar })).status, 200);
@@ -130,7 +176,7 @@ test('account store always scopes reads and writes by authenticated UUID', async
       calls.push({ sql, params });
       if (sql.startsWith('SELECT display_name')) return { rows: [] };
       if (sql.startsWith('SELECT document_json')) return { rows: [] };
-      return { rows: [{ display_name: 'Alice' }] };
+      return { rowCount: 1, rows: [{ display_name: 'Alice', revision: 1 }] };
     },
     async connect() {
       return { query: pool.query, release() {} };
@@ -145,6 +191,9 @@ test('account store always scopes reads and writes by authenticated UUID', async
   assert.deepEqual(calls.map(c => c.params[0]), [a, a, a, b, b]);
   assert.match(ACCOUNT_DATA_SCHEMA, /PRIMARY KEY \(account_id, document_kind\)/);
   assert.match(ACCOUNT_DATA_SCHEMA, /REFERENCES ai_accounts/);
+  assert.match(ACCOUNT_DATA_SCHEMA, /ADD COLUMN IF NOT EXISTS revision/);
+  assert.match(calls.find(c => c.sql.includes('ON CONFLICT (account_id,document_kind)')).sql,
+    /revision=masari_account_documents.revision\+1/);
   await assert.rejects(store.putDocument('bad-account', 'personal', personal), /Invalid account/);
   await assert.rejects(store.getDocument(a, 'random'), /Invalid document/);
 });

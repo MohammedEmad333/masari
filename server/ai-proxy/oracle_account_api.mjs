@@ -12,6 +12,35 @@ const object = value => value !== null && typeof value === 'object' &&
   !Array.isArray(value);
 const isBase64 = value => typeof value === 'string' && value.length >= 4 &&
   value.length <= 100000 && /^[A-Za-z0-9+/]*={0,2}$/.test(value);
+// Keep unencrypted personal backups to the explicitly supported task/plan
+// fields. Never accept arbitrary client-supplied keys or credential-bearing
+// strings just because the top-level JSON has the right shape.
+const allowed = (value, keys) => object(value) &&
+  Object.keys(value).every(key => keys.includes(key));
+const safeText = (value, max = 2000) => typeof value === 'string' &&
+  value.length <= max &&
+  !/https?:\/\/|authtoken|export_execute\.php|access_token|bearer\s|password\s*[:=]|AIza[0-9A-Za-z_-]{10,}/i.test(value);
+const safeId = value => safeText(value, 256) && value.length > 0;
+const isoDate = value => typeof value === 'string' && value.length < 64 &&
+  !Number.isNaN(Date.parse(value));
+const validTask = task => allowed(task, [
+  'uid', 'title', 'due', 'description', 'course', 'priority',
+  'reminderMinutesBefore', 'lastModified',
+]) && safeId(task.uid) && safeText(task.title, 400) &&
+  safeText(task.description ?? '', 8000) && safeText(task.course ?? '', 400) &&
+  isoDate(task.due) &&
+  Number.isInteger(task.priority) && task.priority >= 0 && task.priority <= 10 &&
+  (task.reminderMinutesBefore === null || task.reminderMinutesBefore === undefined ||
+    (Number.isInteger(task.reminderMinutesBefore) &&
+     task.reminderMinutesBefore >= -1 && task.reminderMinutesBefore <= 100000)) &&
+  (task.lastModified === null || task.lastModified === undefined || isoDate(task.lastModified));
+const validStep = step => allowed(step, ['id','title','scheduledFor','status']) &&
+  safeId(step.id) && safeText(step.title, 400) && isoDate(step.scheduledFor) &&
+  ['notStarted','inProgress','completed'].includes(step.status);
+const validPlan = plan => allowed(plan, ['deadlineId','steps']) &&
+  safeId(plan.deadlineId) && Array.isArray(plan.steps) &&
+  plan.steps.length <= 250 && plan.steps.every(validStep);
+
 const validPayload = (kind, value) => {
   if (!object(value)) return false;
   const keys = Object.keys(value);
@@ -19,7 +48,8 @@ const validPayload = (kind, value) => {
     return keys.length === 3 && keys.every(k => ['schema', 'manualTasks', 'plans'].includes(k)) &&
       value.schema === 1 && Array.isArray(value.manualTasks) &&
       Array.isArray(value.plans) && value.manualTasks.length <= 1000 &&
-      value.plans.length <= 1000;
+      value.plans.length <= 1000 && value.manualTasks.every(validTask) &&
+      value.plans.every(validPlan);
   }
   return kind === 'calendar' && keys.length === 5 &&
     keys.every(k => ['version','salt','nonce','ciphertext','mac'].includes(k)) &&

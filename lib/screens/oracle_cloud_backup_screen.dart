@@ -22,7 +22,8 @@ class OracleCloudBackupScreen extends StatefulWidget {
   final OracleAutomaticSync autoSync;
 
   @override
-  State<OracleCloudBackupScreen> createState() => _OracleCloudBackupScreenState();
+  State<OracleCloudBackupScreen> createState() =>
+      _OracleCloudBackupScreenState();
 }
 
 class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
@@ -70,9 +71,7 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
         ),
       );
       if (mounted) {
-        setState(
-          () => _status = t('Saved on Oracle.', 'تم الحفظ على Oracle.'),
-        );
+        setState(() => _status = t('Saved on Oracle.', 'تم الحفظ على Oracle.'));
       }
     } catch (_) {
       if (mounted) {
@@ -164,7 +163,9 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
     try {
       await _client.deleteBackup('personal');
       if (mounted) {
-        setState(() => _status = t('Cloud backup deleted.', 'تم حذف النسخة السحابية.'));
+        setState(
+          () => _status = t('Cloud backup deleted.', 'تم حذف النسخة السحابية.'),
+        );
       }
     } catch (_) {
       if (mounted) {
@@ -183,7 +184,9 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(t('Oracle backup', 'النسخ الاحتياطي على Oracle'))),
+    appBar: AppBar(
+      title: Text(t('Oracle backup', 'النسخ الاحتياطي على Oracle')),
+    ),
     body: ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -194,7 +197,9 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
           ),
         ),
         SwitchListTile(
-          title: Text(t('Automatic Oracle sync', 'المزامنة التلقائية مع Oracle')),
+          title: Text(
+            t('Automatic Oracle sync', 'المزامنة التلقائية مع Oracle'),
+          ),
           subtitle: Text(
             t(
               'Merge missing tasks and plans across your devices. Existing local items win conflicts; deletions do not sync yet.',
@@ -214,8 +219,14 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
                     if (mounted) {
                       setState(
                         () => _status = enabled
-                            ? t('Oracle sync enabled.', 'تم تفعيل مزامنة Oracle.')
-                            : t('Oracle sync disabled.', 'تم إيقاف مزامنة Oracle.'),
+                            ? t(
+                                'Oracle sync enabled.',
+                                'تم تفعيل مزامنة Oracle.',
+                              )
+                            : t(
+                                'Oracle sync disabled.',
+                                'تم إيقاف مزامنة Oracle.',
+                              ),
                       );
                     }
                   } catch (_) {
@@ -242,7 +253,9 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
         OutlinedButton.icon(
           onPressed: _busy ? null : _restore,
           icon: const Icon(Icons.cloud_download_outlined),
-          label: Text(t('Restore missing items', 'استرجاع العناصر غير الموجودة')),
+          label: Text(
+            t('Restore missing items', 'استرجاع العناصر غير الموجودة'),
+          ),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(

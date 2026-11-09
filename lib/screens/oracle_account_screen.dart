@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../services/oracle_account_client.dart';
+import '../services/oracle_automatic_sync.dart';
 
 /// Account authority is Oracle/PostgreSQL, not Firebase.
 class OracleAccountScreen extends StatefulWidget {
-  const OracleAccountScreen({super.key, required this.arabic});
+  const OracleAccountScreen({
+    super.key,
+    required this.arabic,
+    required this.autoSync,
+  });
 
   final bool arabic;
+  final OracleAutomaticSync autoSync;
 
   @override
   State<OracleAccountScreen> createState() => _OracleAccountScreenState();
@@ -84,6 +90,7 @@ class _OracleAccountScreenState extends State<OracleAccountScreen> {
     setState(() => _busy = true);
     try {
       await _account.signOut();
+      await widget.autoSync.setEnabled(false);
       if (mounted) {
         setState(() {
           _signedIn = false;
@@ -123,6 +130,7 @@ class _OracleAccountScreenState extends State<OracleAccountScreen> {
     setState(() => _busy = true);
     try {
       await _account.deleteAccount();
+      await widget.autoSync.setEnabled(false);
       if (mounted) {
         setState(() {
           _signedIn = false;

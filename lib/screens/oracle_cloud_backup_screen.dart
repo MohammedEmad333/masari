@@ -6,6 +6,7 @@ import '../services/oracle_account_client.dart';
 import '../services/oracle_automatic_sync.dart';
 import '../services/oracle_personal_backup_codec.dart';
 import '../services/task_plan_repository.dart';
+import 'oracle_calendar_backup_screen.dart';
 
 /// Manual account-bound Oracle backup, independent of Firestore.
 class OracleCloudBackupScreen extends StatefulWidget {
@@ -188,8 +189,8 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
       children: [
         Text(
           t(
-            'Manual backup for tasks and plans only. Moodle calendar links stay on the device. Automatic synchronization is not enabled in Oracle mode yet.',
-            'نسخ يدوي للمهام والخطط فقط. روابط تقويم Moodle تبقى على الجهاز. المزامنة التلقائية غير مفعلة بعد في وضع Oracle.',
+            'Save tasks and plans with optional synchronization. Moodle calendar links are backed up separately with client-side encryption.',
+            'حفظ المهام والخطط مع مزامنة اختيارية. روابط تقويم Moodle تُنسخ بشكل منفصل بعد تشفيرها على الجهاز.',
           ),
         ),
         SwitchListTile(
@@ -248,6 +249,24 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
           onPressed: _busy ? null : _deleteBackup,
           icon: const Icon(Icons.delete_outline),
           label: Text(t('Delete Oracle backup', 'حذف نسخة Oracle')),
+        ),
+        const SizedBox(height: 20),
+        OutlinedButton.icon(
+          onPressed: _busy
+              ? null
+              : () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        OracleCalendarBackupScreen(arabic: widget.arabic),
+                  ),
+                ),
+          icon: const Icon(Icons.enhanced_encryption_outlined),
+          label: Text(
+            t(
+              'Encrypted Moodle calendar links',
+              'حفظ روابط تقويم Moodle بشكل مشفّر',
+            ),
+          ),
         ),
         if (_busy)
           const Padding(

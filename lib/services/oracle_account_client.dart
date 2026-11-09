@@ -96,16 +96,20 @@ class OracleAccountClient {
     if (idToken == null || idToken.isEmpty) {
       throw StateError('Google identity token unavailable.');
     }
-    final response = await _client
-        .post(
-          _url('/v1/auth/google-oidc'),
-          headers: {
-            'Authorization': 'Bearer $idToken',
-            'Content-Type': 'application/json',
-          },
-          body: '{}',
-        )
+    final exchangeRequest = http.Request(
+      'POST',
+      _url('/v1/auth/google-oidc'),
+    );
+    exchangeRequest.followRedirects = false;
+    exchangeRequest.headers.addAll({
+      'Authorization': 'Bearer $idToken',
+      'Content-Type': 'application/json',
+    });
+    exchangeRequest.body = '{}';
+    final exchangeStream = await _client
+        .send(exchangeRequest)
         .timeout(const Duration(seconds: 20));
+    final response = await http.Response.fromStream(exchangeStream);
     if (response.statusCode != 200) {
       throw StateError('Oracle account sign-in failed.');
     }
@@ -139,6 +143,7 @@ class OracleAccountClient {
       throw StateError('Sign in to Oracle first.');
     }
     final request = http.Request(method, _url(path));
+    request.followRedirects = false;
     request.headers.addAll({
       'Authorization': 'Bearer ${session.token}',
       'Content-Type': 'application/json',

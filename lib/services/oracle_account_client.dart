@@ -154,8 +154,9 @@ class OracleAccountClient {
       '/v1/account/me',
       data: {'displayName': name.trim()},
     );
-    if (response.statusCode != 200)
+    if (response.statusCode != 200) {
       throw StateError('Could not update profile.');
+    }
     return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
   }
 

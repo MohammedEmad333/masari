@@ -166,6 +166,73 @@ class _CalendarBackupScreenState extends State<CalendarBackupScreen> {
     }
   }
 
+  Future<void> _deleteCloudBackup() async {
+    final user = await _currentUser();
+    if (!mounted) return;
+    if (user == null) {
+      setState(
+        () => _message = t(
+          'Sign in with Google first.',
+          'سجّل الدخول باستخدام Google أولًا.',
+        ),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t('Delete cloud backup?', 'حذف النسخة السحابية؟')),
+        content: Text(
+          t(
+            'This permanently deletes the encrypted calendar link backup from your Google account. Your calendar links on this device will not be deleted.',
+            'سيؤدي ذلك إلى حذف النسخة المشفّرة من روابط التقويم من حساب Google نهائيًا. لن تُحذف روابط التقويم المحفوظة على هذا الجهاز.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(t('Cancel', 'إلغاء')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(t('Delete cloud backup', 'حذف النسخة السحابية')),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      await EncryptedCalendarBackup(
+        FirebaseFirestore.instance,
+      ).delete(user: user);
+      if (mounted) {
+        setState(
+          () => _message = t(
+            'Encrypted cloud backup deleted. Links on this device are unchanged.',
+            'تم حذف النسخة السحابية المشفّرة. روابط هذا الجهاز لم تتغير.',
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _message = t(
+            'Could not delete the cloud backup. Check your connection and account permissions.',
+            'تعذّر حذف النسخة السحابية. تحقق من الاتصال وصلاحيات الحساب.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: Text(t('Calendar link backup', 'نسخ روابط التقويم'))),
@@ -189,6 +256,12 @@ class _CalendarBackupScreenState extends State<CalendarBackupScreen> {
           onPressed: _busy ? null : () => _transfer(upload: false),
           icon: const Icon(Icons.restore),
           label: Text(t('Restore encrypted links', 'استرجاع الروابط المشفّرة')),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _busy ? null : _deleteCloudBackup,
+          icon: const Icon(Icons.delete_outline),
+          label: Text(t('Delete cloud backup', 'حذف النسخة السحابية')),
         ),
         if (_busy)
           const Padding(

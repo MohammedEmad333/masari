@@ -20,6 +20,7 @@ function fixture() {
   const revoked = new Set();
   let accountDeleted = false;
   let globalCount = 0;
+  let enrolled = false;
   const handler = createOracleAccountHandler({
     authenticate: async token => revoked.has(token) ? null :
       token === tokenA ? { uid: a } : token === tokenB ? { uid: b } : null,
@@ -27,8 +28,10 @@ function fixture() {
       if (token !== 'valid-google-id-token') throw new Error('bad google identity');
       return { sub: '1234567890' };
     },
-    exchangeGoogle: async sub => {
+    exchangeGoogle: async (sub, { allowEnrollment = false } = {}) => {
       assert.equal(sub, '1234567890');
+      if (!enrolled && !allowEnrollment) throw new Error('account_not_enrolled');
+      if (allowEnrollment) enrolled = true;
       return { token: tokenA, expiresAt: '2026-11-10T00:00:00Z' };
     },
     reserveGlobal: async () => { globalCount++; },
@@ -91,13 +94,16 @@ function fixture() {
   return { request, revoked, documents, profiles, get deleted() { return accountDeleted; }, get globalCount() { return globalCount; } };
 }
 
-test('Google OIDC exchange requires a verified token and an empty body', async () => {
+test('Google OIDC requires explicit enrollment before silent renewal', async () => {
   const f = fixture();
+  assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', {})).status, 403);
+  assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', { enroll: true })).status, 200);
   assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', {})).status, 200);
   assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'invalid', {})).status, 401);
   assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', { uid: b })).status, 413);
   assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', { x: 1 })).status, 400);
-  assert.equal(f.globalCount, 4);
+  assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', { enroll: false })).status, 400);
+  assert.equal(f.globalCount, 7);
 });
 
 test('profile and backup access use only the authenticated account', async () => {

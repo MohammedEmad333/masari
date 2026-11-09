@@ -18,10 +18,10 @@ Do not remove Firebase services or delete existing backups during migration.
 | Server session | Firebase ID token / App Check | Expiring opaque `msr_` bearer; hash in PostgreSQL |
 | Profile | Firebase user | `masari_account_profiles` |
 | Manual task/plan backup | Firestore | `masari_account_documents/personal` |
-| Encrypted calendar backup | Firestore | API supports `calendar` encrypted envelopes; client migration pending |
-| Automatic task synchronization | Firestore | **Not yet migrated**; disabled in Oracle UI mode |
+| Encrypted calendar backup | Firestore | Client-side AES-GCM encrypted Oracle backup, restore and deletion |
+| Automatic task synchronization | Firestore | Separate Oracle opt-in task/plan merge, account-bound; no delete/conflict sync |
 | Account deletion | Firebase / unavailable | Oracle deletes linked data, sessions and mappings |
-| AI assistant | Firebase fallback or separate Oracle sessions | Existing AI unchanged pending full review |
+| AI assistant | Firebase fallback or separate Oracle sessions | Uses Oracle account bearer without Firebase fallback in Oracle-enabled app builds |
 
 Local Moodle/ICS operation does **not** require signing in.
 
@@ -71,9 +71,11 @@ body size, use TLS and add reverse-proxy abuse controls before public use.
    after a successful Oracle backup + restore verification. Preserve the
    Firestore documents until users verify the new copy. Do not transfer raw
    calendar URLs: decrypt and re-encrypt on the device.
-8. Move automatic synchronization and encrypted calendar UI to Oracle,
-   remove the legacy Firebase fallback, update user disclosures and privacy
-   policy, and only then consider removing Firebase dependencies.
+8. Verify the Oracle-only automatic synchronization and encrypted calendar
+   UI on real Android devices; reconcile collisions and logout/expiry cases.
+   Remove the remaining legacy Firebase fallback in the **server**, update
+   user disclosures and privacy policy, and only then consider removing
+   Firebase dependencies.
 
 ## Authentication and deletion safeguards
 

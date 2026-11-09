@@ -1,6 +1,6 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import pg from 'pg';
+// Database driver is intentionally loaded only in the dedicated PG CI job.
 import { randomUUID } from 'node:crypto';
 import { createOracleSessions, SESSION_SCHEMA } from '../oracle_sessions.mjs';
 import { PAIRING_SCHEMA } from '../oracle_pairing.mjs';
@@ -14,6 +14,7 @@ const databaseUrl = process.env.MASARI_TEST_PG_URL;
 if (!databaseUrl) {
   test('PostgreSQL integration suite requires MASARI_TEST_PG_URL', { skip: true }, () => {});
 } else {
+  const { default: pg } = await import('pg');
   let pool;
   let sessions;
   let store;

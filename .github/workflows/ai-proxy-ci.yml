@@ -60,7 +60,7 @@ jobs:
               import { dirname, resolve } from "node:path";
               const entrypoint = "/app/index.mjs";
               const source = readFileSync(entrypoint, "utf8");
-              const imports = [...source.matchAll(/from\\s+["\x27](\\.[^"\x27]+)["\x27]/g)]
+              const imports = [...source.matchAll(/from\s+["\x27](\.[^"\x27]+)["\x27]/g)]
                 .map(match => match[1]);
               if (imports.length === 0) throw new Error("No imports discovered");
               for (const relative of imports) {

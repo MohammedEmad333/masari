@@ -30,10 +30,13 @@ Local Moodle/ICS operation does **not** require signing in.
 The app supplies `MASARI_ACCOUNTS_API_URL=https://<dedicated-host>`.
 This is a public base URL and **not a credential**.
 
-- `POST /v1/auth/google-oidc`: Google-issued OIDC ID token in Authorization;
-  exactly empty JSON body `{}`. Oracle verifies Google RSA signatures, issuer,
-  audience, expiration and subject, rate-limits attempts, then issues an opaque
-  1-hour session. No Firebase authentication or App Check.
+- `POST /v1/auth/google-oidc`: Google-issued OIDC ID token in Authorization.
+  Explicit interactive sign-in sends `{ "enroll": true }`, the **only** request
+  allowed to create an Oracle account. Silent renewal sends `{}` and works
+  only if that Google subject already has an Oracle account; otherwise it
+  returns `403 enrollment_required`. Oracle verifies Google RSA signatures,
+  issuer, audience, expiration and subject, rate-limits attempts and issues
+  an opaque 1-hour session. No Firebase authentication or App Check.
 - `GET /v1/account/me`: current account profile.
 - `PATCH /v1/account/me`: edit display name.
 - `DELETE /v1/account/me`: explicit confirmation header; delete Oracle
@@ -110,6 +113,9 @@ body size, use TLS and add reverse-proxy abuse controls before public use.
 - Google `sub` is the durable identity key, **not** changeable email.
 - PostgreSQL stores a SHA-256 digest of each random bearer token, never the
   bearer itself. Tokens expire in an hour and can be revoked.
+- Account deletion removes the Google-subject mapping. Other devices may not
+  silently recreate the account from their old Google session; fresh explicit
+  interactive sign-in is required before any new Oracle enrollment.
 - Logout while offline clears the local token, but server revocation may only
   occur upon reconnection or token expiry. Future versions should queue a
   revoke request or implement an account-wide device/session manager.

@@ -550,7 +550,9 @@ class CalendarRepository {
         !uri.hasAuthority ||
         uri.scheme != 'https' ||
         uri.userInfo.isNotEmpty) {
-      throw const CalendarSyncException('Enter a valid HTTPS Moodle calendar URL.');
+      throw const CalendarSyncException(
+        'Enter a valid HTTPS Moodle calendar URL.',
+      );
     }
   }
 }

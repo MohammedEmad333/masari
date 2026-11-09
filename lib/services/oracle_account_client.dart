@@ -4,18 +4,19 @@ import 'dart:convert';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 
-import 'oracle_ai_session_store.dart';
+import 'oracle_ai_session_store.dart' show OracleAiSession;
+import 'oracle_account_session_store.dart';
 
 /// Oracle is the account authority. Google only supplies a verified OIDC
 /// identity at sign-in; Firebase Auth and Firestore are never consulted.
 class OracleAccountClient {
   OracleAccountClient({
     http.Client? client,
-    OracleAiSessionStore? sessions,
+    OracleAccountSessionStore? sessions,
     Uri? endpoint,
   }) : _client = client ?? http.Client(),
        _ownsClient = client == null,
-       _sessions = sessions ?? OracleAiSessionStore(),
+       _sessions = sessions ?? OracleAccountSessionStore(),
        _endpoint = endpoint ?? Uri.tryParse(configuredUrl);
 
   static const configuredUrl = String.fromEnvironment(
@@ -37,7 +38,7 @@ class OracleAccountClient {
 
   final http.Client _client;
   final bool _ownsClient;
-  final OracleAiSessionStore _sessions;
+  final OracleAccountSessionStore _sessions;
   final Uri? _endpoint;
 
   bool _initialized = false;

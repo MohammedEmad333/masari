@@ -127,7 +127,7 @@ test('concurrent device revisions prevent lost task/plan updates', async () => {
   const snapshot = await f.request('GET', '/v1/backups/personal', tokenA);
   assert.equal(snapshot.body.revision, 1);
   const second = await f.request('PUT', '/v1/backups/personal', tokenA,
-    { data: { ...personal, manualTasks: [{ uid: 'one' }] } },
+    { data: { ...personal, manualTasks: [{ uid: 'one', title: 'Read', due: '2026-11-12T00:00:00Z', priority: 1 }] } },
     { 'x-backup-revision': '1' });
   assert.equal(second.status, 200);
   assert.equal(second.body.revision, 2);

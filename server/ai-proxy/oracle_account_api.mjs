@@ -113,18 +113,24 @@ export function createOracleAccountHandler({
       }
       const body = await readJson(req, 32);
       if (body.error) return reply(res, body.status, { error: body.error });
-      if (Object.keys(body.value).length !== 0) {
+      const keys = Object.keys(body.value);
+      if (keys.length > 1 || (keys.length === 1 &&
+          (keys[0] !== 'enroll' || body.value.enroll !== true))) {
         return reply(res, 400, { error: 'invalid_body' });
       }
+      const allowEnrollment = body.value.enroll === true;
       let identity;
       try { identity = await verifyGoogle(bearer); } catch {
         return reply(res, 401, { error: 'invalid_authentication' });
       }
       try {
         await reserveIdentity(identity.sub);
-        const session = await exchangeGoogle(identity.sub);
+        const session = await exchangeGoogle(identity.sub, { allowEnrollment });
         return reply(res, 200, session);
       } catch (e) {
+        if (e?.message === 'account_not_enrolled') {
+          return reply(res, 403, { error: 'enrollment_required' });
+        }
         return reply(res, e?.code === 'pairing_rate_exceeded' ? 429 : 503,
           { error: e?.code === 'pairing_rate_exceeded' ? 'rate_limited' : 'service_unavailable' });
       }

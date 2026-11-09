@@ -65,8 +65,8 @@ class OracleAccountClient {
 
   Future<OracleAiSession?> currentSession() async {
     await initialize();
-    _googleAccount ??=
-        await GoogleSignIn.instance.attemptLightweightAuthentication();
+    _googleAccount ??= await GoogleSignIn.instance
+        .attemptLightweightAuthentication();
     final id = _googleAccount?.id;
     if (id == null) return null;
     return _sessions.readForGoogle(id);
@@ -150,15 +150,20 @@ class OracleAccountClient {
 
   Future<Map<String, dynamic>> updateName(String name) async {
     final response = await request(
-      'PATCH', '/v1/account/me', data: {'displayName': name.trim()},
+      'PATCH',
+      '/v1/account/me',
+      data: {'displayName': name.trim()},
     );
-    if (response.statusCode != 200) throw StateError('Could not update profile.');
+    if (response.statusCode != 200)
+      throw StateError('Could not update profile.');
     return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
   }
 
   Future<void> upload(String kind, Map<String, dynamic> payload) async {
     final response = await request(
-      'PUT', _backupPath(kind), data: {'data': payload},
+      'PUT',
+      _backupPath(kind),
+      data: {'data': payload},
     );
     if (response.statusCode != 200) throw StateError('Backup failed.');
   }

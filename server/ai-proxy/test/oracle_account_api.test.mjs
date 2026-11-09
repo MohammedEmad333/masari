@@ -76,8 +76,9 @@ test('Google OIDC exchange requires a verified token and an empty body', async (
   const f = fixture();
   assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', {})).status, 200);
   assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'invalid', {})).status, 401);
-  assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', { uid: b })).status, 400);
-  assert.equal(f.globalCount, 3);
+  assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', { uid: b })).status, 413);
+  assert.equal((await f.request('POST', '/v1/auth/google-oidc', 'valid-google-id-token', { x: 1 })).status, 400);
+  assert.equal(f.globalCount, 4);
 });
 
 test('profile and backup access use only the authenticated account', async () => {

@@ -100,10 +100,11 @@ class CalendarRepository {
           .whereType<String>()
           .where((url) {
             final uri = Uri.tryParse(url);
-            return uri != null &&
-                uri.hasAuthority &&
-                uri.scheme == 'https' &&
-                uri.userInfo.isEmpty;
+            if (uri == null) return false;
+            if (!uri.hasAuthority) return false;
+            if (uri.scheme != 'https') return false;
+            if (uri.userInfo.isNotEmpty) return false;
+            return true;
           })
           .toSet()
           .toList();

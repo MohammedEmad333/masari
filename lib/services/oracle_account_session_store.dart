@@ -21,7 +21,7 @@ class OracleAccountSessionStore {
     if (uid == null || uid.isEmpty) return null;
     try {
       if (await _storage.read(key: _googleUidKey) != uid) return null;
-      return read();
+      return await read();
     } catch (_) {
       return null;
     }

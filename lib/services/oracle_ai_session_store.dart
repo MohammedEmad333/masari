@@ -20,6 +20,9 @@ class OracleAiSessionStore {
   static const _tokenKey = 'masari_ai_oracle_session_token';
   static const _expiryKey = 'masari_ai_oracle_session_expiry';
   static const _googleUidKey = 'masari_ai_oracle_google_uid';
+  // Explicit Oracle account enrollment survives a one-hour session expiry.
+  // It is cleared on sign-out and account deletion.
+  static const _enrolledGoogleUidKey = 'masari_oracle_enrolled_google_uid';
   final FlutterSecureStorage _storage;
 
   Future<OracleAiSession?> readForGoogle(String? uid) async {
@@ -75,6 +78,23 @@ class OracleAiSessionStore {
       await clear();
       rethrow;
     }
+  }
+
+  Future<String?> enrolledGoogleUid() async {
+    try {
+      return await _storage.read(key: _enrolledGoogleUidKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> rememberEnrollment(String googleUid) async {
+    if (googleUid.isEmpty) throw ArgumentError('Missing Google subject');
+    await _storage.write(key: _enrolledGoogleUidKey, value: googleUid);
+  }
+
+  Future<void> forgetEnrollment() async {
+    await _storage.delete(key: _enrolledGoogleUidKey);
   }
 
   Future<void> clear() async {

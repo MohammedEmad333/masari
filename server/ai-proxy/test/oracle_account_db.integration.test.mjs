@@ -1,11 +1,10 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 // Database driver is intentionally loaded only in the dedicated PG CI job.
-import { randomUUID } from 'node:crypto';
 import { createOracleSessions, SESSION_SCHEMA } from '../oracle_sessions.mjs';
 import { PAIRING_SCHEMA } from '../oracle_pairing.mjs';
 import { GOOGLE_ACCOUNT_SCHEMA } from '../oracle_google_accounts.mjs';
-import { GOOGLE_OIDC_ACCOUNT_SCHEMA } from '../oracle_google_oidc_accounts.mjs';
+import { createGoogleOidcAccounts, GOOGLE_OIDC_ACCOUNT_SCHEMA } from '../oracle_google_oidc_accounts.mjs';
 import {
   ACCOUNT_DATA_SCHEMA, BackupConflictError, createOracleAccountStore,
 } from '../oracle_account_store.mjs';
@@ -80,6 +79,27 @@ if (!databaseUrl) {
     await assert.rejects(sessions.issueSession(alice), /Account unavailable/);
     const session = await sessions.issueSession(bob);
     assert.deepEqual(await sessions.authenticate(session.token), { uid: bob });
+  });
+
+  test('deleted Google identities never silently re-create their accounts', async () => {
+    const exchange = createGoogleOidcAccounts({ pool, issueSession: sessions.issueSession });
+    const subject = '98765432100123456789';
+    await assert.rejects(
+      exchange(subject, { createIfMissing: false }),
+      /account_not_enrolled/,
+    );
+    const created = await exchange(subject, { createIfMissing: true });
+    const original = await sessions.authenticate(created.token);
+    assert.ok(original?.uid);
+    await store.deleteAccount(original.uid);
+    assert.equal(await sessions.authenticate(created.token), null);
+    await assert.rejects(
+      exchange(subject, { createIfMissing: false }),
+      /account_not_enrolled/,
+    );
+    const enrolledAgain = await exchange(subject, { createIfMissing: true });
+    const replacement = await sessions.authenticate(enrolledAgain.token);
+    assert.notEqual(replacement?.uid, original.uid);
   });
 
   test('revoking a session prevents reuse while preserving the account', async () => {

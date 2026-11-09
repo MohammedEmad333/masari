@@ -36,10 +36,12 @@ try {
   throw error;
 }
 const sessions = createOracleSessions({ pool });
-const exchangeGoogle = createGoogleOidcAccounts({
+const exchangeGoogleOidc = createGoogleOidcAccounts({
   pool,
   issueSession: sessions.issueSession,
 });
+const exchangeGoogle = (sub, { allowEnrollment = false } = {}) =>
+  exchangeGoogleOidc(sub, { createIfMissing: allowEnrollment });
 const reserveGlobal = createPairingRateLimiter({
   pool, maxAttempts: 100, windowSeconds: 60,
 });

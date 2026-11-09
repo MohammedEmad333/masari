@@ -33,6 +33,31 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
+  test('private Moodle feeds require HTTPS before any network request', () async {
+    var requested = false;
+    final client = MockClient((request) async {
+      requested = true;
+      return http.Response('BEGIN:VCALENDAR\\nEND:VCALENDAR', 200);
+    });
+    final repository = CalendarRepository(client: client);
+    const insecure = 'http://moodle.example.edu/calendar/export_execute.php?authtoken=private';
+
+    await expectLater(
+      repository.saveCalendarUrl(insecure),
+      throwsA(isA<CalendarSyncException>()),
+    );
+    await expectLater(
+      repository.addAdditionalCalendarUrl(insecure),
+      throwsA(isA<CalendarSyncException>()),
+    );
+    await expectLater(
+      repository.sync(calendarUrl: insecure),
+      throwsA(isA<CalendarSyncException>()),
+    );
+    expect(requested, isFalse);
+    client.close();
+  });
+
   test(
     'cached overdue and upcoming assignments survive offline loading',
     () async {

@@ -79,8 +79,9 @@ class OracleEncryptedCalendarCodec {
       ),
     );
     final decoded = jsonDecode(utf8.decode(plain));
-    if (decoded is! List)
+    if (decoded is! List) {
       throw const FormatException('Invalid calendar archive.');
+    }
     final urls = decoded.cast<String>();
     for (final url in urls) {
       _validateUrl(url);

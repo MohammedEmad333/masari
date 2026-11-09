@@ -89,9 +89,7 @@ class OracleAutomaticSync {
       );
       final localPlans = await _plans.loadAll();
       final localTasks = controller.manualDeadlines;
-      final existing = {
-        for (final task in localTasks) task.stableKey: task,
-      };
+      final existing = {for (final task in localTasks) task.stableKey: task};
       final merged = <String, Deadline>{
         for (final task in remote.tasks) task.stableKey: task,
         ...existing,

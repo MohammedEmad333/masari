@@ -30,6 +30,9 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check server/ai-proxy/index.mjs
+          node --check server/ai-proxy/accounts_index.mjs
+          node --check server/ai-proxy/oracle_account_api.mjs
+          node --check server/ai-proxy/oracle_account_store.mjs
           node --check server/ai-proxy/core.mjs
           node --check server/ai-proxy/firestore_quota.mjs
           node --check server/ai-proxy/postgres_quota.mjs

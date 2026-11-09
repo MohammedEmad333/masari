@@ -40,7 +40,8 @@ void main() {
       return http.Response('BEGIN:VCALENDAR\\nEND:VCALENDAR', 200);
     });
     final repository = CalendarRepository(client: client);
-    const insecure = 'http://moodle.example.edu/calendar/export_execute.php?authtoken=private';
+    const insecure =
+        'http://moodle.example.edu/calendar/export_execute.php?authtoken=private';
 
     await expectLater(
       repository.saveCalendarUrl(insecure),

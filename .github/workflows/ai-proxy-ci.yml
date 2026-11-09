@@ -64,17 +64,18 @@ jobs:
             --input-type=module -e '
               import { readFileSync, existsSync } from "node:fs";
               import { dirname, resolve } from "node:path";
-              const entrypoint = "/app/index.mjs";
-              const source = readFileSync(entrypoint, "utf8");
-              const imports = [...source.matchAll(/from\s+["\x27](\.[^"\x27]+)["\x27]/g)]
-                .map(match => match[1]);
-              if (imports.length === 0) throw new Error("No imports discovered");
-              for (const relative of imports) {
-                const path = resolve(dirname(entrypoint), relative);
-                if (!existsSync(path)) throw new Error("Missing runtime module: " + relative);
-                await import(path);
+              for (const entrypoint of ["/app/index.mjs", "/app/accounts_index.mjs"]) {
+                const source = readFileSync(entrypoint, "utf8");
+                const imports = [...source.matchAll(/from\s+["\x27](\.[^"\x27]+)["\x27]/g)]
+                  .map(match => match[1]);
+                if (imports.length === 0) throw new Error("No imports discovered");
+                for (const relative of imports) {
+                  const path = resolve(dirname(entrypoint), relative);
+                  if (!existsSync(path)) throw new Error("Missing runtime module: " + relative);
+                  await import(path);
+                }
+                console.log("PASS: " + entrypoint + " " + imports.length + " local imports");
               }
-              console.log("PASS: " + imports.length + " local runtime imports available");
             '
 
   postgres-integration:

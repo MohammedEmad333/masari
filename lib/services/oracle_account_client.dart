@@ -67,15 +67,31 @@ class OracleAccountClient {
     await initialize();
     _googleAccount ??= await GoogleSignIn.instance
         .attemptLightweightAuthentication();
-    final id = _googleAccount?.id;
-    if (id == null) return null;
-    return _sessions.readForGoogle(id);
+    final account = _googleAccount;
+    if (account == null) return null;
+    final stored = await _sessions.readForGoogle(account.id);
+    if (stored != null) return stored;
+
+    // Silent renewal is allowed only for an explicitly enrolled account.
+    // Never create an Oracle account just because a Google session exists.
+    if (await _sessions.enrolledGoogleUid() != account.id) return null;
+    try {
+      await _exchangeGoogle(account);
+      return await _sessions.readForGoogle(account.id);
+    } catch (_) {
+      // Network outages do not prevent offline tasks and calendars.
+      return null;
+    }
   }
 
   Future<void> signIn() async {
     await initialize();
     final account = await GoogleSignIn.instance.authenticate();
     await _sessions.clear();
+    await _exchangeGoogle(account);
+  }
+
+  Future<void> _exchangeGoogle(GoogleSignInAccount account) async {
     final idToken = account.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
       throw StateError('Google identity token unavailable.');
@@ -108,6 +124,7 @@ class OracleAccountClient {
       expiresAt: expiresAt,
       googleUid: account.id,
     );
+    await _sessions.rememberEnrollment(account.id);
     _googleAccount = account;
   }
 
@@ -233,6 +250,7 @@ class OracleAccountClient {
       throw StateError('Could not delete Oracle account.');
     }
     await _sessions.clear();
+    await _sessions.forgetEnrollment();
     await GoogleSignIn.instance.signOut();
     _googleAccount = null;
   }
@@ -248,6 +266,7 @@ class OracleAccountClient {
       // valid until its one-hour expiry; report that via privacy documentation.
     } finally {
       await _sessions.clear();
+      await _sessions.forgetEnrollment();
       if (_initialized) await GoogleSignIn.instance.signOut();
       _googleAccount = null;
     }

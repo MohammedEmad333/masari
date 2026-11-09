@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/oracle_account_client.dart';
+import '../services/oracle_automatic_sync.dart';
 import '../services/oracle_personal_backup_codec.dart';
 import '../services/task_plan_repository.dart';
 
@@ -12,10 +13,12 @@ class OracleCloudBackupScreen extends StatefulWidget {
     super.key,
     required this.controller,
     required this.arabic,
+    required this.autoSync,
   });
 
   final AppController controller;
   final bool arabic;
+  final OracleAutomaticSync autoSync;
 
   @override
   State<OracleCloudBackupScreen> createState() => _OracleCloudBackupScreenState();
@@ -188,6 +191,45 @@ class _OracleCloudBackupScreenState extends State<OracleCloudBackupScreen> {
             'Manual backup for tasks and plans only. Moodle calendar links stay on the device. Automatic synchronization is not enabled in Oracle mode yet.',
             'نسخ يدوي للمهام والخطط فقط. روابط تقويم Moodle تبقى على الجهاز. المزامنة التلقائية غير مفعلة بعد في وضع Oracle.',
           ),
+        ),
+        SwitchListTile(
+          title: Text(t('Automatic Oracle sync', 'المزامنة التلقائية مع Oracle')),
+          subtitle: Text(
+            t(
+              'Merge missing tasks and plans across your devices. Existing local items win conflicts; deletions do not sync yet.',
+              'دمج المهام والخطط المفقودة بين أجهزتك. العناصر المحلية لا تُستبدل؛ الحذف لا يتزامن بعد.',
+            ),
+          ),
+          value: widget.autoSync.enabled,
+          onChanged: _busy
+              ? null
+              : (enabled) async {
+                  setState(() {
+                    _busy = true;
+                    _status = null;
+                  });
+                  try {
+                    await widget.autoSync.setEnabled(enabled);
+                    if (mounted) {
+                      setState(
+                        () => _status = enabled
+                            ? t('Oracle sync enabled.', 'تم تفعيل مزامنة Oracle.')
+                            : t('Oracle sync disabled.', 'تم إيقاف مزامنة Oracle.'),
+                      );
+                    }
+                  } catch (_) {
+                    if (mounted) {
+                      setState(
+                        () => _status = t(
+                          'Could not update sync. Sign in to Oracle first.',
+                          'تعذّر تغيير المزامنة. سجّل الدخول إلى Oracle أولًا.',
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => _busy = false);
+                  }
+                },
         ),
         const SizedBox(height: 24),
         FilledButton.icon(

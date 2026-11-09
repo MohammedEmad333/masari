@@ -102,7 +102,8 @@ class CalendarRepository {
             final uri = Uri.tryParse(url);
             return uri != null &&
                 uri.hasAuthority &&
-                (uri.scheme == 'https' || uri.scheme == 'http');
+                uri.scheme == 'https' &&
+                uri.userInfo.isEmpty;
           })
           .toSet()
           .toList();
@@ -538,8 +539,9 @@ class CalendarRepository {
     final uri = Uri.tryParse(value);
     if (uri == null ||
         !uri.hasAuthority ||
-        (uri.scheme != 'https' && uri.scheme != 'http')) {
-      throw const CalendarSyncException('Enter a valid Moodle calendar URL.');
+        uri.scheme != 'https' ||
+        uri.userInfo.isNotEmpty) {
+      throw const CalendarSyncException('Enter a valid HTTPS Moodle calendar URL.');
     }
   }
 }

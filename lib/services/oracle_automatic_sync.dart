@@ -84,40 +84,57 @@ class OracleAutomaticSync {
       final profile = await _account.profile();
       if (profile['accountId'] != storedAccountId) return;
 
-      final remote = OraclePersonalBackupCodec.decode(
-        await _account.download('personal'),
-      );
-      final localPlans = await _plans.loadAll();
-      final localTasks = controller.manualDeadlines;
-      final existing = {for (final task in localTasks) task.stableKey: task};
-      final merged = <String, Deadline>{
-        for (final task in remote.tasks) task.stableKey: task,
-        ...existing,
-      };
-      for (final task in remote.tasks) {
-        if (!existing.containsKey(task.stableKey)) {
-          await controller.saveManualDeadline(task);
+      // Re-read and merge after any concurrent device update (HTTP 409).
+      // Never overwrite another device's newer snapshot from a stale GET.
+      var saved = false;
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final snapshot = await _account.downloadSnapshot('personal');
+        final remote = OraclePersonalBackupCodec.decode(snapshot.data);
+        final localPlans = await _plans.loadAll();
+        final localTasks = controller.manualDeadlines;
+        final existing = {for (final task in localTasks) task.stableKey: task};
+        final merged = <String, Deadline>{
+          for (final task in remote.tasks) task.stableKey: task,
+          ...existing,
+        };
+        for (final task in remote.tasks) {
+          if (!existing.containsKey(task.stableKey)) {
+            await controller.saveManualDeadline(task);
+          }
+        }
+        final combinedPlans = {...remote.plans, ...localPlans};
+        for (final entry in remote.plans.entries) {
+          if (!localPlans.containsKey(entry.key)) {
+            await _plans.save(entry.value);
+          }
+        }
+        // Re-check account binding immediately before the remote write.
+        final currentAccount = await _account.profile();
+        if (currentAccount['accountId'] != storedAccountId || !enabled) {
+          return;
+        }
+        saved = await _account.uploadIfCurrent(
+          'personal',
+          OraclePersonalBackupCodec.prepare(
+            manualTasks: merged.values.toList(),
+            plans: combinedPlans,
+          ),
+          revision: snapshot.revision,
+        );
+        if (saved) {
+          _lastLocalState = jsonEncode({
+            'tasks': controller.manualDeadlines.map((e) => e.toJson()).toList(),
+            'plans': combinedPlans.map(
+              (key, value) => MapEntry(key, value.toJson()),
+            ),
+          });
+          break;
         }
       }
-      final combinedPlans = {...remote.plans, ...localPlans};
-      for (final entry in remote.plans.entries) {
-        if (!localPlans.containsKey(entry.key)) {
-          await _plans.save(entry.value);
-        }
+      if (!saved) {
+        // Another device keeps winning the race; preserve local edits.
+        throw StateError('Oracle backup conflict');
       }
-      await _account.upload(
-        'personal',
-        OraclePersonalBackupCodec.prepare(
-          manualTasks: merged.values.toList(),
-          plans: combinedPlans,
-        ),
-      );
-      _lastLocalState = jsonEncode({
-        'tasks': controller.manualDeadlines.map((e) => e.toJson()).toList(),
-        'plans': combinedPlans.map(
-          (key, value) => MapEntry(key, value.toJson()),
-        ),
-      });
     } catch (_) {
       // Offline/expired sessions must never prevent local edits.
     } finally {

@@ -12,7 +12,7 @@ export function createGoogleOidcAccounts({ pool, issueSession } = {}) {
   if (!pool || typeof pool.connect !== 'function' || typeof issueSession !== 'function') {
     throw new TypeError('OIDC account dependencies required');
   }
-  return async function exchangeGoogleSubject(sub) {
+  return async function exchangeGoogleSubject(sub, { createIfMissing = true } = {}) {
     if (typeof sub !== 'string' || !/^[0-9]{1,128}$/.test(sub)) throw new Error('invalid_google_subject');
     const client = await pool.connect();
     let accountId;
@@ -22,6 +22,7 @@ export function createGoogleOidcAccounts({ pool, issueSession } = {}) {
       const found = await client.query('SELECT account_id FROM ai_google_oidc_accounts WHERE google_sub=$1', [sub]);
       accountId = found.rows[0]?.account_id;
       if (!accountId) {
+        if (!createIfMissing) throw new Error('account_not_enrolled');
         accountId = randomUUID();
         await client.query('INSERT INTO ai_accounts(account_id) VALUES ($1)', [accountId]);
         await client.query('INSERT INTO ai_google_oidc_accounts(google_sub,account_id) VALUES ($1,$2)', [sub, accountId]);

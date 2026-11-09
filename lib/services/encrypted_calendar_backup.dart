@@ -121,6 +121,11 @@ class EncryptedCalendarBackup {
     ).set({...archive, 'updatedAt': FieldValue.serverTimestamp()});
   }
 
+  /// Remove only the encrypted cloud copy; local calendar URLs are untouched.
+  Future<void> delete({required User user}) async {
+    await _document(user).delete();
+  }
+
   Future<List<String>?> download({
     required User user,
     required String passphrase,

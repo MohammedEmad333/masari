@@ -159,7 +159,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   ),
                 ),
               );
-              unawaited(_autoSync.checkForChanges());
+              _onDataChanged();
             },
           ),
           IconButton(

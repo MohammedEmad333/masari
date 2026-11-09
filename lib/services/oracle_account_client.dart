@@ -96,10 +96,7 @@ class OracleAccountClient {
     if (idToken == null || idToken.isEmpty) {
       throw StateError('Google identity token unavailable.');
     }
-    final exchangeRequest = http.Request(
-      'POST',
-      _url('/v1/auth/google-oidc'),
-    );
+    final exchangeRequest = http.Request('POST', _url('/v1/auth/google-oidc'));
     exchangeRequest.followRedirects = false;
     exchangeRequest.headers.addAll({
       'Authorization': 'Bearer $idToken',

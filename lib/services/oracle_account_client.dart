@@ -169,12 +169,46 @@ class OracleAccountClient {
     if (response.statusCode != 200) throw StateError('Backup failed.');
   }
 
-  Future<Map<String, dynamic>?> download(String kind) async {
+  /// The snapshot revision is checked atomically by PostgreSQL on upload.
+  /// A missing document has revision zero.
+  Future<({Map<String, dynamic>? data, int revision})> downloadSnapshot(
+    String kind,
+  ) async {
     final response = await request('GET', _backupPath(kind));
-    if (response.statusCode == 404) return null;
+    if (response.statusCode == 404) return (data: null, revision: 0);
     if (response.statusCode != 200) throw StateError('Restore failed.');
     final body = Map<String, dynamic>.from(jsonDecode(response.body) as Map);
-    return Map<String, dynamic>.from(body['data'] as Map);
+    final revision = body['revision'];
+    if (revision is! int || revision < 1) {
+      throw const FormatException('Invalid backup revision.');
+    }
+    return (
+      data: Map<String, dynamic>.from(body['data'] as Map),
+      revision: revision,
+    );
+  }
+
+  Future<Map<String, dynamic>?> download(String kind) async {
+    final snapshot = await downloadSnapshot(kind);
+    return snapshot.data;
+  }
+
+  /// Returns false on an HTTP 409 conflict; caller must re-read and re-merge.
+  Future<bool> uploadIfCurrent(
+    String kind,
+    Map<String, dynamic> payload, {
+    required int revision,
+  }) async {
+    if (revision < 0) throw ArgumentError.value(revision, 'revision');
+    final response = await request(
+      'PUT',
+      _backupPath(kind),
+      data: {'data': payload},
+      headers: {'X-Backup-Revision': '$revision'},
+    );
+    if (response.statusCode == 409) return false;
+    if (response.statusCode != 200) throw StateError('Backup failed.');
+    return true;
   }
 
   Future<void> deleteBackup(String kind) async {

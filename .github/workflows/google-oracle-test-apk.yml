@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   build:
-    name: Signed Google-enabled test APK
+    name: Signed Oracle accounts test APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -50,7 +50,7 @@ jobs:
           SIGNER_SHA256="$(keytool -list -keystore "$RUNNER_TEMP/masari-upload.jks" -storepass "$PLAY_STORE_PASSWORD" -alias "$PLAY_KEY_ALIAS" -v | sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr '[:upper:]' '[:lower:]')"
           test "$SIGNER_SHA256" = "bff786abee97d6a467103b95fed08ce536a683edc362d9f3a712ab77932230d4"
 
-      - name: Build signed Google test APK
+      - name: Build signed Oracle accounts test APK
         shell: bash
         env:
           PLAY_STORE_BUILD: 'true'
@@ -64,26 +64,27 @@ jobs:
           dart format --output=none --set-exit-if-changed lib test
           flutter analyze
           flutter test
+          # This test build uses the isolated Masari accounts PostgreSQL backend.
+          # Do not configure the production AI endpoint until it accepts
+          # sessions from the same Oracle database.
           flutter build apk --release \
-            --dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask \
-            --dart-define=MASARI_GOOGLE_ORACLE_AUTH_ENABLED=true \
-            --dart-define=MASARI_GOOGLE_DIRECT_OIDC_ENABLED=true
+            --dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win
           APK=build/app/outputs/flutter-apk/app-release.apk
           test -s "$APK"
           TOOLS="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           "$TOOLS/apksigner" verify "$APK"
           "$TOOLS/aapt" dump badging "$APK" | grep -F "package: name='com.mohammedemad333.masari'"
           mkdir -p dist
-          cp "$APK" dist/masari-google-oracle-test.apk
-          (cd dist && sha256sum masari-google-oracle-test.apk > masari-google-oracle-test.apk.sha256)
+          cp "$APK" dist/masari-oracle-accounts-test.apk
+          (cd dist && sha256sum masari-oracle-accounts-test.apk > masari-oracle-accounts-test.apk.sha256)
 
       - name: Upload test APK (not an official release)
         uses: actions/upload-artifact@v7
         with:
-          name: masari-google-oracle-test-apk
+          name: masari-oracle-accounts-test-apk
           path: |
-            dist/masari-google-oracle-test.apk
-            dist/masari-google-oracle-test.apk.sha256
+            dist/masari-oracle-accounts-test.apk
+            dist/masari-oracle-accounts-test.apk.sha256
           if-no-files-found: error
           retention-days: 14
           compression-level: 0

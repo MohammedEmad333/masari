@@ -18,7 +18,7 @@ dependencies:
   path_provider: ^2.1.5
   open_filex: ^5.0.0
   qr_flutter: ^4.1.0
-  archive: ^4.0.9
+  archive: ^4.6.0
   crypto: ^3.0.8
   cryptography: ^2.9.0
   share_plus: ^13.3.1

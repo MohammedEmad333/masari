@@ -108,10 +108,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       await _refreshConnection();
     } catch (_) {
       if (mounted) {
-        setState(() => _error = t(
-          'Could not sign in to Masari. Try again from your account.',
-          'تعذّر تسجيل الدخول إلى مساري. حاول مجددًا من حسابك.',
-        ));
+        setState(
+          () => _error = t(
+            'Could not sign in to Masari. Try again from your account.',
+            'تعذّر تسجيل الدخول إلى مساري. حاول مجددًا من حسابك.',
+          ),
+        );
       }
     } finally {
       account.dispose();
@@ -345,9 +347,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   ? null
                   : _signInToOracleAccount,
               icon: const Icon(Icons.account_circle_outlined),
-              label: Text(
-                t('Sign in to Masari', 'تسجيل الدخول إلى مساري'),
-              ),
+              label: Text(t('Sign in to Masari', 'تسجيل الدخول إلى مساري')),
             ),
           if (!OracleAccountClient.enabled && GoogleOracleAuthClient.enabled)
             OutlinedButton.icon(
@@ -359,8 +359,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 t('Continue with Google', 'المتابعة باستخدام Google'),
               ),
             ),
-          if (!OracleAccountClient.enabled &&
-              !GoogleOracleAuthClient.enabled)
+          if (!OracleAccountClient.enabled && !GoogleOracleAuthClient.enabled)
             OutlinedButton.icon(
               onPressed: _loading
                   ? null

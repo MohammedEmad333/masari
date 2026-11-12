@@ -12,6 +12,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app_controller.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
+import '../services/oracle_account_client.dart';
+import '../services/oracle_automatic_sync.dart';
 import '../services/automatic_google_sync.dart';
 import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
@@ -24,7 +26,9 @@ import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
 import 'task_plans_screen.dart';
 import 'google_account_screen.dart';
+import 'oracle_account_screen.dart';
 import 'cloud_backup_screen.dart';
+import 'oracle_cloud_backup_screen.dart';
 import 'assistant_preview_screen.dart';
 
 class HomeShell extends StatefulWidget {
@@ -38,25 +42,40 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   late final AutomaticGoogleSync _autoSync;
+  late final OracleAutomaticSync _oracleAutoSync;
 
   @override
   void initState() {
     super.initState();
     _autoSync = AutomaticGoogleSync(widget.controller);
+    _oracleAutoSync = OracleAutomaticSync(widget.controller);
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_onDataChanged);
-    unawaited(_autoSync.initialize());
+    if (OracleAccountClient.enabled) {
+      unawaited(_oracleAutoSync.initialize());
+    } else {
+      unawaited(_autoSync.initialize());
+    }
   }
 
-  void _onDataChanged() => unawaited(_autoSync.checkForChanges());
+  void _onDataChanged() => unawaited(
+    OracleAccountClient.enabled
+        ? _oracleAutoSync.checkForChanges()
+        : _autoSync.checkForChanges(),
+  );
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_autoSync.sync());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(
+        OracleAccountClient.enabled ? _oracleAutoSync.sync() : _autoSync.sync(),
+      );
+    }
   }
 
   @override
   void dispose() {
+    _oracleAutoSync.dispose();
     widget.controller.removeListener(_onDataChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -100,11 +119,17 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             icon: const Icon(Icons.cloud_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => CloudBackupScreen(
-                  controller: controller,
-                  arabic: _ar,
-                  autoSync: _autoSync,
-                ),
+                builder: (_) => OracleAccountClient.enabled
+                    ? OracleCloudBackupScreen(
+                        controller: controller,
+                        arabic: _ar,
+                        autoSync: _oracleAutoSync,
+                      )
+                    : CloudBackupScreen(
+                        controller: controller,
+                        arabic: _ar,
+                        autoSync: _autoSync,
+                      ),
               ),
             ),
           ),
@@ -113,7 +138,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                builder: (_) => GoogleAccountScreen(arabic: _ar),
+                builder: (_) => OracleAccountClient.enabled
+                    ? OracleAccountScreen(
+                        arabic: _ar,
+                        autoSync: _oracleAutoSync,
+                      )
+                    : GoogleAccountScreen(arabic: _ar),
               ),
             ),
           ),
@@ -129,7 +159,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   ),
                 ),
               );
-              unawaited(_autoSync.checkForChanges());
+              _onDataChanged();
             },
           ),
           IconButton(

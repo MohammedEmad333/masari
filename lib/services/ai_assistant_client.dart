@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'google_account_service.dart';
 import 'google_oracle_auth_client.dart';
+import 'oracle_account_client.dart';
 import 'oracle_ai_session_store.dart';
 
 class AiAssistantException implements Exception {
@@ -58,6 +59,14 @@ class AiAssistantClient {
       uri.path == '/v1/assistant/ask';
 
   static Future<OracleAiSession?> _currentOracleSession() async {
+    if (OracleAccountClient.enabled) {
+      final client = OracleAccountClient();
+      try {
+        return await client.currentSession();
+      } finally {
+        client.dispose();
+      }
+    }
     final store = OracleAiSessionStore();
     if (!GoogleOracleAuthClient.enabled) return store.read();
     await GoogleAccountService.instance.initialize();
@@ -113,15 +122,17 @@ class AiAssistantClient {
       throw const AiAssistantException('sensitive_content');
     }
 
-    // A valid, encrypted Oracle AI session avoids Firebase App Check for the
-    // assistant only. Google backup and calendar authentication are untouched.
+    // In Oracle account mode, the same verified Oracle session also
+    // authenticates AI requests without Firebase Auth or App Check.
     OracleAiSession? oracleSession;
     try {
       oracleSession = await _oracleSessionProvider();
     } catch (_) {
       throw const AiAssistantException('session_storage_error');
     }
-    if (GoogleOracleAuthClient.enabled && oracleSession == null) {
+    if (GoogleOracleAuthClient.enabled &&
+        !OracleAccountClient.enabled &&
+        oracleSession == null) {
       final renewal = GoogleOracleAuthClient();
       try {
         await renewal.exchange();
@@ -138,7 +149,7 @@ class AiAssistantClient {
     if (oracleSession != null && oracleSession.isValid) {
       bearer = oracleSession.token;
     } else {
-      if (GoogleOracleAuthClient.enabled) {
+      if (GoogleOracleAuthClient.enabled || OracleAccountClient.enabled) {
         throw const AiAssistantException('sign_in_required');
       }
       final String? idToken;
@@ -189,7 +200,9 @@ class AiAssistantClient {
     }
     if (response.statusCode == 401) {
       if (oracleSession != null) {
-        if (GoogleOracleAuthClient.enabled && retryAfterRenewal) {
+        if (GoogleOracleAuthClient.enabled &&
+            !OracleAccountClient.enabled &&
+            retryAfterRenewal) {
           final renewal = GoogleOracleAuthClient();
           try {
             await renewal.exchange();

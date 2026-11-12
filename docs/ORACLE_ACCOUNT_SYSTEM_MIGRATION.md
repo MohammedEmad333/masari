@@ -1,0 +1,139 @@
+# Masari accounts on Oracle — staged migration (no Firebase for new account API)
+
+## Scope and rollout status
+
+This branch introduces a **Firebase-free** Oracle account API, backed by the
+**Masari-owned PostgreSQL database** already used for Oracle AI sessions.
+It also adds an opt-in Flutter account screen and manual personal backup.
+
+**Not yet a production cutover.** No Oracle VM, DNS, Caddy, PostgreSQL data,
+existing Firebase accounts or EduBridge services are changed by this PR.
+Do not remove Firebase services or delete existing backups during migration.
+
+### Existing vs. new
+
+| Feature | Existing Firebase route | New Oracle route |
+| --- | --- | --- |
+| Identity | Google Sign-In -> Firebase Auth | Google OIDC verified by Oracle |
+| Server session | Firebase ID token / App Check | Expiring opaque `msr_` bearer; hash in PostgreSQL |
+| Profile | Firebase user | `masari_account_profiles` |
+| Manual task/plan backup | Firestore | `masari_account_documents/personal` |
+| Encrypted calendar backup | Firestore | Client-side AES-GCM encrypted Oracle backup, restore and deletion |
+| Automatic task synchronization | Firestore | Separate Oracle opt-in task/plan merge, account-bound; no delete/conflict sync |
+| Account deletion | Firebase / unavailable | Oracle deletes linked data, sessions and mappings |
+| AI assistant | Firebase fallback or separate Oracle sessions | Uses Oracle account bearer without Firebase fallback in Oracle-enabled app builds |
+
+Local Moodle/ICS operation does **not** require signing in.
+
+## HTTPS API contract (Oracle only)
+
+The app supplies `MASARI_ACCOUNTS_API_URL=https://<dedicated-host>`.
+This is a public base URL and **not a credential**.
+
+- `POST /v1/auth/google-oidc`: Google-issued OIDC ID token in Authorization.
+  Explicit interactive sign-in sends `{ "enroll": true }`, the **only** request
+  allowed to create an Oracle account. Silent renewal sends `{}` and works
+  only if that Google subject already has an Oracle account; otherwise it
+  returns `403 enrollment_required`. Oracle verifies Google RSA signatures,
+  issuer, audience, expiration and subject, rate-limits attempts and issues
+  an opaque 1-hour session. No Firebase authentication or App Check.
+- `GET /v1/account/me`: current account profile.
+- `PATCH /v1/account/me`: edit display name.
+- `DELETE /v1/account/me`: explicit confirmation header; delete Oracle
+  account data, revoke sessions, remove Google mappings.
+- `POST /v1/auth/logout`: revoke this bearer token server-side.
+- `GET|PUT|DELETE /v1/backups/personal`: user-owned manual tasks and plans.
+- `GET|PUT|DELETE /v1/backups/calendar`: **encrypted envelope only**; keep
+  the calendar passphrase exclusively on the client.
+- `GET /health`: process-only health, no auth. Do not treat this as DB readiness.
+
+No API route accepts `uid` or `accountId` from clients: the server derives
+ownership strictly from the verified session's PostgreSQL account ID.
+Sensitive values must not appear in URL query strings or logs. Limit HTTP
+body size, use TLS and add reverse-proxy abuse controls before public use.
+
+## Oracle deployment preparation — no production commands executed
+
+1. Confirm the actual Masari PostgreSQL volume and credential locations.
+   Never alter EduBridge or its shared databases/services.
+2. Configure a dedicated Google OAuth **Web client ID** whose audience exactly
+   matches the Google token returned by the signed Android build.
+3. The existing `compose.oracle-postgres.yaml` now defines `masari-accounts`,
+   using `accounts_index.mjs` (Node.js 22) and the existing isolated Masari
+   PostgreSQL volume. This adds a **loopback-only** host port 8099 by default;
+   inspect port availability before deploying.
+4. Configure TLS at a dedicated account API hostname. On Docker bridge
+   networks, connect Caddy to the account service using its actual network;
+   do not assume it can reach localhost in another container.
+5. Use `MASARI_ACCOUNTS_API_URL` in a **test APK first**. Never place database
+   credentials or Google secret keys in the APK.
+6. Exercise sign-in, multi-account isolation, logout/revocation, account
+   deletion, Android process restart, backup/restore and 401/429/503 behavior.
+   Test backups on two devices; verify no cross-account reads or uploads.
+7. Migrate the existing Firebase backups only with explicit per-user consent,
+   after a successful Oracle backup + restore verification. Preserve the
+   Firestore documents until users verify the new copy. Do not transfer raw
+   calendar URLs: decrypt and re-encrypt on the device.
+8. Verify the Oracle-only automatic synchronization and encrypted calendar
+   UI on real Android devices; reconcile collisions and logout/expiry cases.
+   Remove the remaining legacy Firebase fallback in the **server**, update
+   user disclosures and privacy policy, and only then consider removing
+   Firebase dependencies.
+
+## Backup concurrency and Oracle session renewal
+
+- Each document has a PostgreSQL `revision` counter. A `GET` returns
+  `{ data, revision }`; a missing document is HTTP 404 (revision zero).
+- Oracle automatic synchronization passes `X-Backup-Revision` on `PUT`.
+  PostgreSQL checks the revision in one atomic statement; stale uploads
+  return **409 backup_conflict**, prompting the client to fetch and merge
+  again (up to three attempts). Explicit manual "replace backup" retains
+  user-confirmed overwrite semantics.
+- Personal backup payloads use a strict allowlist for task and plan fields,
+  reject unexpected credential fields and token-bearing URLs, and enforce
+  size and item-count limits.
+- Sessions expire after one hour. After a successful, explicit account
+  login, the app retains only the selected Google account subject as a
+  renewal marker. It can silently obtain a fresh Google OIDC identity token
+  and Oracle session when possible. Logout or deletion clears this marker.
+  If silent Google renewal fails, users must sign in interactively.
+- The AI service must use **the same Masari PostgreSQL database** and
+  enable `MASARI_ORACLE_AUTH_ENABLED=true` plus
+  `MASARI_QUOTA_BACKEND=postgres` to accept account bearer tokens.
+  Do **not** enable AI for Oracle-only builds until this is verified.
+- CI runs actual PostgreSQL integration tests using an isolated disposable
+  database to cover owner isolation, real atomic concurrent writes,
+  account deletion and session revocation. These tests do not certify
+  production TLS, Android OAuth or server deployment.
+
+## Authentication and deletion safeguards
+
+- Google is only the identity provider; account IDs, sessions, backups and
+  ownership rules are controlled by Oracle/PostgreSQL.
+- Google `sub` is the durable identity key, **not** changeable email.
+- PostgreSQL stores a SHA-256 digest of each random bearer token, never the
+  bearer itself. Tokens expire in an hour and can be revoked.
+- Account deletion removes the Google-subject mapping. Other devices may not
+  silently recreate the account from their old Google session; fresh explicit
+  interactive sign-in is required before any new Oracle enrollment.
+- Logout while offline clears the local token, but server revocation may only
+  occur upon reconnection or token expiry. Future versions should queue a
+  revoke request or implement an account-wide device/session manager.
+- Account deletion removes profile/backups/session hashes/Google links and
+  disables the orphan UUID. Local tasks and Moodle links remain, by design.
+- The personal task backup is **not end-to-end encrypted**. Access is restricted
+  to the user by server authentication, PostgreSQL, TLS and operational
+  security; the operator can read personal task data. The calendar backup is
+  client-side encrypted separately.
+
+## CI
+
+Run `node --test` from `server/ai-proxy` and build the production Docker image.
+The new API has isolated tests for verified Google sign-in, account ownership,
+profile changes, encrypted calendar shape, logout, concurrency and explicit deletion.
+The CI workflow also provisions disposable PostgreSQL for integration tests.
+Flutter must pass `dart format`, `flutter analyze`, `flutter test`, APK
+smoke build and test AAB build.
+
+**Deploy gate:** this document and PR do not mean the Oracle account system
+is live. Keep the legacy account path available until every migration gate passes.

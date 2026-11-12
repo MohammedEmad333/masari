@@ -65,17 +65,23 @@ class OracleAccountClient {
   }
 
   Future<OracleAiSession?> currentSession() async {
+    // A live Oracle bearer is already an authenticated session. Checking it
+    // locally first avoids invoking Android Google sign-in whenever a screen
+    // is opened, or whenever a profile/AI request is made.
+    final cached = await _sessions.read();
+    if (cached != null) return cached;
+
+    // Do not start Google authentication for guests. Silent renewal is only
+    // available after an explicit account enrollment on this device.
+    final enrolledUid = await _sessions.enrolledGoogleUid();
+    if (enrolledUid == null || enrolledUid.isEmpty) return null;
+
     await initialize();
     _googleAccount ??= await GoogleSignIn.instance
         .attemptLightweightAuthentication();
     final account = _googleAccount;
-    if (account == null) return null;
-    final stored = await _sessions.readForGoogle(account.id);
-    if (stored != null) return stored;
+    if (account == null || account.id != enrolledUid) return null;
 
-    // Silent renewal is allowed only for an explicitly enrolled account.
-    // Never create an Oracle account just because a Google session exists.
-    if (await _sessions.enrolledGoogleUid() != account.id) return null;
     try {
       await _exchangeGoogle(account);
       return await _sessions.readForGoogle(account.id);

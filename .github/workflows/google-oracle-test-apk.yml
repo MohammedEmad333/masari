@@ -2,6 +2,12 @@ name: Google Oracle test APK (manual)
 
 on:
   workflow_dispatch:
+  # QA-only push trigger. No main branch, no release publication.
+  push:
+    branches:
+      - qa/oracle-accounts-ai-main-20261112
+    paths:
+      - '.github/workflows/google-oracle-test-apk.yml'
 
 permissions:
   contents: read
@@ -65,7 +71,7 @@ jobs:
           flutter analyze
           flutter test
           # Production accounts and AI now share Masari PostgreSQL.
-          # This is a manually dispatched QA build, not a store release.
+          # Only manually dispatched or QA-branch builds; never a store release.
           # Real-device QA must still verify Oracle bearer use with AI.
           flutter build apk --release \
             --dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win \

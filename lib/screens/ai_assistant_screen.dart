@@ -4,6 +4,7 @@ import '../services/ai_assistant_client.dart';
 import '../services/google_oracle_auth_client.dart';
 import '../services/google_account_service.dart';
 import '../services/oracle_ai_session_store.dart';
+import '../services/oracle_account_client.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
 
@@ -31,7 +32,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   void initState() {
     super.initState();
     _refreshConnection();
-    if (GoogleOracleAuthClient.enabled) _connectGoogle(silent: true);
+    if (!OracleAccountClient.enabled && GoogleOracleAuthClient.enabled) {
+      _connectGoogle(silent: true);
+    }
   }
 
   Future<void> _connectGoogle({bool silent = false}) async {
@@ -67,14 +70,53 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Future<void> _refreshConnection() async {
-    await GoogleAccountService.instance.initialize();
-    final store = OracleAiSessionStore();
-    final session = GoogleOracleAuthClient.enabled
-        ? await store.readForGoogle(
-            GoogleAccountService.instance.currentUser?.uid,
-          )
-        : await store.read();
-    if (mounted) setState(() => _oracleConnected = session?.isValid ?? false);
+    try {
+      if (OracleAccountClient.enabled) {
+        final account = OracleAccountClient();
+        try {
+          final session = await account.currentSession();
+          if (mounted) {
+            setState(() => _oracleConnected = session?.isValid ?? false);
+          }
+        } finally {
+          account.dispose();
+        }
+        return;
+      }
+      await GoogleAccountService.instance.initialize();
+      final store = OracleAiSessionStore();
+      final session = GoogleOracleAuthClient.enabled
+          ? await store.readForGoogle(
+              GoogleAccountService.instance.currentUser?.uid,
+            )
+          : await store.read();
+      if (mounted) setState(() => _oracleConnected = session?.isValid ?? false);
+    } catch (_) {
+      if (mounted) setState(() => _oracleConnected = false);
+    }
+  }
+
+  Future<void> _signInToOracleAccount() async {
+    if (_connectingGoogle || _loading) return;
+    setState(() {
+      _connectingGoogle = true;
+      _error = null;
+    });
+    final account = OracleAccountClient();
+    try {
+      await account.signIn();
+      await _refreshConnection();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = t(
+          'Could not sign in to Masari. Try again from your account.',
+          'تعذّر تسجيل الدخول إلى مساري. حاول مجددًا من حسابك.',
+        ));
+      }
+    } finally {
+      account.dispose();
+      if (mounted) setState(() => _connectingGoogle = false);
+    }
   }
 
   String t(String en, String ar) => widget.arabic ? ar : en;
@@ -121,7 +163,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   /// Only Google-backed sessions are automatically renewed; legacy pairing
   /// tokens continue to require explicit re-pairing.
   Future<String> _askWithGoogleRenewal() async {
-    if (GoogleOracleAuthClient.enabled) {
+    if (!OracleAccountClient.enabled && GoogleOracleAuthClient.enabled) {
       await GoogleAccountService.instance.initialize();
       final session = await OracleAiSessionStore().readForGoogle(
         GoogleAccountService.instance.currentUser?.uid,
@@ -143,7 +185,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     try {
       return await send();
     } on AiAssistantException catch (error) {
-      if (!GoogleOracleAuthClient.enabled ||
+      if (OracleAccountClient.enabled ||
+          !GoogleOracleAuthClient.enabled ||
           error.code != 'oracle_session_expired') {
         rethrow;
       }
@@ -196,8 +239,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         );
       case 'oracle_session_expired':
         return t(
-          'Your Oracle AI session has expired or was revoked. Re-pair the device.',
-          'انتهت جلسة مساعد Oracle أو أُلغيت. يلزم إعادة ربط الجهاز.',
+          OracleAccountClient.enabled
+              ? 'Your Masari session expired. Sign in to your account again.'
+              : 'Your Oracle AI session has expired or was revoked. Re-pair the device.',
+          OracleAccountClient.enabled
+              ? 'انتهت جلسة مساري. سجّل الدخول إلى حسابك مجددًا.'
+              : 'انتهت جلسة مساعد Oracle أو أُلغيت. يلزم إعادة ربط الجهاز.',
         );
       case 'session_storage_error':
         return t(
@@ -281,13 +328,28 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           Text(
             _oracleConnected
                 ? t('Connected with Oracle', 'متصل عبر Oracle')
+                : OracleAccountClient.enabled
+                ? t(
+                    'Masari account not connected — sign in with Google',
+                    'حساب مساري غير متصل — سجّل الدخول باستخدام Google',
+                  )
                 : t(
                     'Oracle not paired — Google sign-in may be required',
                     'Oracle غير مرتبط — قد يلزم تسجيل Google',
                   ),
           ),
           const SizedBox(height: 12),
-          if (GoogleOracleAuthClient.enabled)
+          if (OracleAccountClient.enabled && !_oracleConnected)
+            OutlinedButton.icon(
+              onPressed: _loading || _connectingGoogle
+                  ? null
+                  : _signInToOracleAccount,
+              icon: const Icon(Icons.account_circle_outlined),
+              label: Text(
+                t('Sign in to Masari', 'تسجيل الدخول إلى مساري'),
+              ),
+            ),
+          if (!OracleAccountClient.enabled && GoogleOracleAuthClient.enabled)
             OutlinedButton.icon(
               onPressed: _loading || _connectingGoogle
                   ? null
@@ -297,7 +359,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 t('Continue with Google', 'المتابعة باستخدام Google'),
               ),
             ),
-          if (!GoogleOracleAuthClient.enabled)
+          if (!OracleAccountClient.enabled &&
+              !GoogleOracleAuthClient.enabled)
             OutlinedButton.icon(
               onPressed: _loading
                   ? null
@@ -359,7 +422,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               _error!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            if (_error == _message('sign_in_required'))
+            if (!OracleAccountClient.enabled &&
+                _error == _message('sign_in_required'))
               OutlinedButton.icon(
                 icon: const Icon(Icons.account_circle_outlined),
                 onPressed: () => Navigator.of(context).push(

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.17
+
+- Enable the production Oracle account API alongside the AI assistant in all official signed Android APK and Google Play AAB builds, matching the successfully device-tested Oracle accounts and AI configuration.
+- Keep Google OIDC sign-in, encrypted account sessions, and AI requests on their established HTTPS endpoints; no credentials or API keys are bundled in the app.
+- Add release-workflow regression checks so future official builds cannot silently omit the Oracle account endpoint.
+
 ## 2.2.16
 
 - Add optional Oracle AI device pairing with a one-time code and encrypted Android session storage.

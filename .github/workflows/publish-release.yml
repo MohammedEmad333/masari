@@ -98,6 +98,7 @@ jobs:
           set -euo pipefail
           flutter pub get
           flutter build apk --release \
+            --dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win \
             --dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask
           APK="build/app/outputs/flutter-apk/app-release.apk"
           test -s "$APK"

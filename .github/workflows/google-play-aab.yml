@@ -71,7 +71,12 @@ jobs:
           PLAY_STORE_PASSWORD: ${{ secrets.PLAY_STORE_PASSWORD }}
           PLAY_KEY_ALIAS: ${{ secrets.PLAY_KEY_ALIAS }}
           PLAY_KEY_PASSWORD: ${{ secrets.PLAY_KEY_PASSWORD }}
-        run: flutter build appbundle --release
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build appbundle --release \
+            --dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win \
+            --dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask
       - name: Generate and verify bundle checksum
         shell: bash
         run: |

@@ -47,12 +47,16 @@ void main() {
       final workflow = File(path).readAsStringSync();
       expect(
         workflow,
-        contains('--dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win'),
+        contains(
+          '--dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win',
+        ),
         reason: '$path must enable Oracle accounts in production',
       );
       expect(
         workflow,
-        contains('--dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask'),
+        contains(
+          '--dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask',
+        ),
         reason: '$path must enable the same AI proxy as the QA build',
       );
     }

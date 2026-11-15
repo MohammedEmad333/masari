@@ -3,7 +3,7 @@
 ## 2.2.18
 
 - Update the course ZIP `archive` dependency to 4.6.0, preserving the existing import and share workflow.
-- Add regression coverage for duplicate ZIP entries so malformed course archives are rejected before importing files.
+- Add regression coverage for ZIP manifests referencing missing attachments, rejecting invalid imports without changing local course data.
 - Retain the verified Oracle accounts and AI endpoints, existing official signing identity, and all user data.
 
 ## 2.2.17

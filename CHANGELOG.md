@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.18
+
+- Update the course ZIP `archive` dependency to 4.6.0, preserving the existing import and share workflow.
+- Add regression coverage for ZIP manifests referencing missing attachments, rejecting invalid imports without changing local course data.
+- Retain the verified Oracle accounts and AI endpoints, existing official signing identity, and all user data.
+
 ## 2.2.17
 
 - Enable the production Oracle account API alongside the AI assistant in all official signed Android APK and Google Play AAB builds, matching the successfully device-tested Oracle accounts and AI configuration.

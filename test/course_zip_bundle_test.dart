@@ -62,6 +62,37 @@ void main() {
     );
   });
 
+  test('rejects missing ZIP attachment without modifying courses', () async {
+    final manifest = utf8.encode(
+      jsonEncode({
+        'v': 1,
+        'name': 'Missing attachment',
+        'chapters': [
+          {
+            'name': 'Chapter',
+            'resources': [
+              {'title': 'Missing.pdf', 'file': 'files/1'},
+            ],
+          },
+        ],
+      }),
+    );
+    final archive = Archive()
+      ..addFile(ArchiveFile('course.json', manifest.length, manifest));
+    final zip = File('${sandbox.path}/missing-attachment.zip');
+    await zip.writeAsBytes(ZipEncoder().encode(archive));
+
+    await expectLater(
+      CourseZipBundle.previewCourse(zip),
+      throwsFormatException,
+    );
+    await expectLater(
+      CourseZipBundle.importCourse(zip, library),
+      throwsFormatException,
+    );
+    expect(await library.load(), isEmpty);
+  });
+
   test('rejects invalid ZIP paths before touching storage', () async {
     final archive = Archive()
       ..addFile(ArchiveFile('../outside', 3, utf8.encode('bad')));

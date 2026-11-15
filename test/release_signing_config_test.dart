@@ -35,7 +35,7 @@ void main() {
 
   test('next Masari release increments its Android version code', () {
     final yaml = File('pubspec.yaml').readAsStringSync();
-    expect(yaml, contains('version: 2.2.17+21'));
+    expect(yaml, contains('version: 2.2.18+22'));
   });
 
   test('every official signed build uses Oracle account and AI endpoints', () {

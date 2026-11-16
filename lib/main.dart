@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app_controller.dart';
 import 'screens/home_shell.dart';
 import 'screens/local_courses_screen.dart';
+import 'theme/masari_theme.dart';
 import 'services/background_sync_service.dart';
 import 'services/calendar_repository.dart';
 import 'services/notification_service.dart';
@@ -107,8 +108,8 @@ class MoodleReminderApp extends StatelessWidget {
             GlobalCupertinoLocalizations.delegate,
           ],
           themeMode: controller.themeMode,
-          theme: _theme(Brightness.light),
-          darkTheme: _theme(Brightness.dark),
+          theme: MasariTheme.light,
+          darkTheme: MasariTheme.dark,
           home: controller.startupError == null
               ? HomeShell(controller: controller)
               : _StartupFailure(controller: controller),
@@ -117,24 +118,7 @@ class MoodleReminderApp extends StatelessWidget {
     );
   }
 
-  ThemeData _theme(Brightness brightness) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF0D63C8),
-      brightness: brightness,
-    );
 
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      brightness: brightness,
-      scaffoldBackgroundColor: scheme.surface,
-      appBarTheme: const AppBarTheme(centerTitle: false),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-    );
-  }
 }
 
 class _StartupFailure extends StatelessWidget {

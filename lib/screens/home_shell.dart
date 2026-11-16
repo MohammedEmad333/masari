@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_controller.dart';
+import '../theme/masari_components.dart';
+import '../theme/masari_theme.dart';
 import '../models/deadline.dart';
 import '../services/notification_service.dart';
 import '../services/oracle_account_client.dart';
@@ -1489,48 +1491,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     );
   }
 
-  Widget _section(String title, String count) => Row(
-    children: [
-      Expanded(
-        child: Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-        ),
-      ),
-      Badge(label: Text(count)),
-    ],
-  );
+  Widget _section(String title, String count) =>
+      MasariSectionHeader(title: title, count: count);
 
-  Widget _empty(IconData icon, String title, String subtitle) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          Icon(icon, size: 42, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 10),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(subtitle, textAlign: TextAlign.center),
-        ],
-      ),
-    ),
-  );
+  Widget _empty(IconData icon, String title, String subtitle) =>
+      MasariEmptyState(icon: icon, title: title, description: subtitle);
 
-  Widget _settingsCard(String title, Widget child) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
-    ),
-  );
+  Widget _settingsCard(String title, Widget child) =>
+      MasariSettingsSection(title: title, child: child);
 
   String _offsetLabel(int hours) {
     if (hours % 24 == 0) {
@@ -2106,13 +2074,13 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const start = Color(0xFF1379D6);
-    const end = Color(0xFF0A316F);
+    const start = MasariColors.primary;
+    const end = MasariColors.navy;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [start, end]),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(MasariRadii.lg),
       ),
       child: DefaultTextStyle.merge(
         style: const TextStyle(color: Colors.white),

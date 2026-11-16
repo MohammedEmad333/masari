@@ -41,8 +41,9 @@ jobs:
             echo "::error::Expected Masari Google Play application ID is missing."
             exit 1
           fi
-          if ! grep -Fq 'val playStoreBuild = System.getenv("PLAY_STORE_BUILD") == "true"' android/app/build.gradle.kts; then
-            echo "::error::Play build identity selector is missing."
+          if ! grep -Fq 'val playSigningRequested = !ciSmokeBuild' android/app/build.gradle.kts || \
+             ! grep -Fq 'System.getenv("MASARI_CI_SMOKE_BUILD") == "true"' android/app/build.gradle.kts; then
+            echo "::error::Release signing guard or CI-only selector is missing."
             exit 1
           fi
       - name: Install dependencies and verify

@@ -234,10 +234,20 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
           'The assistant connection is not configured in this build.',
           'اتصال المساعد غير مُعدّ في هذه النسخة.',
         );
+      case 'app_check_token_unavailable':
+        return t(
+          'Could not verify this device with Play Integrity. Check Google Play services and try again.',
+          'تعذّر التحقق من الجهاز عبر Play Integrity. تحقق من خدمات Google Play وحاول مجددًا.',
+        );
       case 'app_check_failed':
         return t(
-          'App verification failed. Check Play Integrity registration or your device.',
-          'فشل التحقق من التطبيق. افحص تسجيل Play Integrity أو جهازك.',
+          'App verification was rejected by the server. Check your app registration.',
+          'رفض الخادم التحقق من التطبيق. تحقق من تسجيل التطبيق.',
+        );
+      case 'oracle_access_denied':
+        return t(
+          'The Masari server denied this request. Check your account access.',
+          'رفض خادم مساري هذا الطلب. تحقق من صلاحيات حسابك.',
         );
       case 'oracle_session_expired':
         return t(

@@ -165,10 +165,10 @@ class AiAssistantClient {
       try {
         appCheckToken = await _appCheckTokenProvider();
       } catch (_) {
-        throw const AiAssistantException('app_check_failed');
+        throw const AiAssistantException('app_check_token_unavailable');
       }
       if (appCheckToken == null || appCheckToken.isEmpty) {
-        throw const AiAssistantException('app_check_failed');
+        throw const AiAssistantException('app_check_token_unavailable');
       }
     }
 
@@ -221,7 +221,9 @@ class AiAssistantClient {
       throw const AiAssistantException('sign_in_required');
     }
     if (response.statusCode == 403) {
-      throw const AiAssistantException('app_check_failed');
+      throw AiAssistantException(
+        oracleSession != null ? 'oracle_access_denied' : 'app_check_failed',
+      );
     }
     if (response.statusCode == 429) {
       throw const AiAssistantException('quota_exceeded');

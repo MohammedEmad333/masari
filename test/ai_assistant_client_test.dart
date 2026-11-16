@@ -171,4 +171,116 @@ void main() {
       expect(firebaseCalls, 0);
     },
   );
+
+  test('missing App Check token blocks Firebase request before HTTP', () async {
+    var calls = 0;
+    final client = AiAssistantClient(
+      client: MockClient((_) async {
+        calls++;
+        return http.Response('{}', 200);
+      }),
+      endpoint: endpoint,
+      tokenProvider: () async => 'firebase-id-token',
+      appCheckTokenProvider: () async => null,
+      oracleSessionProvider: () async => null,
+    );
+    await expectLater(
+      client.ask(message: 'Help', language: 'en', consent: true),
+      throwsA(
+        isA<AiAssistantException>().having(
+          (error) => error.code,
+          'code',
+          'app_check_token_unavailable',
+        ),
+      ),
+    );
+    expect(calls, 0);
+    client.dispose();
+  });
+
+  test('App Check retrieval failure never sends Firebase request', () async {
+    var calls = 0;
+    final client = AiAssistantClient(
+      client: MockClient((_) async {
+        calls++;
+        return http.Response('{}', 200);
+      }),
+      endpoint: endpoint,
+      tokenProvider: () async => 'firebase-id-token',
+      appCheckTokenProvider: () async => throw StateError('integrity failed'),
+      oracleSessionProvider: () async => null,
+    );
+    await expectLater(
+      client.ask(message: 'Help', language: 'en', consent: true),
+      throwsA(
+        isA<AiAssistantException>().having(
+          (error) => error.code,
+          'code',
+          'app_check_token_unavailable',
+        ),
+      ),
+    );
+    expect(calls, 0);
+    client.dispose();
+  });
+
+  test('Firebase HTTP 403 is distinct from device token retrieval', () async {
+    var calls = 0;
+    final client = AiAssistantClient(
+      client: MockClient((request) async {
+        calls++;
+        expect(request.headers['x-firebase-appcheck'], 'valid-app-check');
+        return http.Response('{}', 403);
+      }),
+      endpoint: endpoint,
+      tokenProvider: () async => 'firebase-id-token',
+      appCheckTokenProvider: () async => 'valid-app-check',
+      oracleSessionProvider: () async => null,
+    );
+    await expectLater(
+      client.ask(message: 'Help', language: 'en', consent: true),
+      throwsA(
+        isA<AiAssistantException>().having(
+          (error) => error.code,
+          'code',
+          'app_check_failed',
+        ),
+      ),
+    );
+    expect(calls, 1);
+    client.dispose();
+  });
+
+  test('Oracle HTTP 403 never blames Firebase App Check', () async {
+    var calls = 0;
+    final bearer = 'msr_${List.filled(64, 'c').join()}';
+    final client = AiAssistantClient(
+      client: MockClient((request) async {
+        calls++;
+        expect(request.headers['authorization'], 'Bearer $bearer');
+        expect(request.headers.containsKey('x-firebase-appcheck'), false);
+        return http.Response('{}', 403);
+      }),
+      endpoint: endpoint,
+      tokenProvider: () async => throw StateError('Firebase must not run'),
+      appCheckTokenProvider: () async =>
+          throw StateError('App Check must not run'),
+      oracleSessionProvider: () async => OracleAiSession(
+        bearer,
+        DateTime.now().toUtc().add(const Duration(minutes: 10)),
+      ),
+    );
+    await expectLater(
+      client.ask(message: 'Help', language: 'en', consent: true),
+      throwsA(
+        isA<AiAssistantException>().having(
+          (error) => error.code,
+          'code',
+          'oracle_access_denied',
+        ),
+      ),
+    );
+    expect(calls, 1);
+    client.dispose();
+  });
 }

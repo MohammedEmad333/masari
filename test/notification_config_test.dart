@@ -36,4 +36,29 @@ void main() {
       contains('static Future<void> showTest({bool arabic = false})'),
     );
   });
+
+  test('notification plugin 23 retains Android reboot and alarm behavior', () {
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+    final settings = File('android/settings.gradle.kts').readAsStringSync();
+    final service = File(
+      'lib/services/notification_service.dart',
+    ).readAsStringSync();
+
+    expect(pubspec, contains('flutter_local_notifications: ^23.0.0'));
+    expect(gradle, contains('compileSdk = 37'));
+    expect(gradle, contains('targetSdk = 36'));
+    expect(settings, contains('version "9.1.1"'));
+    expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
+    expect(manifest, contains('android.permission.RECEIVE_BOOT_COMPLETED'));
+    expect(manifest, contains('ScheduledNotificationReceiver'));
+    expect(manifest, contains('ScheduledNotificationBootReceiver'));
+    expect(manifest, contains('android.intent.action.BOOT_COMPLETED'));
+    expect(manifest, contains('android.intent.action.MY_PACKAGE_REPLACED'));
+    expect(service, contains('AndroidScheduleMode.inexactAllowWhileIdle'));
+    expect(service, contains('await _plugin.cancelAll()'));
+  });
 }

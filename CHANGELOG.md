@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.19
+
+- Update the Firebase Core, Authentication, App Check, and Cloud Firestore packages together, with Kotlin 2.4 and Android Gradle Plugin 9 compatibility.
+- Update flutter_local_notifications to 23.0.0 and compile against Android SDK 37, preserving targetSdk 36 and existing notification permissions.
+- Distinguish missing App Check tokens, rejected Firebase-backed HTTP 403 requests, and Oracle session access denials without bypassing authentication or exposing tokens.
+- Fix the Google Play AAB build guard to verify the active release signing configuration instead of a deleted Gradle variable.
+- Add release, notification, and AI authentication regression tests. Real-device validation of sign-in, backup, reminders, and AI is required before publishing.
+- Preserve existing offline data, course ZIP safety, stable Android package ID, and registered upload signing identity.
+
 ## 2.2.18
 
 - Update the course ZIP `archive` dependency to 4.6.0, preserving the existing import and share workflow.

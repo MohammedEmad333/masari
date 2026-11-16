@@ -8,7 +8,10 @@ void main() {
   test('every Android variant uses one application ID', () {
     final gradle = readProjectFile('android/app/build.gradle.kts');
 
-    expect(gradle, contains('System.getenv("PLAY_STORE_BUILD") == "true"'));
+    expect(
+      gradle,
+      contains('System.getenv("MASARI_CI_SMOKE_BUILD") == "true"'),
+    );
     expect(gradle, contains('applicationId = "com.mohammedemad333.masari"'));
     expect(gradle, contains('"com.mohammedemad333.masari"'));
     expect(gradle, isNot(contains('applicationId = if (playStoreBuild)')));

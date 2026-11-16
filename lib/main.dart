@@ -117,8 +117,6 @@ class MoodleReminderApp extends StatelessWidget {
       },
     );
   }
-
-
 }
 
 class _StartupFailure extends StatelessWidget {

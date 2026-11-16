@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.moodle_reminder"
-    compileSdk = 36
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

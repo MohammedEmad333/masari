@@ -2,6 +2,12 @@ name: Google Oracle test APK (manual)
 
 on:
   workflow_dispatch:
+  # Run one signed device-QA build from the isolated Masari 2.2.19 candidate.
+  push:
+    branches:
+      - qa/masari-2.2.19-signed-device-test-20261116
+    paths:
+      - .github/workflows/google-oracle-test-apk.yml
 
 permissions:
   contents: read

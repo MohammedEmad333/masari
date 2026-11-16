@@ -37,15 +37,16 @@ abstract final class MasariTheme {
     final primary = dark ? MasariColors.primaryDark : MasariColors.primary;
     final canvas = dark ? MasariColors.canvasDark : MasariColors.canvasLight;
     final surface = dark ? MasariColors.surfaceDark : MasariColors.surfaceLight;
-    final scheme = ColorScheme.fromSeed(
-      seedColor: MasariColors.primary,
-      brightness: brightness,
-    ).copyWith(
-      primary: primary,
-      onPrimary: dark ? MasariColors.canvasDark : Colors.white,
-      surface: surface,
-      onSurface: dark ? Colors.white : MasariColors.navy,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: MasariColors.primary,
+          brightness: brightness,
+        ).copyWith(
+          primary: primary,
+          onPrimary: dark ? MasariColors.canvasDark : Colors.white,
+          surface: surface,
+          onSurface: dark ? Colors.white : MasariColors.navy,
+        );
 
     return ThemeData(
       useMaterial3: true,

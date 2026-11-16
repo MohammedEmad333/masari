@@ -16,13 +16,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
 
     // All build variants share the same permanent Android application ID.
     // CI-only smoke builds use a temporary key and are never distributed.
-    val playStoreBuild = System.getenv("PLAY_STORE_BUILD") == "true"
     val ciSmokeBuild = System.getenv("MASARI_CI_SMOKE_BUILD") == "true"
 
     defaultConfig {
@@ -66,6 +62,12 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 

@@ -26,17 +26,11 @@ void main() {
     for (final theme in [MasariTheme.light, MasariTheme.dark]) {
       expect(theme.useMaterial3, isTrue);
       expect(
-        contrastRatio(
-          theme.colorScheme.onSurface,
-          theme.colorScheme.surface,
-        ),
+        contrastRatio(theme.colorScheme.onSurface, theme.colorScheme.surface),
         greaterThanOrEqualTo(4.5),
       );
       expect(
-        contrastRatio(
-          theme.colorScheme.onPrimary,
-          theme.colorScheme.primary,
-        ),
+        contrastRatio(theme.colorScheme.onPrimary, theme.colorScheme.primary),
         greaterThanOrEqualTo(4.5),
       );
       expect(theme.navigationBarTheme.height, 80);

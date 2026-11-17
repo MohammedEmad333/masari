@@ -21,6 +21,7 @@ import '../services/automatic_google_sync.dart';
 import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
+import '../services/calendar_agenda.dart';
 import '../services/manual_task_form.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
@@ -36,6 +37,7 @@ import 'assistant_preview_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'masari_study_overview.dart';
 import 'masari_task_filter_summary.dart';
+import 'masari_agenda_day_header.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -884,26 +886,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final active = widget.controller.activeDeadlines
         .where((d) => !d.isPast)
         .toList();
-    final items = active.where((deadline) {
-      final d = deadline.due;
-      return d.year == _selectedDate.year &&
-          d.month == _selectedDate.month &&
-          d.day == _selectedDate.day;
-    }).toList();
-
-    final futureAfterSelected = active.where((deadline) {
-      final selectedDay = DateTime(
-        _selectedDate.year,
-        _selectedDate.month,
-        _selectedDate.day,
-      );
-      final dueDay = DateTime(
-        deadline.due.year,
-        deadline.due.month,
-        deadline.due.day,
-      );
-      return dueDay.isAfter(selectedDay);
-    }).toList();
+    final items = deadlinesOnDay(active, _selectedDate);
+    final nextAfterSelected = nextDeadlineAfterDay(active, _selectedDate);
+    final now = DateTime.now();
+    final isToday = _sameDay(_selectedDate, now);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -921,23 +907,26 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           ),
         ),
         const SizedBox(height: 16),
-        _section(
-          DateFormat.yMMMMd(_localeName).format(_selectedDate),
-          '${items.length}',
+        MasariAgendaDayHeader(
+          dateLabel: DateFormat.yMMMMd(_localeName).format(_selectedDate),
+          eventCount: items.length,
+          isToday: isToday,
+          arabic: _ar,
+          onToday: () => setState(() => _selectedDate = DateTime.now()),
         ),
         const SizedBox(height: 8),
         if (items.isEmpty)
           _empty(
             Icons.event_available_outlined,
             t('Nothing due on this day', 'لا يوجد تسليم في هذا اليوم'),
-            futureAfterSelected.isEmpty
+            nextAfterSelected == null
                 ? t(
                     'Choose another date to inspect your agenda.',
                     'اختر تاريخًا آخر لعرض المواعيد.',
                   )
                 : t(
-                    'Next deadline: ${DateFormat.MMMd('en').format(futureAfterSelected.first.due)}',
-                    'الموعد القادم: ${DateFormat.MMMMd('ar').format(futureAfterSelected.first.due)}',
+                    'Next deadline: ${DateFormat.MMMd('en').format(nextAfterSelected.due)}',
+                    'الموعد القادم: ${DateFormat.MMMMd('ar').format(nextAfterSelected.due)}',
                   ),
           )
         else

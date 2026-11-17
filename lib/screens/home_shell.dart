@@ -629,9 +629,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             ),
           ],
           const SizedBox(height: 16),
-          MasariSectionHeader(
-            title: t('Study insights', 'إحصائيات الدراسة'),
-          ),
+          MasariSectionHeader(title: t('Study insights', 'إحصائيات الدراسة')),
           const SizedBox(height: 12),
           MasariStudyOverview(
             arabic: _ar,

@@ -20,5 +20,7 @@ List<LocalCourse> searchLocalCourses(
   }).toList();
 }
 
-int localCourseMaterialCount(LocalCourse course) =>
-    course.chapters.fold<int>(0, (sum, chapter) => sum + chapter.materials.length);
+int localCourseMaterialCount(LocalCourse course) => course.chapters.fold<int>(
+  0,
+  (sum, chapter) => sum + chapter.materials.length,
+);

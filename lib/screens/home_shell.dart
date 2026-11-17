@@ -35,6 +35,7 @@ import 'oracle_cloud_backup_screen.dart';
 import 'assistant_preview_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'masari_study_overview.dart';
+import 'masari_task_filter_summary.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -723,6 +724,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       query: _searchQuery,
       course: selectedCourse,
     );
+    final completed = filterDeadlines(
+      controller.completedDeadlines,
+      query: _searchQuery,
+      course: selectedCourse,
+    );
+    final hasFilters = _searchQuery.trim().isNotEmpty || selectedCourse != null;
+    final today = deadlines
+        .where((d) => _sameDay(d.due, DateTime.now()))
+        .toList();
     final archiveCutoff = DateTime.now().subtract(const Duration(days: 7));
     final overdue = deadlines
         .where((d) => d.isPast && !d.due.isBefore(archiveCutoff))
@@ -756,12 +766,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         const SizedBox(height: 12),
         _section(
           t('My tasks today', 'مهامي اليوم'),
-          '${active.where((d) => _sameDay(d.due, DateTime.now())).length}',
+          '${today.length}',
         ),
         const SizedBox(height: 8),
-        ...active
-            .where((d) => _sameDay(d.due, DateTime.now()))
-            .map(_deadlineCard),
+        ...today.map(_deadlineCard),
         const SizedBox(height: 16),
         TextField(
           decoration: InputDecoration(
@@ -795,6 +803,24 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             _selectedCourse = value == null || value.isEmpty ? null : value;
           }),
         ),
+        if (hasFilters)
+          MasariTaskFilterSummary(
+            arabic: _ar,
+            results: deadlines.length + completed.length,
+            onReset: () => setState(() {
+              _searchQuery = '';
+              _selectedCourse = null;
+            }),
+          ),
+        if (hasFilters && deadlines.isEmpty && completed.isEmpty)
+          _empty(
+            Icons.search_off_rounded,
+            t('No matching tasks', 'لا توجد مهام مطابقة'),
+            t(
+              'Try a different search or clear your filters.',
+              'جرّب بحثًا آخر أو امسح التصفية.',
+            ),
+          ),
         if (overdue.isNotEmpty) ...[
           const SizedBox(height: 18),
           _section(t('Overdue', 'مهام متأخرة'), '${overdue.length}'),
@@ -826,22 +852,23 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         if (upcoming.isEmpty)
           _empty(
             Icons.task_alt_rounded,
-            t('You are all caught up', 'لا توجد مواعيد قادمة'),
-            t(
-              'Pull down to sync your Moodle calendar.',
-              'اسحب للأسفل لمزامنة تقويم Moodle.',
-            ),
+            hasFilters
+                ? t('No matching upcoming tasks', 'لا توجد مهام قادمة مطابقة')
+                : t('You are all caught up', 'لا توجد مواعيد قادمة'),
+            hasFilters
+                ? t('Adjust your search or course filter.', 'عدّل البحث أو تصفية المساق.')
+                : t(
+                    'Pull down to sync your Moodle calendar.',
+                    'اسحب للأسفل لمزامنة تقويم Moodle.',
+                  ),
           )
         else
           ...upcoming.take(15).map(_deadlineCard),
-        if (controller.completedDeadlines.isNotEmpty) ...[
+        if (completed.isNotEmpty) ...[
           const SizedBox(height: 18),
-          _section(
-            t('Completed', 'المكتملة'),
-            '${controller.completedDeadlines.length}',
-          ),
+          _section(t('Completed', 'المكتملة'), '${completed.length}'),
           const SizedBox(height: 8),
-          ...controller.completedDeadlines.take(5).map(_deadlineCard),
+          ...completed.take(5).map(_deadlineCard),
         ],
       ],
     );

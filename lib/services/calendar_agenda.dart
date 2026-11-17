@@ -3,7 +3,9 @@ import '../models/deadline.dart';
 /// Read-only agenda selectors. The caller supplies active deadlines, so
 /// selecting a date never changes saved tasks or notification schedules.
 List<Deadline> deadlinesOnDay(Iterable<Deadline> deadlines, DateTime day) {
-  final result = deadlines.where((deadline) => _sameDay(deadline.due, day)).toList();
+  final result = deadlines
+      .where((deadline) => _sameDay(deadline.due, day))
+      .toList();
   result.sort((a, b) => a.due.compareTo(b.due));
   return result;
 }

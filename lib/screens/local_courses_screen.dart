@@ -684,7 +684,10 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                   onChanged: (value) => setState(() => _courseQuery = value),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search_rounded),
-                    labelText: t('Search study library', 'ابحث في المكتبة الدراسية'),
+                    labelText: t(
+                      'Search study library',
+                      'ابحث في المكتبة الدراسية',
+                    ),
                     suffixIcon: _courseQuery.isEmpty
                         ? null
                         : IconButton(
@@ -713,9 +716,14 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                   Card(
                     child: ListTile(
                       leading: const Icon(Icons.search_off_rounded),
-                      title: Text(t('No matching courses', 'لا توجد مساقات مطابقة')),
+                      title: Text(
+                        t('No matching courses', 'لا توجد مساقات مطابقة'),
+                      ),
                       subtitle: Text(
-                        t('Try a different course, chapter or material name.', 'جرّب اسم مساق أو فصل أو مادة أخرى.'),
+                        t(
+                          'Try a different course, chapter or material name.',
+                          'جرّب اسم مساق أو فصل أو مادة أخرى.',
+                        ),
                       ),
                     ),
                   ),

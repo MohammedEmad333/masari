@@ -766,10 +766,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           ),
         ),
         const SizedBox(height: 12),
-        _section(
-          t('My tasks today', 'مهامي اليوم'),
-          '${today.length}',
-        ),
+        _section(t('My tasks today', 'مهامي اليوم'), '${today.length}'),
         const SizedBox(height: 8),
         ...today.map(_deadlineCard),
         const SizedBox(height: 16),
@@ -862,7 +859,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 ? t('No matching upcoming tasks', 'لا توجد مهام قادمة مطابقة')
                 : t('You are all caught up', 'لا توجد مواعيد قادمة'),
             hasFilters
-                ? t('Adjust your search or course filter.', 'عدّل البحث أو تصفية المساق.')
+                ? t(
+                    'Adjust your search or course filter.',
+                    'عدّل البحث أو تصفية المساق.',
+                  )
                 : t(
                     'Pull down to sync your Moodle calendar.',
                     'اسحب للأسفل لمزامنة تقويم Moodle.',

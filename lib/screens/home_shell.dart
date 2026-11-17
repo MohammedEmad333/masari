@@ -81,6 +81,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _taskSearchController.dispose();
     _oracleAutoSync.dispose();
     widget.controller.removeListener(_onDataChanged);
     WidgetsBinding.instance.removeObserver(this);
@@ -88,6 +89,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   int _index = MasariTab.home.index;
+  final _taskSearchController = TextEditingController();
   MasariScheduleView _scheduleView = MasariScheduleView.calendar;
   String _searchQuery = '';
   String? _selectedCourse;
@@ -772,6 +774,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         ...today.map(_deadlineCard),
         const SizedBox(height: 16),
         TextField(
+          controller: _taskSearchController,
           decoration: InputDecoration(
             prefixIcon: const Icon(Icons.search_rounded),
             labelText: t('Search deadlines', 'ابحث عن المهام'),
@@ -807,10 +810,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           MasariTaskFilterSummary(
             arabic: _ar,
             results: deadlines.length + completed.length,
-            onReset: () => setState(() {
-              _searchQuery = '';
-              _selectedCourse = null;
-            }),
+            onReset: () {
+              _taskSearchController.clear();
+              setState(() {
+                _searchQuery = '';
+                _selectedCourse = null;
+              });
+            },
           ),
         if (hasFilters && deadlines.isEmpty && completed.isEmpty)
           _empty(

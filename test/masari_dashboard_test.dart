@@ -18,12 +18,12 @@ void main() {
               theme: dark ? MasariTheme.dark : MasariTheme.light,
               home: Directionality(
                 textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
-                child: const Scaffold(
+                child: Scaffold(
                   body: SingleChildScrollView(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       child: MasariStudyOverview(
-                        arabic: true,
+                        arabic: arabic,
                         completionPercent: 75,
                         dueSoonCount: 3,
                         overdueCount: 0,

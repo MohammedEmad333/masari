@@ -131,13 +131,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       ),
       body: IndexedStack(
         index: _index,
-        children: [
-          _home(),
-          _tasks(),
-          _schedule(),
-          _courses(),
-          _settings(),
-        ],
+        children: [_home(), _tasks(), _schedule(), _courses(), _settings()],
       ),
       bottomNavigationBar: MasariPrimaryNavigation(
         selectedIndex: _index,
@@ -189,9 +183,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   Future<void> _openAiAssistant() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => AiAssistantScreen(arabic: _ar),
-      ),
+      MaterialPageRoute<void>(builder: (_) => AiAssistantScreen(arabic: _ar)),
     );
   }
 

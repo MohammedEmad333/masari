@@ -34,6 +34,7 @@ import 'cloud_backup_screen.dart';
 import 'oracle_cloud_backup_screen.dart';
 import 'assistant_preview_screen.dart';
 import 'ai_assistant_screen.dart';
+import 'masari_study_overview.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -628,15 +629,16 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             ),
           ],
           const SizedBox(height: 16),
-          ListTile(
-            leading: const Icon(Icons.insights_rounded),
-            title: Text(t('Study insights', 'إحصائيات الدراسة')),
-            subtitle: Text(
-              t(
-                '$completionPercent% completed • $overdueCount overdue • $dueSoonCount due within 7 days • ${conflicts.length} conflicts',
-                'الإنجاز $completionPercent% • المتأخرة $overdueCount • خلال 7 أيام $dueSoonCount • التعارضات ${conflicts.length}',
-              ),
-            ),
+          MasariSectionHeader(
+            title: t('Study insights', 'إحصائيات الدراسة'),
+          ),
+          const SizedBox(height: 12),
+          MasariStudyOverview(
+            arabic: _ar,
+            completionPercent: completionPercent,
+            dueSoonCount: dueSoonCount,
+            overdueCount: overdueCount,
+            conflictCount: conflicts.length,
           ),
           const SizedBox(height: 12),
           ListTile(

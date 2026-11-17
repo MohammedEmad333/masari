@@ -13,6 +13,7 @@ import '../app_controller.dart';
 import '../theme/masari_components.dart';
 import '../theme/masari_theme.dart';
 import '../models/deadline.dart';
+import '../navigation/masari_navigation.dart';
 import '../services/notification_service.dart';
 import '../services/oracle_account_client.dart';
 import '../services/oracle_automatic_sync.dart';
@@ -32,6 +33,7 @@ import 'oracle_account_screen.dart';
 import 'cloud_backup_screen.dart';
 import 'oracle_cloud_backup_screen.dart';
 import 'assistant_preview_screen.dart';
+import 'ai_assistant_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -83,7 +85,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  int _index = 0;
+  int _index = MasariTab.home.index;
+  MasariScheduleView _scheduleView = MasariScheduleView.calendar;
   String _searchQuery = '';
   String? _selectedCourse;
   String _courseCalendarFilter = 'all';
@@ -105,65 +108,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final titles = [
       t('Home', 'الرئيسية'),
       t('Tasks', 'المهام'),
-      t('Study plan', 'خطة الدراسة'),
-      t('Calendar', 'التقويم'),
+      t('Schedule', 'جدولي'),
       t('Courses', 'المساقات'),
-      t('Settings', 'الإعدادات'),
+      t('More', 'المزيد'),
     ];
 
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(titles[_index]),
         actions: [
-          IconButton(
-            tooltip: t('Cloud backup', 'النسخ الاحتياطي السحابي'),
-            icon: const Icon(Icons.cloud_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => OracleAccountClient.enabled
-                    ? OracleCloudBackupScreen(
-                        controller: controller,
-                        arabic: _ar,
-                        autoSync: _oracleAutoSync,
-                      )
-                    : CloudBackupScreen(
-                        controller: controller,
-                        arabic: _ar,
-                        autoSync: _autoSync,
-                      ),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: t('Google account', 'حساب Google'),
-            icon: const Icon(Icons.account_circle_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => OracleAccountClient.enabled
-                    ? OracleAccountScreen(
-                        arabic: _ar,
-                        autoSync: _oracleAutoSync,
-                      )
-                    : GoogleAccountScreen(arabic: _ar),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip: t('Task plans', 'خطط المهام'),
-            icon: const Icon(Icons.account_tree_outlined),
-            onPressed: () async {
-              await Navigator.of(context).push<void>(
-                MaterialPageRoute<void>(
-                  builder: (_) => TaskPlansScreen(
-                    deadlines: controller.allDeadlines,
-                    arabic: _ar,
-                  ),
-                ),
-              );
-              _onDataChanged();
-            },
-          ),
           IconButton(
             tooltip: t('Sync now', 'مزامنة الآن'),
             onPressed: controller.busy || !_canSync ? null : _sync,
@@ -181,49 +134,84 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         children: [
           _home(),
           _tasks(),
-          _plan(),
-          _calendar(),
+          _schedule(),
           _courses(),
           _settings(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: MasariPrimaryNavigation(
         selectedIndex: _index,
-        indicatorColor: scheme.primary.withValues(alpha: .22),
         onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home_rounded),
-            label: t('Home', 'الرئيسية'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.task_alt_outlined),
-            selectedIcon: const Icon(Icons.task_alt_rounded),
-            label: t('Tasks', 'المهام'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.menu_book_outlined),
-            selectedIcon: const Icon(Icons.menu_book_rounded),
-            label: t('Plan', 'الخطة'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month_rounded),
-            label: t('Calendar', 'التقويم'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.school_outlined),
-            selectedIcon: const Icon(Icons.school_rounded),
-            label: t('Courses', 'المساقات'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings_rounded),
-            label: t('Settings', 'الإعدادات'),
-          ),
-        ],
+        arabic: _ar,
       ),
+    );
+  }
+
+  Future<void> _openCloudBackup() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => OracleAccountClient.enabled
+            ? OracleCloudBackupScreen(
+                controller: widget.controller,
+                arabic: _ar,
+                autoSync: _oracleAutoSync,
+              )
+            : CloudBackupScreen(
+                controller: widget.controller,
+                arabic: _ar,
+                autoSync: _autoSync,
+              ),
+      ),
+    );
+  }
+
+  Future<void> _openAccount() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => OracleAccountClient.enabled
+            ? OracleAccountScreen(arabic: _ar, autoSync: _oracleAutoSync)
+            : GoogleAccountScreen(arabic: _ar),
+      ),
+    );
+  }
+
+  Future<void> _openTaskPlans() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => TaskPlansScreen(
+          deadlines: widget.controller.allDeadlines,
+          arabic: _ar,
+        ),
+      ),
+    );
+    if (mounted) _onDataChanged();
+  }
+
+  Future<void> _openAiAssistant() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => AiAssistantScreen(arabic: _ar),
+      ),
+    );
+  }
+
+  Widget _schedule() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: MasariSchedulePicker(
+            value: _scheduleView,
+            arabic: _ar,
+            onChanged: (value) => setState(() => _scheduleView = value),
+          ),
+        ),
+        Expanded(
+          child: _scheduleView == MasariScheduleView.calendar
+              ? _calendar()
+              : _plan(),
+        ),
+      ],
     );
   }
 
@@ -669,7 +657,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               ),
             ),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => setState(() => _index = 1),
+            onTap: () => setState(() => _index = MasariTab.tasks.index),
           ),
           ListTile(
             leading: const Icon(Icons.menu_book_rounded),
@@ -678,7 +666,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               t('Review your weekly schedule', 'راجع جدول المذاكرة الأسبوعي'),
             ),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => setState(() => _index = 2),
+            onTap: () => setState(() {
+              _index = MasariTab.schedule.index;
+              _scheduleView = MasariScheduleView.week;
+            }),
           ),
         ],
       ),
@@ -1265,6 +1256,41 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
+        _settingsCard(
+          t('Quick access', 'وصول سريع'),
+          Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.account_circle_outlined),
+                title: Text(
+                  OracleAccountClient.enabled
+                      ? t('Masari account', 'حساب مساري')
+                      : t('Google account', 'حساب Google'),
+                ),
+                onTap: _openAccount,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.cloud_outlined),
+                title: Text(t('Cloud backup', 'النسخ الاحتياطي السحابي')),
+                onTap: _openCloudBackup,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.account_tree_outlined),
+                title: Text(t('Task plans', 'خطط المهام')),
+                onTap: _openTaskPlans,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.auto_awesome_outlined),
+                title: Text(t('Study assistant', 'المساعد الدراسي')),
+                onTap: _openAiAssistant,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
         _settingsCard(
           t('Moodle calendar', 'تقويم Moodle'),
           Column(

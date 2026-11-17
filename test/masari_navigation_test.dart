@@ -4,16 +4,13 @@ import 'package:moodle_reminder/navigation/masari_navigation.dart';
 
 void main() {
   test('five destinations preserve the expected order', () {
-    expect(
-      MasariTab.values,
-      [
-        MasariTab.home,
-        MasariTab.tasks,
-        MasariTab.schedule,
-        MasariTab.courses,
-        MasariTab.more,
-      ],
-    );
+    expect(MasariTab.values, [
+      MasariTab.home,
+      MasariTab.tasks,
+      MasariTab.schedule,
+      MasariTab.courses,
+      MasariTab.more,
+    ]);
   });
 
   for (final arabic in [false, true]) {
@@ -69,8 +66,7 @@ void main() {
                     child: MasariSchedulePicker(
                       value: selected,
                       arabic: arabic,
-                      onChanged: (value) =>
-                          setState(() => selected = value),
+                      onChanged: (value) => setState(() => selected = value),
                     ),
                   ),
                 ),

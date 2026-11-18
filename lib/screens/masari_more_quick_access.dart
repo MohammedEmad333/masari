@@ -20,8 +20,7 @@ class MasariMoreQuickAccess extends StatelessWidget {
   final VoidCallback onTaskPlans;
   final VoidCallback onAssistant;
 
-  String tr(String english, String arabicText) =>
-      arabic ? arabicText : english;
+  String tr(String english, String arabicText) => arabic ? arabicText : english;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +34,9 @@ class MasariMoreQuickAccess extends StatelessWidget {
                 ? tr('Masari account', 'حساب مساري')
                 : tr('Google account', 'حساب Google'),
           ),
-          subtitle: Text(tr('Sign in and manage your account', 'تسجيل الدخول وإدارة الحساب')),
+          subtitle: Text(
+            tr('Sign in and manage your account', 'تسجيل الدخول وإدارة الحساب'),
+          ),
           trailing: Icon(
             arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
           ),
@@ -46,7 +47,12 @@ class MasariMoreQuickAccess extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           leading: const Icon(Icons.cloud_outlined),
           title: Text(tr('Cloud backup', 'النسخ الاحتياطي السحابي')),
-          subtitle: Text(tr('Review and restore saved backups', 'عرض النسخ المحفوظة واستعادتها')),
+          subtitle: Text(
+            tr(
+              'Review and restore saved backups',
+              'عرض النسخ المحفوظة واستعادتها',
+            ),
+          ),
           trailing: Icon(
             arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
           ),
@@ -57,7 +63,12 @@ class MasariMoreQuickAccess extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           leading: const Icon(Icons.account_tree_outlined),
           title: Text(tr('Task plans', 'خطط المهام')),
-          subtitle: Text(tr('Review steps and study progress', 'مراجعة الخطوات وتقدم الدراسة')),
+          subtitle: Text(
+            tr(
+              'Review steps and study progress',
+              'مراجعة الخطوات وتقدم الدراسة',
+            ),
+          ),
           trailing: Icon(
             arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
           ),
@@ -68,7 +79,9 @@ class MasariMoreQuickAccess extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           leading: const Icon(Icons.auto_awesome_outlined),
           title: Text(tr('Study assistant', 'المساعد الدراسي')),
-          subtitle: Text(tr('Ask questions with your consent', 'اطرح أسئلتك بعد الموافقة')),
+          subtitle: Text(
+            tr('Ask questions with your consent', 'اطرح أسئلتك بعد الموافقة'),
+          ),
           trailing: Icon(
             arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
           ),

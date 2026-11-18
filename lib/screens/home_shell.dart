@@ -38,6 +38,7 @@ import 'ai_assistant_screen.dart';
 import 'masari_study_overview.dart';
 import 'masari_task_filter_summary.dart';
 import 'masari_agenda_day_header.dart';
+import 'masari_more_quick_access.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key, required this.controller});
@@ -1272,36 +1273,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       children: [
         _settingsCard(
           t('Quick access', 'وصول سريع'),
-          Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.account_circle_outlined),
-                title: Text(
-                  OracleAccountClient.enabled
-                      ? t('Masari account', 'حساب مساري')
-                      : t('Google account', 'حساب Google'),
-                ),
-                onTap: _openAccount,
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.cloud_outlined),
-                title: Text(t('Cloud backup', 'النسخ الاحتياطي السحابي')),
-                onTap: _openCloudBackup,
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.account_tree_outlined),
-                title: Text(t('Task plans', 'خطط المهام')),
-                onTap: _openTaskPlans,
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.auto_awesome_outlined),
-                title: Text(t('Study assistant', 'المساعد الدراسي')),
-                onTap: _openAiAssistant,
-              ),
-            ],
+          MasariMoreQuickAccess(
+            arabic: _ar,
+            masariAccountEnabled: OracleAccountClient.enabled,
+            onAccount: _openAccount,
+            onBackup: _openCloudBackup,
+            onTaskPlans: _openTaskPlans,
+            onAssistant: _openAiAssistant,
           ),
         ),
         const SizedBox(height: 12),

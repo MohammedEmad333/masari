@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/local_course_library.dart';
 import '../services/local_course_search.dart';
+import 'masari_library_material_tile.dart';
 
 class LocalCoursesScreen extends StatefulWidget {
   const LocalCoursesScreen({
@@ -776,11 +777,12 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                         for (final chapter in course.chapters)
                           ExpansionTile(
                             key: ValueKey(chapter.id),
+                            leading: const Icon(Icons.folder_outlined),
                             title: Text(chapter.name),
                             subtitle: Text(
                               t(
-                                '${chapter.materials.length} items',
-                                '${chapter.materials.length} مادة',
+                                '${localChapterFileCount(chapter)} files • ${localChapterLinkCount(chapter)} links',
+                                '${localChapterFileCount(chapter)} ملفات • ${localChapterLinkCount(chapter)} روابط',
                               ),
                             ),
                             trailing: PopupMenuButton<String>(
@@ -804,23 +806,29 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
                               ],
                             ),
                             children: [
-                              for (final material in chapter.materials)
-                                ListTile(
-                                  leading: Icon(
-                                    material.isLink
-                                        ? Icons.link
-                                        : Icons.insert_drive_file_outlined,
+                              if (chapter.materials.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
                                   ),
-                                  title: Text(material.title),
-                                  onTap: () => _openMaterial(material),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline),
-                                    tooltip: t('Delete', 'حذف'),
-                                    onPressed: () => _removeMaterial(
-                                      course,
-                                      chapter,
-                                      material,
+                                  child: Text(
+                                    t(
+                                      'No files or links yet. Add one below.',
+                                      'لا توجد ملفات أو روابط بعد. أضف مادة أدناه.',
                                     ),
+                                  ),
+                                ),
+                              for (final material in chapter.materials)
+                                MasariLibraryMaterialTile(
+                                  key: ValueKey(material.id),
+                                  material: material,
+                                  arabic: widget.arabic,
+                                  onOpen: () => _openMaterial(material),
+                                  onDelete: () => _removeMaterial(
+                                    course,
+                                    chapter,
+                                    material,
                                   ),
                                 ),
                               Wrap(

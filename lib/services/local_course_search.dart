@@ -24,3 +24,9 @@ int localCourseMaterialCount(LocalCourse course) => course.chapters.fold<int>(
   0,
   (sum, chapter) => sum + chapter.materials.length,
 );
+
+int localChapterFileCount(CourseChapter chapter) =>
+    chapter.materials.where((material) => !material.isLink).length;
+
+int localChapterLinkCount(CourseChapter chapter) =>
+    chapter.materials.where((material) => material.isLink).length;

@@ -24,7 +24,6 @@ void main() {
     final answer = await service.ask(
       message: 'How do I revise?',
       language: 'en',
-      consent: true,
     );
     expect(answer, 'Try spaced repetition.');
     expect(captured!.headers['authorization'], 'Bearer firebase-id-token');
@@ -37,27 +36,23 @@ void main() {
     service.dispose();
   });
 
-  test('refuses without explicit consent or valid login', () async {
+  test('requires a valid login before sending a question', () async {
     var networkCalls = 0;
-    final mock = MockClient((request) async {
-      networkCalls++;
-      return http.Response('{}', 200);
-    });
     final service = AiAssistantClient(
-      client: mock,
+      client: MockClient((request) async {
+        networkCalls++;
+        return http.Response('{}', 200);
+      }),
       endpoint: endpoint,
       tokenProvider: () async => null,
       appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
-      service.ask(message: 'Hello', language: 'en', consent: false),
-      throwsA(isA<AiAssistantException>()),
-    );
-    await expectLater(
-      service.ask(message: 'Hello', language: 'en', consent: true),
+      service.ask(message: 'Hello', language: 'en'),
       throwsA(isA<AiAssistantException>()),
     );
     expect(networkCalls, 0);
+    service.dispose();
   });
 
   test('rejects secret URLs and insecure proxy schemes', () async {
@@ -87,7 +82,7 @@ void main() {
       appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
-      insecure.ask(message: 'Test', language: 'en', consent: true),
+      insecure.ask(message: 'Test', language: 'en'),
       throwsA(isA<AiAssistantException>()),
     );
     expect(requests, 0);

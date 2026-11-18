@@ -182,7 +182,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     Future<String> send() => _client.ask(
       message: _question.text,
       language: widget.arabic ? 'ar' : 'en',
-      consent: true,
     );
     try {
       return await send();

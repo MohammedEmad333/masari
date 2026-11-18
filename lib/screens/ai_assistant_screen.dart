@@ -273,8 +273,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         );
       case 'timeout':
         return t('The model took too long.', 'استغرق النموذج وقتًا طويلًا.');
-      case 'consent_required':
-        return t('Consent is required.', 'الموافقة مطلوبة.');
       default:
         return t(
           'The AI service is unavailable. Try again later.',

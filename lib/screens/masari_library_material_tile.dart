@@ -36,11 +36,7 @@ class MasariLibraryMaterialTile extends StatelessWidget {
               : Icons.insert_drive_file_outlined,
         ),
       ),
-      title: Text(
-        material.title,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Text(material.title, maxLines: 2, overflow: TextOverflow.ellipsis),
       subtitle: Text(typeLabel),
       onTap: onOpen,
       trailing: IconButton(

@@ -8,8 +8,9 @@ import '../services/oracle_account_client.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
 import 'masari_assistant_privacy_notice.dart';
+import 'masari_assistant_composer.dart';
 
-/// Opt-in text-only AI chat. No calendar events or tokens are included.
+/// Text-only AI chat. Sending happens only when the user taps Ask AI.
 class AiAssistantScreen extends StatefulWidget {
   const AiAssistantScreen({super.key, required this.arabic});
 
@@ -22,7 +23,6 @@ class AiAssistantScreen extends StatefulWidget {
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final _question = TextEditingController();
   final _client = AiAssistantClient();
-  bool _consent = false;
   bool _loading = false;
   final List<({String question, String answer})> _history = [];
   String? _error;
@@ -132,7 +132,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Future<void> _ask() async {
-    if (_loading || !_consent) return;
+    if (_loading) return;
     FocusScope.of(context).unfocus();
     setState(() {
       _loading = true;
@@ -155,7 +155,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _consent = false;
         });
         await _refreshConnection();
       }
@@ -183,7 +182,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     Future<String> send() => _client.ask(
       message: _question.text,
       language: widget.arabic ? 'ar' : 'en',
-      consent: _consent,
+      consent: true,
     );
     try {
       return await send();
@@ -376,40 +375,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
               label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
             ),
           const SizedBox(height: 16),
-          TextField(
+          MasariAssistantComposer(
             controller: _question,
-            maxLines: 5,
-            minLines: 2,
-            maxLength: 500,
-            enabled: !_loading,
-            decoration: InputDecoration(
-              labelText: t('Your question', 'سؤالك'),
-              hintText: t(
-                'How can I plan revision for an exam?',
-                'كيف أُنظّم المراجعة قبل الامتحان؟',
-              ),
-            ),
-          ),
-          CheckboxListTile(
-            value: _consent,
-            onChanged: _loading
-                ? null
-                : (value) {
-                    setState(() => _consent = value ?? false);
-                  },
-            controlAffinity: ListTileControlAffinity.leading,
-            title: Text(
-              t(
-                'I agree to send this question to an external AI provider.',
-                'أوافق على إرسال هذا السؤال إلى مزوّد ذكاء اصطناعي خارجي.',
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: _loading || !_consent ? null : _ask,
-            icon: const Icon(Icons.send_outlined),
-            label: Text(t('Ask AI', 'اسأل المساعد')),
+            arabic: widget.arabic,
+            loading: _loading,
+            onSend: _ask,
           ),
           if (_loading) ...[
             const SizedBox(height: 16),

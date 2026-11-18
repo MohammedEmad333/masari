@@ -27,8 +27,14 @@ void main() {
     );
     expect(localChapterFileCount(chapter), 1);
     expect(localChapterLinkCount(chapter), 1);
-    expect(localChapterFileCount(const CourseChapter(id: 'empty', name: 'Empty')), 0);
-    expect(localChapterLinkCount(const CourseChapter(id: 'empty', name: 'Empty')), 0);
+    expect(
+      localChapterFileCount(const CourseChapter(id: 'empty', name: 'Empty')),
+      0,
+    );
+    expect(
+      localChapterLinkCount(const CourseChapter(id: 'empty', name: 'Empty')),
+      0,
+    );
   });
 
   for (final arabic in [false, true]) {
@@ -62,7 +68,9 @@ void main() {
       expect(find.text(arabic ? 'رابط' : 'Link'), findsOneWidget);
       await tester.tap(find.text('Course website'));
       expect(opened, 1);
-      await tester.tap(find.byTooltip(arabic ? 'حذف المادة' : 'Delete material'));
+      await tester.tap(
+        find.byTooltip(arabic ? 'حذف المادة' : 'Delete material'),
+      );
       expect(deleted, 1);
       expect(opened, 1);
       expect(tester.takeException(), isNull);

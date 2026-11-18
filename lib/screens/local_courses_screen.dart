@@ -14,6 +14,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/local_course_library.dart';
+import '../services/local_course_search.dart';
 
 class LocalCoursesScreen extends StatefulWidget {
   const LocalCoursesScreen({
@@ -32,6 +33,8 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
   LocalCourseLibrary? _library;
   List<LocalCourse> _courses = [];
   bool _busy = true;
+  String _courseQuery = '';
+  final _searchController = TextEditingController();
 
   String t(String en, String ar) => widget.arabic ? ar : en;
 
@@ -39,6 +42,12 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
   void initState() {
     super.initState();
     _initialize();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _initialize() async {
@@ -635,6 +644,7 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visibleCourses = searchLocalCourses(_courses, _courseQuery);
     return Scaffold(
       appBar: AppBar(
         title: Text(t('My study library', 'مكتبتي الدراسية')),
@@ -669,12 +679,66 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
               children: [
-                for (final course in _courses)
+                TextField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _courseQuery = value),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    labelText: t(
+                      'Search study library',
+                      'ابحث في المكتبة الدراسية',
+                    ),
+                    suffixIcon: _courseQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: t('Clear search', 'مسح البحث'),
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _courseQuery = '');
+                            },
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (_courseQuery.trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      t(
+                        '${visibleCourses.length} matching courses',
+                        '${visibleCourses.length} مساقات مطابقة',
+                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                if (visibleCourses.isEmpty)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.search_off_rounded),
+                      title: Text(
+                        t('No matching courses', 'لا توجد مساقات مطابقة'),
+                      ),
+                      subtitle: Text(
+                        t(
+                          'Try a different course, chapter or material name.',
+                          'جرّب اسم مساق أو فصل أو مادة أخرى.',
+                        ),
+                      ),
+                    ),
+                  ),
+                for (final course in visibleCourses)
                   Card(
                     child: ExpansionTile(
                       key: ValueKey(course.id),
                       leading: const Icon(Icons.menu_book_outlined),
                       title: Text(course.name),
+                      subtitle: Text(
+                        t(
+                          '${course.chapters.length} chapters • ${localCourseMaterialCount(course)} materials',
+                          '${course.chapters.length} فصول • ${localCourseMaterialCount(course)} مادة',
+                        ),
+                      ),
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
                           if (value == 'zip') _shareZip(course);

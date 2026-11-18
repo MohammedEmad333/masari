@@ -47,7 +47,10 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNotNull);
+        expect(
+          tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+          isNotNull,
+        );
 
         await tester.tap(find.text(arabic ? 'اسأل المساعد' : 'Ask AI'));
         expect(sends, 1);
@@ -76,6 +79,9 @@ void main() {
     );
 
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
-    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
   });
 }

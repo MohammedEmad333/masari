@@ -36,7 +36,9 @@ class MasariMoreQuickAccess extends StatelessWidget {
                 : tr('Google account', 'حساب Google'),
           ),
           subtitle: Text(tr('Sign in and manage your account', 'تسجيل الدخول وإدارة الحساب')),
-          trailing: const Icon(Icons.chevron_right_rounded),
+          trailing: Icon(
+            arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+          ),
           onTap: onAccount,
         ),
         const Divider(height: 1),
@@ -45,7 +47,9 @@ class MasariMoreQuickAccess extends StatelessWidget {
           leading: const Icon(Icons.cloud_outlined),
           title: Text(tr('Cloud backup', 'النسخ الاحتياطي السحابي')),
           subtitle: Text(tr('Review and restore saved backups', 'عرض النسخ المحفوظة واستعادتها')),
-          trailing: const Icon(Icons.chevron_right_rounded),
+          trailing: Icon(
+            arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+          ),
           onTap: onBackup,
         ),
         const Divider(height: 1),
@@ -54,7 +58,9 @@ class MasariMoreQuickAccess extends StatelessWidget {
           leading: const Icon(Icons.account_tree_outlined),
           title: Text(tr('Task plans', 'خطط المهام')),
           subtitle: Text(tr('Review steps and study progress', 'مراجعة الخطوات وتقدم الدراسة')),
-          trailing: const Icon(Icons.chevron_right_rounded),
+          trailing: Icon(
+            arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+          ),
           onTap: onTaskPlans,
         ),
         const Divider(height: 1),
@@ -63,7 +69,9 @@ class MasariMoreQuickAccess extends StatelessWidget {
           leading: const Icon(Icons.auto_awesome_outlined),
           title: Text(tr('Study assistant', 'المساعد الدراسي')),
           subtitle: Text(tr('Ask questions with your consent', 'اطرح أسئلتك بعد الموافقة')),
-          trailing: const Icon(Icons.chevron_right_rounded),
+          trailing: Icon(
+            arabic ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+          ),
           onTap: onAssistant,
         ),
       ],

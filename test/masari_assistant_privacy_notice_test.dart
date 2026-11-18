@@ -43,18 +43,17 @@ void main() {
     }
   }
 
-  testWidgets('privacy notice mentions external provider and data limitations', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(
-          body: MasariAssistantPrivacyNotice(arabic: false),
+  testWidgets(
+    'privacy notice mentions external provider and data limitations',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: MasariAssistantPrivacyNotice(arabic: false)),
         ),
-      ),
-    );
+      );
 
-    expect(find.textContaining('TokenRouter'), findsOneWidget);
-    expect(find.textContaining('cannot read tasks'), findsOneWidget);
-  });
+      expect(find.textContaining('TokenRouter'), findsOneWidget);
+      expect(find.textContaining('cannot read tasks'), findsOneWidget);
+    },
+  );
 }

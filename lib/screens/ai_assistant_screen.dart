@@ -7,6 +7,7 @@ import '../services/oracle_ai_session_store.dart';
 import '../services/oracle_account_client.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
+import 'masari_assistant_privacy_notice.dart';
 
 /// Opt-in text-only AI chat. No calendar events or tokens are included.
 class AiAssistantScreen extends StatefulWidget {
@@ -324,18 +325,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            t(
-              'Optional online assistant. Only the question you type is '
-                  'sent to the Masari proxy and the external TokenRouter model. '
-                  'Do not include private information. The assistant cannot '
-                  'read tasks or schedule reminders.',
-              'مساعد اختياري عبر الإنترنت. يُرسل نص السؤال الذي تكتبه '
-                  'فقط إلى خادم مساري ونموذج TokenRouter الخارجي. '
-                  'لا تُدخل معلومات خاصة. لا يستطيع المساعد قراءة '
-                  'المهام أو جدولة التذكيرات.',
-            ),
-          ),
+          MasariAssistantPrivacyNotice(arabic: widget.arabic),
           const SizedBox(height: 12),
           Text(
             _oracleConnected

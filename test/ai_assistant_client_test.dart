@@ -70,7 +70,7 @@ void main() {
     await expectLater(
       service.ask(
         message: 'https://moodle.example/calendar?authtoken=secret',
-        language: 'en',,
+        language: 'en',
       ),
       throwsA(isA<AiAssistantException>()),
     );
@@ -127,7 +127,7 @@ void main() {
       );
       final answer = await client.ask(
         message: 'Hello',
-        language: 'en',,
+        language: 'en',
       );
       expect(answer, 'Oracle works');
       expect(captured!.headers['authorization'], 'Bearer $token');

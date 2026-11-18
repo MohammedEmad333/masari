@@ -95,7 +95,7 @@ void main() {
       appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
-      service.ask(message: 'Test', language: 'ar',),
+      service.ask(message: 'Test', language: 'ar'),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -125,10 +125,7 @@ void main() {
           DateTime.now().toUtc().add(const Duration(minutes: 30)),
         ),
       );
-      final answer = await client.ask(
-        message: 'Hello',
-        language: 'en',
-      );
+      final answer = await client.ask(message: 'Hello', language: 'en');
       expect(answer, 'Oracle works');
       expect(captured!.headers['authorization'], 'Bearer $token');
       expect(captured!.headers.containsKey('x-firebase-appcheck'), false);
@@ -152,7 +149,7 @@ void main() {
         ),
       );
       await expectLater(
-        client.ask(message: 'Hello', language: 'en',),
+        client.ask(message: 'Hello', language: 'en'),
         throwsA(
           isA<AiAssistantException>().having(
             (e) => e.code,
@@ -178,7 +175,7 @@ void main() {
       oracleSessionProvider: () async => null,
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en',),
+      client.ask(message: 'Help', language: 'en'),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -204,7 +201,7 @@ void main() {
       oracleSessionProvider: () async => null,
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en',),
+      client.ask(message: 'Help', language: 'en'),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -231,7 +228,7 @@ void main() {
       oracleSessionProvider: () async => null,
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en',),
+      client.ask(message: 'Help', language: 'en'),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -264,7 +261,7 @@ void main() {
       ),
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en',),
+      client.ask(message: 'Help', language: 'en'),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,

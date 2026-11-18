@@ -70,8 +70,7 @@ void main() {
     await expectLater(
       service.ask(
         message: 'https://moodle.example/calendar?authtoken=secret',
-        language: 'en',
-        consent: true,
+        language: 'en',,
       ),
       throwsA(isA<AiAssistantException>()),
     );
@@ -96,7 +95,7 @@ void main() {
       appCheckTokenProvider: () async => 'app-check-test-token',
     );
     await expectLater(
-      service.ask(message: 'Test', language: 'ar', consent: true),
+      service.ask(message: 'Test', language: 'ar',),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -128,8 +127,7 @@ void main() {
       );
       final answer = await client.ask(
         message: 'Hello',
-        language: 'en',
-        consent: true,
+        language: 'en',,
       );
       expect(answer, 'Oracle works');
       expect(captured!.headers['authorization'], 'Bearer $token');
@@ -154,7 +152,7 @@ void main() {
         ),
       );
       await expectLater(
-        client.ask(message: 'Hello', language: 'en', consent: true),
+        client.ask(message: 'Hello', language: 'en',),
         throwsA(
           isA<AiAssistantException>().having(
             (e) => e.code,
@@ -180,7 +178,7 @@ void main() {
       oracleSessionProvider: () async => null,
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en', consent: true),
+      client.ask(message: 'Help', language: 'en',),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -206,7 +204,7 @@ void main() {
       oracleSessionProvider: () async => null,
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en', consent: true),
+      client.ask(message: 'Help', language: 'en',),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -233,7 +231,7 @@ void main() {
       oracleSessionProvider: () async => null,
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en', consent: true),
+      client.ask(message: 'Help', language: 'en',),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,
@@ -266,7 +264,7 @@ void main() {
       ),
     );
     await expectLater(
-      client.ask(message: 'Help', language: 'en', consent: true),
+      client.ask(message: 'Help', language: 'en',),
       throwsA(
         isA<AiAssistantException>().having(
           (error) => error.code,

@@ -5,10 +5,7 @@ import '../theme/masari_theme.dart';
 /// Privacy notice for the optional study assistant.
 /// This is display-only: consent and sending remain controlled by the screen.
 class MasariAssistantPrivacyNotice extends StatelessWidget {
-  const MasariAssistantPrivacyNotice({
-    super.key,
-    required this.arabic,
-  });
+  const MasariAssistantPrivacyNotice({super.key, required this.arabic});
 
   final bool arabic;
 

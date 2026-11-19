@@ -22,6 +22,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final _question = TextEditingController();
   final _client = AiAssistantClient();
   bool _loading = false;
+  String? _pendingQuestion;
   final List<({String question, String answer})> _history = [];
   String? _error;
   bool _oracleConnected = false;
@@ -134,20 +135,30 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _loading = true;
+      _pendingQuestion = _question.text.trim();
       _error = null;
     });
     final question = _question.text.trim();
     try {
       final answer = await _askWithGoogleRenewal();
       if (mounted) {
-        setState(() => _history.add((question: question, answer: answer)));
+        setState(() {
+          _history.add((question: question, answer: answer));
+          _pendingQuestion = null;
+        });
         _question.clear();
       }
     } on AiAssistantException catch (error) {
-      if (mounted) setState(() => _error = _message(error.code));
+      if (mounted) setState(() {
+        _pendingQuestion = null;
+        _error = _message(error.code);
+      });
     } catch (_) {
       if (mounted) {
-        setState(() => _error = t('Unable to connect.', 'تعذّر الاتصال.'));
+        setState(() {
+          _pendingQuestion = null;
+          _error = t('Unable to connect.', 'تعذّر الاتصال.');
+        });
       }
     } finally {
       if (mounted) {
@@ -374,6 +385,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 ? null
                 : () => setState(() {
                     _history.clear();
+                    _pendingQuestion = null;
                     _error = null;
                     _question.clear();
                   }),
@@ -474,6 +486,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     _chatBubble(text: item.answer, fromUser: false),
                     const SizedBox(height: 20),
                   ],
+                  if (_pendingQuestion != null) ...[
+                    _chatBubble(text: _pendingQuestion!, fromUser: true),
+                    const SizedBox(height: 12),
+                  ],
                   if (_loading)
                     Align(
                       alignment: AlignmentDirectional.centerStart,
@@ -549,6 +565,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                             maxLength: 500,
                             enabled: !_loading,
                             textInputAction: TextInputAction.send,
+                            onChanged: (_) => setState(() {}),
                             onSubmitted: (_) {
                               if (!_loading && _question.text.trim().isNotEmpty) {
                                 _ask();

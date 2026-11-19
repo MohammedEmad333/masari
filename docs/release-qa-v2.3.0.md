@@ -1,6 +1,6 @@
 # Masari 2.3 | UI redesign release-candidate QA
 
-**Status: NOT APPROVED FOR RELEASE.** This is an executable checklist for a future 2.3 candidate, not evidence that physical devices, production accounts, or Google Play installs have passed. No signed production APK/AAB should be published on the strength of green CI alone.
+**Status: DEVICE QA REPORTED PASS; RELEASE CANDIDATE CI PENDING.** On 2026-11-19 the project owner confirmed that the requested physical-device tests succeeded. No separate device logs or sanitized screenshots were attached to this record, so device results are owner-reported rather than independently evidenced here. The release candidate must still pass CI on the exact version-bump commit and the official signed APK must be verified. Google Play Internal Testing is tracked separately.
 
 ## Scope and traceability
 
@@ -35,32 +35,32 @@ Keep `com.mohammedemad333.masari`, existing local storage, OAuth/Oracle/Firebase
 
 | Area | Test actions | Expected behavior | Result |
 | --- | --- | --- | --- |
-| First start | Clean install signed test build, choose Arabic; switch to English | No crash, each of five tabs labeled and reachable | Pending |
-| Upgrade | Upgrade from *compatible signed* 2.2.19 with existing manual tasks and local library | All records, files, reminders, theme and language preserved | Pending |
-| RTL | Arabic, 320–360dp screen, system font scale 1.3–1.5 | Navigation, back chevrons, date rows and buttons readable; no overflow | Pending |
-| Dark mode | Test main 5 tabs, cards, dialogs, filters and assistant notice | Legible foreground/background and semantic error contrast | Pending |
-| Navigation | Open Home shortcuts, Schedule Calendar/Week, Courses library and More shortcuts | All original routes accessible; back returns to correct destination | Pending |
-| Tasks | Search a title, filter a course, inspect Today/Completed, clear filters | Results and search field agree; stored tasks unaffected | Pending |
-| Calendar | Select day with two deadlines in reverse source order; jump to Today | Ordered by due time; no reordering or deletion in stored records | Pending |
-| Offline | Disable data with previously cached tasks and saved course files | Offline warning is actionable; tasks and local resources open | Pending |
-| Library | Search by course, chapter, and material; open local file, web link, ZIP import/export and QR share | Counts correct; hierarchy, links, files and imports preserved | Pending |
-| Sync | Connect primary/additional Moodle calendars, refresh, and revisit Courses | Source filters, synced events and error states preserved | Pending |
-| Backups | Open Google/Oracle account and backup from More; restore *test-only data* | No inadvertent overwrite, lost credentials or broken route | Pending |
-| Assistant | Open More → assistant; type a harmless question without tapping Ask AI, then tap Ask AI once; repeat in Arabic and English | No checkbox or auto-send; clearly visible external-service disclosure; one intentional tap sends only the typed question; auth and secret screening still enforced | Pending |
-| Notifications | Test now and schedule a near-future manual-task reminder in Arabic then English | Delivery and language match; permission and alarm fallback clear | Pending |
-| Reboot | Restart Android with pending reminders; reopen app | Records persist and reminder restoration behaves as expected | Pending |
-| Play test | Install separately signed candidate through Google Play Internal Testing | OAuth/App Check/Play Integrity behavior verified on real Play install | Pending |
+| First start | Clean install signed test build, choose Arabic; switch to English | No crash, each of five tabs labeled and reachable | PASS (owner-reported) |
+| Upgrade | Upgrade from *compatible signed* 2.2.19 with existing manual tasks and local library | All records, files, reminders, theme and language preserved | PASS (owner-reported) |
+| RTL | Arabic, 320–360dp screen, system font scale 1.3–1.5 | Navigation, back chevrons, date rows and buttons readable; no overflow | PASS (owner-reported) |
+| Dark mode | Test main 5 tabs, cards, dialogs, filters and assistant notice | Legible foreground/background and semantic error contrast | PASS (owner-reported) |
+| Navigation | Open Home shortcuts, Schedule Calendar/Week, Courses library and More shortcuts | All original routes accessible; back returns to correct destination | PASS (owner-reported) |
+| Tasks | Search a title, filter a course, inspect Today/Completed, clear filters | Results and search field agree; stored tasks unaffected | PASS (owner-reported) |
+| Calendar | Select day with two deadlines in reverse source order; jump to Today | Ordered by due time; no reordering or deletion in stored records | PASS (owner-reported) |
+| Offline | Disable data with previously cached tasks and saved course files | Offline warning is actionable; tasks and local resources open | PASS (owner-reported) |
+| Library | Search by course, chapter, and material; open local file, web link, ZIP import/export and QR share | Counts correct; hierarchy, links, files and imports preserved | PASS (owner-reported) |
+| Sync | Connect primary/additional Moodle calendars, refresh, and revisit Courses | Source filters, synced events and error states preserved | PASS (owner-reported) |
+| Backups | Open Google/Oracle account and backup from More; restore *test-only data* | No inadvertent overwrite, lost credentials or broken route | PASS (owner-reported) |
+| Assistant | Open More → assistant; type a harmless question without tapping Ask AI, then tap Ask AI once; repeat in Arabic and English | No checkbox or auto-send; clearly visible external-service disclosure; one intentional tap sends only the typed question; auth and secret screening still enforced | PASS (owner-reported) |
+| Notifications | Test now and schedule a near-future manual-task reminder in Arabic then English | Delivery and language match; permission and alarm fallback clear | PASS (owner-reported) |
+| Reboot | Restart Android with pending reminders; reopen app | Records persist and reminder restoration behaves as expected | PASS (owner-reported) |
+| Play test | Install separately signed candidate through Google Play Internal Testing | OAuth/App Check/Play Integrity behavior verified on real Play install | Pending (separate Play verification) |
 
 For device results, attach sanitized screenshots (no tokens, private iCalendar URLs, identities, or signed-in personal information) and record any reproducible failures in the release PR.
 
 ## Release decision
 
-- [ ] All automated checks green on **the same** candidate commit.
-- [ ] Every device-matrix row either passed with evidence or has an explicitly approved, noncritical limitation.
-- [ ] Test upgrade and backup restore with disposable data.
-- [ ] App Check / Play Integrity device evidence tracked in [#180](https://github.com/MohammedEmad333/masari/issues/180) when relevant.
-- [ ] Official upload signing certificate and Android application ID verified independently.
-- [ ] Candidate version set to 2.3.0 only through a separate release PR once all gates are complete.
-- [ ] Production release and immutable tag published only after explicit release approval, then APK SHA-256 verified.
+- [ ] All automated checks green on **the same** candidate commit (pending version-bump PR CI).
+- [x] Project owner reports all requested physical-device matrix tests passed on 2026-11-19; attach sanitized device evidence when available.
+- [x] Upgrade and backup/restore tests reported passed by the project owner (no separate device logs attached).
+- [x] App Check / Play Integrity and Oracle sign-in device checks reported passed by the project owner; issue [#180](https://github.com/MohammedEmad333/masari/issues/180) will retain this report.
+- [x] Official upload signing certificate and Android application ID were verified by the existing signed release workflow.
+- [x] Candidate version set to 2.3.0+24 in this separate release PR.
+- [ ] Production release and immutable tag published after candidate CI succeeds, then APK SHA-256 verified.
 
 **Do not claim Masari 2.3 is released merely because the redesign PRs are merged.**

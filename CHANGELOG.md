@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.0
+
+- Redesign the study assistant as a chat interface with message bubbles, quick prompts, a fixed composer, pending-message and loading states.
+- Remove the large assistant privacy card and the technical Oracle connection status label while retaining a compact disclosure that messages are sent to the external AI service only after the user explicitly sends them.
+- Add Open in Moodle and Copy link actions to task details when a task has a valid stored URL.
+- Preserve existing Oracle/Google authentication, secure sessions, task storage, reminders, package ID, and official signing identity.
+- Device testing was reported successful by the project owner on 2026-11-19; see the release QA record for the distinction between owner-reported results and attached device evidence.
+
 ## 2.2.19
 
 - Update the Firebase Core, Authentication, App Check, and Cloud Firestore packages together, with Kotlin 2.4 and Android Gradle Plugin 9 compatibility.

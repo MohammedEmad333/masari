@@ -101,10 +101,8 @@ class AiAssistantClient {
   Future<String> ask({
     required String message,
     required String language,
-    required bool consent,
     bool retryAfterRenewal = true,
   }) async {
-    if (!consent) throw const AiAssistantException('consent_required');
     if (!_validEndpoint(_endpoint)) {
       throw const AiAssistantException('not_configured');
     }
@@ -212,7 +210,6 @@ class AiAssistantClient {
           return ask(
             message: message,
             language: language,
-            consent: consent,
             retryAfterRenewal: false,
           );
         }

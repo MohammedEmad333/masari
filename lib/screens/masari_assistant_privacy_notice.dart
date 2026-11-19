@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/masari_theme.dart';
 
 /// Privacy notice for the optional study assistant.
-/// This is display-only: consent and sending remain controlled by the screen.
+/// Explains external processing before the user chooses to send a question.
 class MasariAssistantPrivacyNotice extends StatelessWidget {
   const MasariAssistantPrivacyNotice({super.key, required this.arabic});
 

@@ -149,11 +149,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         _question.clear();
       }
     } on AiAssistantException catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _pendingQuestion = null;
           _error = _message(error.code);
         });
+      }
     } catch (_) {
       if (mounted) {
         setState(() {

@@ -1036,7 +1036,22 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           )
         else
           ...entries.map((entry) {
-            final next = entry.value.first;
+            final now = DateTime.now();
+            final upcoming = entry.value
+                .where((deadline) => !deadline.due.isBefore(now))
+                .toList()
+              ..sort((a, b) => a.due.compareTo(b.due));
+            final overdueCount = entry.value.length - upcoming.length;
+            final summary = <String>[
+              t('Upcoming: ${upcoming.length}', 'القادمة: ${upcoming.length}'),
+              if (overdueCount > 0)
+                t('Overdue: $overdueCount', 'المتأخرة: $overdueCount'),
+              if (upcoming.isNotEmpty)
+                t(
+                  'Next: ${_remainingText(upcoming.first)}',
+                  'الأقرب: ${_remainingText(upcoming.first)}',
+                ),
+            ];
             return Card(
               child: ListTile(
                 leading: CircleAvatar(
@@ -1050,12 +1065,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   _displayCourse(entry.key),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text(
-                  t(
-                    '${entry.value.length} upcoming • next ${_remainingText(next)}',
-                    '${entry.value.length} قادمة • التالي ${_remainingText(next)}',
-                  ),
-                ),
+                subtitle: Text(summary.join(' • ')),
                 trailing: Icon(
                   _ar
                       ? Icons.chevron_left_rounded

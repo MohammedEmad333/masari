@@ -382,6 +382,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        textDirection: TextDirection.ltr,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           CircleAvatar(

@@ -217,4 +217,3 @@ Use the repository's structured issue forms for public bugs and feature requests
 
 **Mohammed Emad Elrefy**  
 Al-Aqsa University — Department of Computer Science  
-Software Engineering Project — Supervisor: Eng. Firas Fouad Al-ijla

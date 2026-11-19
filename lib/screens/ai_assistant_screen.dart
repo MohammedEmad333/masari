@@ -149,10 +149,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         _question.clear();
       }
     } on AiAssistantException catch (error) {
-      if (mounted) setState(() {
-        _pendingQuestion = null;
-        _error = _message(error.code);
-      });
+      if (mounted)
+        setState(() {
+          _pendingQuestion = null;
+          _error = _message(error.code);
+        });
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -323,10 +324,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     );
   }
 
-  Widget _chatBubble({
-    required String text,
-    required bool fromUser,
-  }) {
+  Widget _chatBubble({required String text, required bool fromUser}) {
     final colors = Theme.of(context).colorScheme;
     return Align(
       alignment: fromUser
@@ -353,8 +351,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
             child: fromUser
                 ? SelectableText(
                     text,
-                    textDirection:
-                        widget.arabic ? TextDirection.rtl : TextDirection.ltr,
+                    textDirection: widget.arabic
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: colors.onPrimaryContainer,
                     ),
@@ -407,10 +406,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                               ? null
                               : _signInToOracleAccount,
                           icon: const Icon(Icons.account_circle_outlined),
-                          label: Text(t(
-                            'Sign in to Masari',
-                            'تسجيل الدخول إلى مساري',
-                          )),
+                          label: Text(
+                            t('Sign in to Masari', 'تسجيل الدخول إلى مساري'),
+                          ),
                         )
                       : GoogleOracleAuthClient.enabled
                       ? OutlinedButton.icon(
@@ -418,10 +416,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                               ? null
                               : () => _connectGoogle(),
                           icon: const Icon(Icons.account_circle_outlined),
-                          label: Text(t(
-                            'Continue with Google',
-                            'المتابعة باستخدام Google',
-                          )),
+                          label: Text(
+                            t(
+                              'Continue with Google',
+                              'المتابعة باستخدام Google',
+                            ),
+                          ),
                         )
                       : OutlinedButton.icon(
                           onPressed: _loading
@@ -460,24 +460,44 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: [
-                        (t('Explain a topic', 'اشرح لي موضوعًا'),
-                          t('Explain this topic in a simple way.',
-                            'اشرح لي هذا الموضوع بطريقة مبسطة.')),
-                        (t('Create revision questions', 'أنشئ أسئلة مراجعة'),
-                          t('Create revision questions for me.',
-                            'أنشئ لي أسئلة للمراجعة.')),
-                        (t('Make a study plan', 'نظّم خطة مذاكرة'),
-                          t('Help me make a study plan.',
-                            'ساعدني في تنظيم خطة مذاكرة.')),
-                      ].map((suggestion) => ActionChip(
-                        label: Text(suggestion.$1),
-                        onPressed: _loading
-                            ? null
-                            : () => setState(
-                                () => _question.text = suggestion.$2,
-                              ),
-                      )).toList(),
+                      children:
+                          [
+                                (
+                                  t('Explain a topic', 'اشرح لي موضوعًا'),
+                                  t(
+                                    'Explain this topic in a simple way.',
+                                    'اشرح لي هذا الموضوع بطريقة مبسطة.',
+                                  ),
+                                ),
+                                (
+                                  t(
+                                    'Create revision questions',
+                                    'أنشئ أسئلة مراجعة',
+                                  ),
+                                  t(
+                                    'Create revision questions for me.',
+                                    'أنشئ لي أسئلة للمراجعة.',
+                                  ),
+                                ),
+                                (
+                                  t('Make a study plan', 'نظّم خطة مذاكرة'),
+                                  t(
+                                    'Help me make a study plan.',
+                                    'ساعدني في تنظيم خطة مذاكرة.',
+                                  ),
+                                ),
+                              ]
+                              .map(
+                                (suggestion) => ActionChip(
+                                  label: Text(suggestion.$1),
+                                  onPressed: _loading
+                                      ? null
+                                      : () => setState(
+                                          () => _question.text = suggestion.$2,
+                                        ),
+                                ),
+                              )
+                              .toList(),
                     ),
                   ],
                   for (final item in _history) ...[
@@ -567,12 +587,16 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                             textInputAction: TextInputAction.send,
                             onChanged: (_) => setState(() {}),
                             onSubmitted: (_) {
-                              if (!_loading && _question.text.trim().isNotEmpty) {
+                              if (!_loading &&
+                                  _question.text.trim().isNotEmpty) {
                                 _ask();
                               }
                             },
                             decoration: InputDecoration(
-                              hintText: t('Write your message…', 'اكتب رسالتك…'),
+                              hintText: t(
+                                'Write your message…',
+                                'اكتب رسالتك…',
+                              ),
                               counterText: '',
                               filled: true,
                               contentPadding: const EdgeInsets.symmetric(

@@ -1,13 +1,19 @@
 import 'dart:io';
+
 import 'package:share_plus/share_plus.dart';
+
 import '../services/course_zip_bundle.dart';
+
 import 'package:qr_flutter/qr_flutter.dart';
+
 import '../services/course_import_merger.dart';
 import '../services/course_file_hash_merger.dart';
 import '../services/zip_import_change_preview.dart';
+
 import 'package:flutter/services.dart';
 
 import '../services/course_share_codec.dart';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
@@ -263,12 +269,11 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
     try {
       final url = CourseShareCodec.encode(course);
       await Clipboard.setData(ClipboardData(text: url));
-      await const MethodChannel(
-        'moodle_reminder/course_share',
-      ).invokeMethod<void>('shareLink', {
-        'url': url,
-        'language': widget.arabic ? 'ar' : 'en',
-      });
+      await const MethodChannel('moodle_reminder/course_share')
+          .invokeMethod<void>('shareLink', {
+            'url': url,
+            'language': widget.arabic ? 'ar' : 'en',
+          });
     } catch (_) {
       _error();
     }

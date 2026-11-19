@@ -38,7 +38,10 @@ void main() {
           find.byType(SelectableText),
         );
         expect(selectable.textSpan!.style!.fontSize, 16);
-        expect(find.textContaining(arabic ? 'مرحبًا' : 'Hello'), findsOneWidget);
+        expect(
+          find.textContaining(arabic ? 'مرحبًا' : 'Hello'),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
       },
     );

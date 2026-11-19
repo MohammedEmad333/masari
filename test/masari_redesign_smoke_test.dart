@@ -20,9 +20,8 @@ void main() {
         MaterialApp(
           theme: MasariTheme.light,
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: const TextScaler.linear(1.3)),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(1.3)),
             child: child!,
           ),
           home: Directionality(
@@ -52,62 +51,63 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('More actions and compact assistant disclosure remain accessible', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(360, 900);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'More actions and compact assistant disclosure remain accessible',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final visits = <String>[];
-      final controller = TextEditingController();
-      addTearDown(controller.dispose);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: MasariTheme.dark,
-          home: Directionality(
-            textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
-            child: Scaffold(
-              body: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  MasariMoreQuickAccess(
-                    arabic: arabic,
-                    masariAccountEnabled: true,
-                    onAccount: () => visits.add('account'),
-                    onBackup: () => visits.add('backup'),
-                    onTaskPlans: () => visits.add('plans'),
-                    onAssistant: () => visits.add('assistant'),
-                  ),
-                  MasariAssistantComposer(
-                    controller: controller,
-                    arabic: arabic,
-                    loading: false,
-                    onSend: () {},
-                  ),
-                ],
+        final visits = <String>[];
+        final controller = TextEditingController();
+        addTearDown(controller.dispose);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: MasariTheme.dark,
+            home: Directionality(
+              textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
+              child: Scaffold(
+                body: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    MasariMoreQuickAccess(
+                      arabic: arabic,
+                      masariAccountEnabled: true,
+                      onAccount: () => visits.add('account'),
+                      onBackup: () => visits.add('backup'),
+                      onTaskPlans: () => visits.add('plans'),
+                      onAssistant: () => visits.add('assistant'),
+                    ),
+                    MasariAssistantComposer(
+                      controller: controller,
+                      arabic: arabic,
+                      loading: false,
+                      onSend: () {},
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      for (final action in [
-        ('account', arabic ? 'حساب مساري' : 'Masari account'),
-        ('backup', arabic ? 'النسخ الاحتياطي السحابي' : 'Cloud backup'),
-        ('plans', arabic ? 'خطط المهام' : 'Task plans'),
-        ('assistant', arabic ? 'المساعد الدراسي' : 'Study assistant'),
-      ]) {
-        final target = find.text(action.$2);
-        await tester.ensureVisible(target);
-        await tester.tap(target);
-        await tester.pump();
-        expect(visits.last, action.$1);
-      }
-      expect(find.text('Assistant privacy'), findsNothing);
-      expect(find.byType(MasariAssistantComposer), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
+        for (final action in [
+          ('account', arabic ? 'حساب مساري' : 'Masari account'),
+          ('backup', arabic ? 'النسخ الاحتياطي السحابي' : 'Cloud backup'),
+          ('plans', arabic ? 'خطط المهام' : 'Task plans'),
+          ('assistant', arabic ? 'المساعد الدراسي' : 'Study assistant'),
+        ]) {
+          final target = find.text(action.$2);
+          await tester.ensureVisible(target);
+          await tester.tap(target);
+          await tester.pump();
+          expect(visits.last, action.$1);
+        }
+        expect(find.text('Assistant privacy'), findsNothing);
+        expect(find.byType(MasariAssistantComposer), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   }
 }

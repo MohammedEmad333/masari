@@ -56,9 +56,8 @@ class OptionalCloudBackup {
     required Map<String, TaskPlan> plans,
   }) async {
     final payload = prepare(manualTasks: manualTasks, plans: plans);
-    await _document(
-      user,
-    ).set({...payload, 'uploadedAt': FieldValue.serverTimestamp()});
+    await _document(user)
+        .set({...payload, 'uploadedAt': FieldValue.serverTimestamp()});
   }
 
   Future<({List<Deadline> tasks, Map<String, TaskPlan> plans})> download(

@@ -12,17 +12,19 @@ Deadline task({String url = '', String description = ''}) => Deadline(
 
 void main() {
   test('accepts a direct Moodle activity URL', () {
-    final url = MoodleTaskLink.resolve(task(
-      url: 'https://moodle.example.edu/mod/assign/view.php?id=123',
-    ));
+    final url = MoodleTaskLink.resolve(
+      task(url: 'https://moodle.example.edu/mod/assign/view.php?id=123'),
+    );
     expect(url?.path, '/mod/assign/view.php');
     expect(url?.queryParameters['id'], '123');
   });
 
   test('uses a safe description link if the URL field is empty', () {
-    final url = MoodleTaskLink.resolve(task(
-      description: 'View assignment: https://moodle.example.edu/mod/quiz/view.php?id=45.',
-    ));
+    final url = MoodleTaskLink.resolve(
+      task(
+        description: 'View assignment: https://moodle.example.edu/mod/quiz/view.php?id=45.',
+      ),
+    );
     expect(url?.queryParameters['id'], '45');
   });
 
@@ -31,12 +33,22 @@ void main() {
   });
 
   test('rejects calendar credentials and token URLs', () {
-    expect(MoodleTaskLink.resolve(task(
-      url: 'https://moodle.example.edu/calendar/export_execute.php?authtoken=secret',
-    )), isNull);
-    expect(MoodleTaskLink.resolve(task(
-      url: 'https://moodle.example.edu/mod/assign/view.php?id=45&token=secret',
-    )), isNull);
+    expect(
+      MoodleTaskLink.resolve(
+        task(
+          url: 'https://moodle.example.edu/calendar/export_execute.php?authtoken=secret',
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      MoodleTaskLink.resolve(
+        task(
+          url: 'https://moodle.example.edu/mod/assign/view.php?id=45&token=secret',
+        ),
+      ),
+      isNull,
+    );
   });
 
   test('rejects HTTP, user-info, missing activity ID and unrelated pages', () {

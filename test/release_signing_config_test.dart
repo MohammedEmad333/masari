@@ -5,9 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('official releases use the registered Masari ID and stable key', () {
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
-    final publish = File(
-      '.github/workflows/publish-release.yml',
-    ).readAsStringSync();
+    final publish = File('.github/workflows/publish-release.yml')
+        .readAsStringSync();
     final manual = File('.github/workflows/release.yml').readAsStringSync();
 
     expect(gradle, contains('"com.mohammedemad333.masari"'));
@@ -22,9 +21,8 @@ void main() {
 
   test('CI smoke APK cannot be mistaken for a distributable release', () {
     final ci = File('.github/workflows/flutter-ci.yml').readAsStringSync();
-    final publish = File(
-      '.github/workflows/publish-release.yml',
-    ).readAsStringSync();
+    final publish = File('.github/workflows/publish-release.yml')
+        .readAsStringSync();
 
     expect(ci, isNot(contains('actions/upload-artifact@')));
     expect(ci, contains("MASARI_CI_SMOKE_BUILD: 'true'"));

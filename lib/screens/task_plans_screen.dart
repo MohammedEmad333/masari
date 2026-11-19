@@ -218,9 +218,8 @@ class _TaskPlansScreenState extends State<TaskPlansScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(step.title),
                 subtitle: Text(
-                  MaterialLocalizations.of(
-                    context,
-                  ).formatMediumDate(step.scheduledFor),
+                  MaterialLocalizations.of(context)
+                      .formatMediumDate(step.scheduledFor),
                 ),
                 trailing: Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,

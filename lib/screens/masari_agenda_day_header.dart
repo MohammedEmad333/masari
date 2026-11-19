@@ -33,9 +33,8 @@ class MasariAgendaDayHeader extends StatelessWidget {
             Flexible(
               child: Text(
                 dateLabel,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: MasariSpacing.sm),

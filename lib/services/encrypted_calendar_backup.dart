@@ -116,9 +116,8 @@ class EncryptedCalendarBackup {
     required String passphrase,
   }) async {
     final archive = await encrypt(urls: urls, passphrase: passphrase);
-    await _document(
-      user,
-    ).set({...archive, 'updatedAt': FieldValue.serverTimestamp()});
+    await _document(user)
+        .set({...archive, 'updatedAt': FieldValue.serverTimestamp()});
   }
 
   Future<List<String>?> download({

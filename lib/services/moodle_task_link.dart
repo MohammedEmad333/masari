@@ -10,8 +10,10 @@ class MoodleTaskLink {
     if (direct != null) return direct;
 
     // Some ICS feeds omit URL but include activity links in DESCRIPTION.
-    final matches = RegExp(r'https?://[^\s<>"]+', caseSensitive: false)
-        .allMatches(deadline.description);
+    final matches = RegExp(
+      r'https?://[^\s<>"]+',
+      caseSensitive: false,
+    ).allMatches(deadline.description);
     for (final match in matches) {
       final value = match.group(0);
       if (value == null) continue;

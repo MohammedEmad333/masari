@@ -45,9 +45,7 @@ void main() {
         );
         expect(
           find.textContaining(
-            arabic
-                ? 'سيتم إرسال نص سؤالك'
-                : 'shares your question',
+            arabic ? 'سيتم إرسال نص سؤالك' : 'shares your question',
           ),
           findsOneWidget,
         );

@@ -195,10 +195,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         }
       }
     }
-    Future<String> send() => _client.ask(
-      message: message,
-      language: widget.arabic ? 'ar' : 'en',
-    );
+    Future<String> send() =>
+        _client.ask(message: message, language: widget.arabic ? 'ar' : 'en');
     try {
       return await send();
     } on AiAssistantException catch (error) {
@@ -351,7 +349,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         Padding(
           padding: const EdgeInsetsDirectional.only(start: 40, bottom: 8),
           child: Text(
-            t('You can start with one of these:', 'يمكنك البدء بأحد هذه الأسئلة:'),
+            t(
+              'You can start with one of these:',
+              'يمكنك البدء بأحد هذه الأسئلة:',
+            ),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -505,9 +506,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                           icon: const Icon(Icons.account_circle_outlined),
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => GoogleAccountScreen(
-                                arabic: widget.arabic,
-                              ),
+                              builder: (_) =>
+                                  GoogleAccountScreen(arabic: widget.arabic),
                             ),
                           ),
                           label: Text(t('Google account', 'حساب Google')),
@@ -529,5 +529,4 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       ),
     );
   }
-
 }

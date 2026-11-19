@@ -52,6 +52,9 @@ void main() {
           isNotNull,
         );
 
+        await tester.enterText(find.byType(TextField), 'Help me study');
+        await tester.pump();
+        expect(sends, 0); // Typing never submits to the external service.
         await tester.tap(find.text(arabic ? 'اسأل المساعد' : 'Ask AI'));
         expect(sends, 1);
         expect(tester.takeException(), isNull);

@@ -322,7 +322,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       text: prompt,
       selection: TextSelection.collapsed(offset: prompt.length),
     );
-    FocusScope.of(context).requestFocus(FocusNode());
   }
 
   Widget _welcomeContent() {
@@ -470,7 +469,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         actions: [
           IconButton(
             tooltip: t('New chat', 'محادثة جديدة'),
-            onPressed: _startNewChat,
+            onPressed: _loading ? null : _startNewChat,
             icon: const Icon(Icons.add_comment_outlined),
           ),
         ],

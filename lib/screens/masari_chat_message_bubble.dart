@@ -39,6 +39,7 @@ class MasariChatMessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        textDirection: TextDirection.ltr,
         mainAxisAlignment: fromUser
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,

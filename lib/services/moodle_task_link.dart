@@ -39,11 +39,13 @@ class MoodleTaskLink {
     final path = uri.path.toLowerCase();
     final isActivity = RegExp(r'/mod/[a-z0-9_]+/view\.php$').hasMatch(path);
     final isCourse = path.endsWith('/course/view.php');
-    final isCalendar = path.endsWith('/calendar/view.php') ||
+    final isCalendar =
+        path.endsWith('/calendar/view.php') ||
         path.endsWith('/calendar/event.php');
     if (!isActivity && !isCourse && !isCalendar) return null;
 
-    final hasId = (uri.queryParameters['id']?.trim().isNotEmpty ?? false) ||
+    final hasId =
+        (uri.queryParameters['id']?.trim().isNotEmpty ?? false) ||
         (isCalendar &&
             (uri.queryParameters['eventid']?.trim().isNotEmpty ?? false));
     if (!hasId) return null;

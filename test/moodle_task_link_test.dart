@@ -30,9 +30,12 @@ void main() {
   });
 
   test('accepts a safe Moodle calendar event URL supplied by the feed', () {
-    final url = MoodleTaskLink.resolve(task(
-      url: 'https://moodle.example.edu/calendar/view.php?view=event&eventid=12',
-    ));
+    final url = MoodleTaskLink.resolve(
+      task(
+        url:
+            'https://moodle.example.edu/calendar/view.php?view=event&eventid=12',
+      ),
+    );
     expect(url?.queryParameters['eventid'], '12');
   });
 

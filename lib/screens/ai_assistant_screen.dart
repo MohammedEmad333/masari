@@ -7,8 +7,6 @@ import '../services/oracle_ai_session_store.dart';
 import '../services/oracle_account_client.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
-import 'masari_assistant_privacy_notice.dart';
-import 'masari_assistant_composer.dart';
 
 /// Text-only AI chat. Sending happens only when the user taps Ask AI.
 class AiAssistantScreen extends StatefulWidget {
@@ -24,6 +22,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final _question = TextEditingController();
   final _client = AiAssistantClient();
   bool _loading = false;
+  String? _pendingQuestion;
   final List<({String question, String answer})> _history = [];
   String? _error;
   bool _oracleConnected = false;
@@ -136,20 +135,32 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _loading = true;
+      _pendingQuestion = _question.text.trim();
       _error = null;
     });
     final question = _question.text.trim();
     try {
       final answer = await _askWithGoogleRenewal();
       if (mounted) {
-        setState(() => _history.add((question: question, answer: answer)));
+        setState(() {
+          _history.add((question: question, answer: answer));
+          _pendingQuestion = null;
+        });
         _question.clear();
       }
     } on AiAssistantException catch (error) {
-      if (mounted) setState(() => _error = _message(error.code));
+      if (mounted) {
+        setState(() {
+          _pendingQuestion = null;
+          _error = _message(error.code);
+        });
+      }
     } catch (_) {
       if (mounted) {
-        setState(() => _error = t('Unable to connect.', 'تعذّر الاتصال.'));
+        setState(() {
+          _pendingQuestion = null;
+          _error = t('Unable to connect.', 'تعذّر الاتصال.');
+        });
       }
     } finally {
       if (mounted) {
@@ -314,112 +325,319 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     );
   }
 
+  Widget _chatBubble({required String text, required bool fromUser}) {
+    final colors = Theme.of(context).colorScheme;
+    return Align(
+      alignment: fromUser
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.84,
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: fromUser
+                ? colors.primaryContainer
+                : colors.surfaceContainerHighest,
+            borderRadius: BorderRadiusDirectional.only(
+              topStart: const Radius.circular(20),
+              topEnd: const Radius.circular(20),
+              bottomStart: Radius.circular(fromUser ? 20 : 6),
+              bottomEnd: Radius.circular(fromUser ? 6 : 20),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: fromUser
+                ? SelectableText(
+                    text,
+                    textDirection: widget.arabic
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: colors.onPrimaryContainer,
+                    ),
+                  )
+                : DefaultTextStyle(
+                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                      height: 1.55,
+                      color: colors.onSurface,
+                    ),
+                    child: _answerText(text),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(t('Study assistant', 'المساعد الدراسي'))),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          MasariAssistantPrivacyNotice(arabic: widget.arabic),
-          const SizedBox(height: 12),
-          Text(
-            _oracleConnected
-                ? t('Connected with Oracle', 'متصل عبر Oracle')
-                : OracleAccountClient.enabled
-                ? t(
-                    'Masari account not connected — sign in with Google',
-                    'حساب مساري غير متصل — سجّل الدخول باستخدام Google',
-                  )
-                : t(
-                    'Oracle not paired — Google sign-in may be required',
-                    'Oracle غير مرتبط — قد يلزم تسجيل Google',
-                  ),
+      appBar: AppBar(
+        title: Text(t('Study assistant', 'المساعد الدراسي')),
+        actions: [
+          IconButton(
+            tooltip: t('New conversation', 'محادثة جديدة'),
+            onPressed: _loading
+                ? null
+                : () => setState(() {
+                    _history.clear();
+                    _pendingQuestion = null;
+                    _error = null;
+                    _question.clear();
+                  }),
+            icon: const Icon(Icons.add_comment_outlined),
           ),
-          const SizedBox(height: 12),
-          if (OracleAccountClient.enabled && !_oracleConnected)
-            OutlinedButton.icon(
-              onPressed: _loading || _connectingGoogle
-                  ? null
-                  : _signInToOracleAccount,
-              icon: const Icon(Icons.account_circle_outlined),
-              label: Text(t('Sign in to Masari', 'تسجيل الدخول إلى مساري')),
-            ),
-          if (!OracleAccountClient.enabled && GoogleOracleAuthClient.enabled)
-            OutlinedButton.icon(
-              onPressed: _loading || _connectingGoogle
-                  ? null
-                  : () => _connectGoogle(),
-              icon: const Icon(Icons.account_circle_outlined),
-              label: Text(
-                t('Continue with Google', 'المتابعة باستخدام Google'),
-              ),
-            ),
-          if (!OracleAccountClient.enabled && !GoogleOracleAuthClient.enabled)
-            OutlinedButton.icon(
-              onPressed: _loading
-                  ? null
-                  : () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              OracleAiPairingScreen(arabic: widget.arabic),
-                        ),
-                      );
-                      await _refreshConnection();
-                    },
-              icon: const Icon(Icons.phonelink_lock_outlined),
-              label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
-            ),
-          const SizedBox(height: 16),
-          MasariAssistantComposer(
-            controller: _question,
-            arabic: widget.arabic,
-            loading: _loading,
-            onSend: _ask,
-          ),
-          if (_loading) ...[
-            const SizedBox(height: 16),
-            const Center(child: CircularProgressIndicator()),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            if (!OracleAccountClient.enabled &&
-                _error == _message('sign_in_required'))
-              OutlinedButton.icon(
-                icon: const Icon(Icons.account_circle_outlined),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => GoogleAccountScreen(arabic: widget.arabic),
-                  ),
-                ),
-                label: Text(t('Google account', 'حساب Google')),
-              ),
-          ],
-          for (final item in _history) ...[
-            const SizedBox(height: 16),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SelectableText(item.question),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: _answerText(item.answer),
-              ),
-            ),
-          ],
         ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (!_oracleConnected)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: OracleAccountClient.enabled
+                      ? OutlinedButton.icon(
+                          onPressed: _loading || _connectingGoogle
+                              ? null
+                              : _signInToOracleAccount,
+                          icon: const Icon(Icons.account_circle_outlined),
+                          label: Text(
+                            t('Sign in to Masari', 'تسجيل الدخول إلى مساري'),
+                          ),
+                        )
+                      : GoogleOracleAuthClient.enabled
+                      ? OutlinedButton.icon(
+                          onPressed: _loading || _connectingGoogle
+                              ? null
+                              : () => _connectGoogle(),
+                          icon: const Icon(Icons.account_circle_outlined),
+                          label: Text(
+                            t(
+                              'Continue with Google',
+                              'المتابعة باستخدام Google',
+                            ),
+                          ),
+                        )
+                      : OutlinedButton.icon(
+                          onPressed: _loading
+                              ? null
+                              : () async {
+                                  await Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => OracleAiPairingScreen(
+                                        arabic: widget.arabic,
+                                      ),
+                                    ),
+                                  );
+                                  await _refreshConnection();
+                                },
+                          icon: const Icon(Icons.phonelink_lock_outlined),
+                          label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
+                        ),
+                ),
+              ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                children: [
+                  if (_history.isEmpty) ...[
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: _chatBubble(
+                        fromUser: false,
+                        text: t(
+                          'Hello! How can I help with your studies today?',
+                          'مرحبًا! كيف يمكنني مساعدتك في دراستك اليوم؟',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          [
+                                (
+                                  t('Explain a topic', 'اشرح لي موضوعًا'),
+                                  t(
+                                    'Explain this topic in a simple way.',
+                                    'اشرح لي هذا الموضوع بطريقة مبسطة.',
+                                  ),
+                                ),
+                                (
+                                  t(
+                                    'Create revision questions',
+                                    'أنشئ أسئلة مراجعة',
+                                  ),
+                                  t(
+                                    'Create revision questions for me.',
+                                    'أنشئ لي أسئلة للمراجعة.',
+                                  ),
+                                ),
+                                (
+                                  t('Make a study plan', 'نظّم خطة مذاكرة'),
+                                  t(
+                                    'Help me make a study plan.',
+                                    'ساعدني في تنظيم خطة مذاكرة.',
+                                  ),
+                                ),
+                              ]
+                              .map(
+                                (suggestion) => ActionChip(
+                                  label: Text(suggestion.$1),
+                                  onPressed: _loading
+                                      ? null
+                                      : () => setState(
+                                          () => _question.text = suggestion.$2,
+                                        ),
+                                ),
+                              )
+                              .toList(),
+                    ),
+                  ],
+                  for (final item in _history) ...[
+                    _chatBubble(text: item.question, fromUser: true),
+                    const SizedBox(height: 12),
+                    _chatBubble(text: item.answer, fromUser: false),
+                    const SizedBox(height: 20),
+                  ],
+                  if (_pendingQuestion != null) ...[
+                    _chatBubble(text: _pendingQuestion!, fromUser: true),
+                    const SizedBox(height: 12),
+                  ],
+                  if (_loading)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: colors.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(t('Thinking…', 'يفكر المساعد…')),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (_error != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colors.errorContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _error!,
+                        style: TextStyle(color: colors.onErrorContainer),
+                      ),
+                    ),
+                    if (!OracleAccountClient.enabled &&
+                        _error == _message('sign_in_required'))
+                      TextButton.icon(
+                        icon: const Icon(Icons.account_circle_outlined),
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                GoogleAccountScreen(arabic: widget.arabic),
+                          ),
+                        ),
+                        label: Text(t('Google account', 'حساب Google')),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+            Material(
+              color: colors.surface,
+              elevation: 8,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _question,
+                            minLines: 1,
+                            maxLines: 4,
+                            maxLength: 500,
+                            enabled: !_loading,
+                            textInputAction: TextInputAction.send,
+                            onChanged: (_) => setState(() {}),
+                            onSubmitted: (_) {
+                              if (!_loading &&
+                                  _question.text.trim().isNotEmpty) {
+                                _ask();
+                              }
+                            },
+                            decoration: InputDecoration(
+                              hintText: t(
+                                'Write your message…',
+                                'اكتب رسالتك…',
+                              ),
+                              counterText: '',
+                              filled: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filled(
+                          tooltip: t('Send message', 'إرسال الرسالة'),
+                          onPressed: _loading || _question.text.trim().isEmpty
+                              ? null
+                              : _ask,
+                          icon: const Icon(Icons.send_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      t(
+                        'Your message is sent to the external AI service when you send it.',
+                        'سيتم إرسال رسالتك إلى خدمة الذكاء الاصطناعي الخارجية عند الضغط على الإرسال.',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

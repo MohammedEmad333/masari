@@ -83,9 +83,10 @@ void main() {
     );
 
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
-    expect(
-      tester.widget<IconButton>(find.byTooltip('Ask AI')).onPressed,
-      isNull,
+    final sendButton = find.ancestor(
+      of: find.byTooltip('Ask AI'),
+      matching: find.byType(IconButton),
     );
+    expect(tester.widget<IconButton>(sendButton).onPressed, isNull);
   });
 }

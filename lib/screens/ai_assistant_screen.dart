@@ -515,7 +515,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         ),
                       ),
                   ],
-                  if (accountAction != null) accountAction,
+                  ?accountAction,
                 ],
               ),
             ),

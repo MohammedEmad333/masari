@@ -1607,6 +1607,55 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 const SizedBox(height: 12),
                 Text(deadline.description),
               ],
+              if (deadline.url.isNotEmpty) ...[
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final uri = Uri.tryParse(deadline.url);
+                    if (uri == null ||
+                        (uri.scheme != 'https' && uri.scheme != 'http') ||
+                        !uri.hasAuthority) {
+                      return;
+                    }
+                    final opened = await launchUrl(
+                      uri,
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (!opened && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            t(
+                              'Could not open Moodle link',
+                              'تعذر فتح رابط Moodle',
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: Text(t('Open in Moodle', 'افتح في Moodle')),
+                ),
+                const SizedBox(height: 6),
+                TextButton.icon(
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: deadline.url));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(t('Link copied', 'تم نسخ الرابط')),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.copy_rounded),
+                  label: Text(t('Copy link', 'نسخ الرابط')),
+                ),
+                const SizedBox(height: 10),
+                Directionality(
+                  textDirection: ui.TextDirection.ltr,
+                  child: SelectableText(deadline.url),
+                ),
+              ],
               const SizedBox(height: 12),
               if (isManual) ...[
                 Text(
@@ -1716,41 +1765,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   child: Text(
                     t('Use global reminders', 'استخدام التذكيرات العامة'),
                   ),
-                ),
-              ],
-              if (deadline.url.isNotEmpty) ...[
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final uri = Uri.tryParse(deadline.url);
-                    if (uri == null ||
-                        (uri.scheme != 'https' && uri.scheme != 'http') ||
-                        !uri.hasAuthority) {
-                      return;
-                    }
-                    final opened = await launchUrl(
-                      uri,
-                      mode: LaunchMode.externalApplication,
-                    );
-                    if (!opened && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            t(
-                              'Could not open Moodle link',
-                              'تعذر فتح رابط Moodle',
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.open_in_new_rounded),
-                  label: Text(t('Open in Moodle', 'افتح في Moodle')),
-                ),
-                const SizedBox(height: 10),
-                Directionality(
-                  textDirection: ui.TextDirection.ltr,
-                  child: SelectableText(deadline.url),
                 ),
               ],
               const SizedBox(height: 18),

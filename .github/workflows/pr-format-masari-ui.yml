@@ -1,0 +1,41 @@
+name: Temporary format Masari UI PR
+
+on:
+  push:
+    branches:
+      - feat/masari-chat-moodle-task-links-20261119
+    paths:
+      - '.github/workflows/pr-format-masari-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - name: Format Dart source and tests
+        run: dart format lib test
+      - name: Commit formatting only to feature branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -- lib test
+          if git diff --cached --quiet; then
+            echo "Already formatted"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style(ui): apply Dart formatter"
+          git push origin HEAD:feat/masari-chat-moodle-task-links-20261119

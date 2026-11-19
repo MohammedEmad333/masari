@@ -4,10 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('cloud backup uses explicit user action and no Moodle secrets', () {
-    final source = File('lib/services/optional_cloud_backup.dart')
-        .readAsStringSync();
-    final screen = File('lib/screens/cloud_backup_screen.dart')
-        .readAsStringSync();
+    final source = File(
+      'lib/services/optional_cloud_backup.dart',
+    ).readAsStringSync();
+    final screen = File(
+      'lib/screens/cloud_backup_screen.dart',
+    ).readAsStringSync();
     expect(source, contains('manualTasks'));
     expect(source, contains('plans'));
     expect(source, contains('task.title'));

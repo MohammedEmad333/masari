@@ -269,11 +269,12 @@ class _LocalCoursesScreenState extends State<LocalCoursesScreen> {
     try {
       final url = CourseShareCodec.encode(course);
       await Clipboard.setData(ClipboardData(text: url));
-      await const MethodChannel('moodle_reminder/course_share')
-          .invokeMethod<void>('shareLink', {
-            'url': url,
-            'language': widget.arabic ? 'ar' : 'en',
-          });
+      await const MethodChannel(
+        'moodle_reminder/course_share',
+      ).invokeMethod<void>('shareLink', {
+        'url': url,
+        'language': widget.arabic ? 'ar' : 'en',
+      });
     } catch (_) {
       _error();
     }

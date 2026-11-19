@@ -26,8 +26,9 @@ class MasariTaskFilterSummary extends StatelessWidget {
           Expanded(
             child: Text(
               arabic ? '$results نتائج مطابقة' : '$results matching tasks',
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: scheme.onSurfaceVariant),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
           TextButton.icon(

@@ -20,8 +20,9 @@ void main() {
         MaterialApp(
           theme: MasariTheme.light,
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(textScaler: const TextScaler.linear(1.3)),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(1.3)),
             child: child!,
           ),
           home: Directionality(

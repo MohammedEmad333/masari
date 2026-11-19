@@ -22,7 +22,8 @@ void main() {
   test('uses a safe description link if the URL field is empty', () {
     final url = MoodleTaskLink.resolve(
       task(
-        description: 'View assignment: https://moodle.example.edu/mod/quiz/view.php?id=45.',
+        description:
+            'View assignment: https://moodle.example.edu/mod/quiz/view.php?id=45.',
       ),
     );
     expect(url?.queryParameters['id'], '45');
@@ -36,7 +37,8 @@ void main() {
     expect(
       MoodleTaskLink.resolve(
         task(
-          url: 'https://moodle.example.edu/calendar/export_execute.php?authtoken=secret',
+          url:
+              'https://moodle.example.edu/calendar/export_execute.php?authtoken=secret',
         ),
       ),
       isNull,
@@ -44,7 +46,8 @@ void main() {
     expect(
       MoodleTaskLink.resolve(
         task(
-          url: 'https://moodle.example.edu/mod/assign/view.php?id=45&token=secret',
+          url:
+              'https://moodle.example.edu/mod/assign/view.php?id=45&token=secret',
         ),
       ),
       isNull,

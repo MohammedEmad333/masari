@@ -117,8 +117,9 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
       _status = null;
     });
     try {
-      final snapshot = await OptionalCloudBackup(FirebaseFirestore.instance)
-          .download(user);
+      final snapshot = await OptionalCloudBackup(
+        FirebaseFirestore.instance,
+      ).download(user);
       final existing = widget.controller.manualDeadlines
           .map((task) => task.stableKey)
           .toSet();

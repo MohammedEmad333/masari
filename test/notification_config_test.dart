@@ -7,10 +7,12 @@ void main() {
     final icon = File(
       'android/app/src/main/res/drawable/masari_notification.xml',
     ).readAsStringSync();
-    final keep = File('android/app/src/main/res/raw/keep.xml')
-        .readAsStringSync();
-    final service = File('lib/services/notification_service.dart')
-        .readAsStringSync();
+    final keep = File(
+      'android/app/src/main/res/raw/keep.xml',
+    ).readAsStringSync();
+    final service = File(
+      'lib/services/notification_service.dart',
+    ).readAsStringSync();
 
     expect(icon, contains('<vector'));
     expect(icon, contains('android:pathData'));
@@ -23,8 +25,9 @@ void main() {
   });
 
   test('immediate notifications do not need device timezone resolution', () {
-    final service = File('lib/services/notification_service.dart')
-        .readAsStringSync();
+    final service = File(
+      'lib/services/notification_service.dart',
+    ).readAsStringSync();
 
     expect(service, contains('reminderScheduledInstant(when)'));
     expect(service, isNot(contains('FlutterTimezone.getLocalTimezone()')));
@@ -35,13 +38,15 @@ void main() {
   });
 
   test('notification plugin 23 retains Android reboot and alarm behavior', () {
-    final manifest = File('android/app/src/main/AndroidManifest.xml')
-        .readAsStringSync();
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
     final settings = File('android/settings.gradle.kts').readAsStringSync();
-    final service = File('lib/services/notification_service.dart')
-        .readAsStringSync();
+    final service = File(
+      'lib/services/notification_service.dart',
+    ).readAsStringSync();
 
     expect(pubspec, contains('flutter_local_notifications: ^23.0.0'));
     expect(gradle, contains('compileSdk = 37'));

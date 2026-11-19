@@ -24,18 +24,21 @@ void main() {
       expect(result.intent, AssistantIntent.reminderPreview);
       expect(result.reminderMinutes, 10);
       expect(
-        AssistantPreviewService.interpret('Remind 2 hours before')
-            .reminderMinutes,
+        AssistantPreviewService.interpret(
+          'Remind 2 hours before',
+        ).reminderMinutes,
         120,
       );
       expect(
-        AssistantPreviewService.interpret('ذكرني قبل 9999 دقيقة')
-            .reminderMinutes,
+        AssistantPreviewService.interpret(
+          'ذكرني قبل 9999 دقيقة',
+        ).reminderMinutes,
         isNull,
       );
       expect(
-        AssistantPreviewService.interpret('ذكرني قبل عشر دقائق')
-            .reminderMinutes,
+        AssistantPreviewService.interpret(
+          'ذكرني قبل عشر دقائق',
+        ).reminderMinutes,
         isNull,
       );
     });

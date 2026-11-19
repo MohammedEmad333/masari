@@ -1037,10 +1037,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         else
           ...entries.map((entry) {
             final now = DateTime.now();
-            final upcoming = entry.value
-                .where((deadline) => !deadline.due.isBefore(now))
-                .toList()
-              ..sort((a, b) => a.due.compareTo(b.due));
+            final upcoming =
+                entry.value
+                    .where((deadline) => !deadline.due.isBefore(now))
+                    .toList()
+                  ..sort((a, b) => a.due.compareTo(b.due));
             final overdueCount = entry.value.length - upcoming.length;
             final summary = <String>[
               t('Upcoming: ${upcoming.length}', 'القادمة: ${upcoming.length}'),

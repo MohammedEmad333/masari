@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moodle_reminder/navigation/masari_navigation.dart';
-import 'package:moodle_reminder/screens/masari_assistant_privacy_notice.dart';
+import 'package:moodle_reminder/screens/masari_assistant_composer.dart';
 import 'package:moodle_reminder/screens/masari_more_quick_access.dart';
 import 'package:moodle_reminder/theme/masari_theme.dart';
 
@@ -52,7 +52,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('More actions and assistant disclosure remain accessible', (
+    testWidgets('More actions and compact assistant disclosure remain accessible', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(360, 900);
@@ -61,6 +61,8 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final visits = <String>[];
+      final controller = TextEditingController();
+      addTearDown(controller.dispose);
       await tester.pumpWidget(
         MaterialApp(
           theme: MasariTheme.dark,
@@ -78,7 +80,12 @@ void main() {
                     onTaskPlans: () => visits.add('plans'),
                     onAssistant: () => visits.add('assistant'),
                   ),
-                  const MasariAssistantPrivacyNotice(arabic: false),
+                  MasariAssistantComposer(
+                    controller: controller,
+                    arabic: arabic,
+                    loading: false,
+                    onSend: () {},
+                  ),
                 ],
               ),
             ),
@@ -98,7 +105,8 @@ void main() {
         await tester.pump();
         expect(visits.last, action.$1);
       }
-      expect(find.text('Assistant privacy'), findsOneWidget);
+      expect(find.text('Assistant privacy'), findsNothing);
+      expect(find.byType(MasariAssistantComposer), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

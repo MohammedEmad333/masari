@@ -6,7 +6,7 @@ import 'package:moodle_reminder/theme/masari_theme.dart';
 void main() {
   for (final arabic in [false, true]) {
     testWidgets(
-      'question can be sent without a checkbox in ${arabic ? 'Arabic' : 'English'}',
+      'chat composer sends only after explicit action in ${arabic ? 'Arabic' : 'English'}',
       (tester) async {
         tester.view.physicalSize = const Size(320, 780);
         tester.view.devicePixelRatio = 1;
@@ -18,18 +18,20 @@ void main() {
 
         await tester.pumpWidget(
           MaterialApp(
-            theme: MasariTheme.light,
+            theme: MasariTheme.dark,
             home: Directionality(
               textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
               child: Scaffold(
-                body: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: MasariAssistantComposer(
-                    controller: controller,
-                    arabic: arabic,
-                    loading: false,
-                    onSend: () => sends++,
-                  ),
+                body: Column(
+                  children: [
+                    const Expanded(child: SizedBox()),
+                    MasariAssistantComposer(
+                      controller: controller,
+                      arabic: arabic,
+                      loading: false,
+                      onSend: () => sends++,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -37,25 +39,24 @@ void main() {
         );
 
         expect(find.byType(Checkbox), findsNothing);
-        expect(find.byType(CheckboxListTile), findsNothing);
-        expect(find.text(arabic ? 'اسأل المساعد' : 'Ask AI'), findsOneWidget);
         expect(
-          find.text(
-            arabic
-                ? 'بالضغط على «اسأل المساعد»، سيتم إرسال نص سؤالك إلى خدمة الذكاء الاصطناعي الخارجية.'
-                : 'Tapping “Ask AI” sends your question to the external AI service.',
-          ),
+          find.text(arabic ? 'اكتب سؤالك هنا...' : 'Message…'),
           findsOneWidget,
         );
         expect(
-          tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-          isNotNull,
+          find.textContaining(
+            arabic
+                ? 'سيتم إرسال نص سؤالك'
+                : 'shares your question',
+          ),
+          findsOneWidget,
         );
 
         await tester.enterText(find.byType(TextField), 'Help me study');
         await tester.pump();
-        expect(sends, 0); // Typing never submits to the external service.
-        await tester.tap(find.text(arabic ? 'اسأل المساعد' : 'Ask AI'));
+        expect(sends, 0);
+        await tester.tap(find.byTooltip(arabic ? 'اسأل المساعد' : 'Ask AI'));
+        await tester.pump();
         expect(sends, 1);
         expect(tester.takeException(), isNull);
       },
@@ -83,7 +84,7 @@ void main() {
 
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
     expect(
-      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      tester.widget<IconButton>(find.byTooltip('Ask AI')).onPressed,
       isNull,
     );
   });

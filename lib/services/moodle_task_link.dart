@@ -36,11 +36,33 @@ class MoodleTaskLink {
       return null;
     }
     final path = uri.path.toLowerCase();
-    if (!RegExp(r'/mod/[a-z0-9_]+/view\.php$').hasMatch(path) &&
-        !path.endsWith('/course/view.php')) {
+    final isActivity = RegExp(r'/mod/[a-z0-9_]+/view\.php
+    const blocked = {
+      'token',
+      'authtoken',
+      'wstoken',
+      'sesskey',
+      'access_token',
+      'password',
+      'key',
+    };
+    if (uri.queryParameters.keys.any(
+      (key) => blocked.contains(key.toLowerCase()),
+    )) {
       return null;
     }
-    if (uri.queryParameters['id']?.trim().isEmpty ?? true) return null;
+    return uri;
+  }
+}
+).hasMatch(path);
+    final isCourse = path.endsWith('/course/view.php');
+    final isCalendar = path.endsWith('/calendar/view.php') ||
+        path.endsWith('/calendar/event.php');
+    if (!isActivity && !isCourse && !isCalendar) return null;
+    final hasId = (uri.queryParameters['id']?.trim().isNotEmpty ?? false) ||
+        (isCalendar &&
+            (uri.queryParameters['eventid']?.trim().isNotEmpty ?? false));
+    if (!hasId) return null;
     const blocked = {
       'token',
       'authtoken',

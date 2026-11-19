@@ -7,7 +7,7 @@ import '../services/oracle_ai_session_store.dart';
 import '../services/oracle_account_client.dart';
 import 'google_account_screen.dart';
 import 'oracle_ai_pairing_screen.dart';
-import 'masari_assistant_privacy_notice.dart';
+import 'masari_chat_message_bubble.dart';
 import 'masari_assistant_composer.dart';
 
 /// Text-only AI chat. Sending happens only when the user taps Ask AI.
@@ -24,7 +24,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final _question = TextEditingController();
   final _client = AiAssistantClient();
   bool _loading = false;
-  final List<({String question, String answer})> _history = [];
+  final List<({bool fromUser, String text})> _messages = [];
+  final ScrollController _chatScrollController = ScrollController();
+  bool _connectionChecked = false;
   String? _error;
   bool _oracleConnected = false;
   bool _connectingGoogle = false;
@@ -71,29 +73,34 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   }
 
   Future<void> _refreshConnection() async {
+    var connected = false;
     try {
       if (OracleAccountClient.enabled) {
         final account = OracleAccountClient();
         try {
           final session = await account.currentSession();
-          if (mounted) {
-            setState(() => _oracleConnected = session?.isValid ?? false);
-          }
+          connected = session?.isValid ?? false;
         } finally {
           account.dispose();
         }
-        return;
+      } else {
+        await GoogleAccountService.instance.initialize();
+        final store = OracleAiSessionStore();
+        final session = GoogleOracleAuthClient.enabled
+            ? await store.readForGoogle(
+                GoogleAccountService.instance.currentUser?.uid,
+              )
+            : await store.read();
+        connected = session?.isValid ?? false;
       }
-      await GoogleAccountService.instance.initialize();
-      final store = OracleAiSessionStore();
-      final session = GoogleOracleAuthClient.enabled
-          ? await store.readForGoogle(
-              GoogleAccountService.instance.currentUser?.uid,
-            )
-          : await store.read();
-      if (mounted) setState(() => _oracleConnected = session?.isValid ?? false);
     } catch (_) {
-      if (mounted) setState(() => _oracleConnected = false);
+      connected = false;
+    }
+    if (mounted) {
+      setState(() {
+        _oracleConnected = connected;
+        _connectionChecked = true;
+      });
     }
   }
 
@@ -127,35 +134,44 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   @override
   void dispose() {
     _question.dispose();
+    _chatScrollController.dispose();
     _client.dispose();
     super.dispose();
   }
 
   Future<void> _ask() async {
     if (_loading) return;
+    final message = _question.text.trim();
+    if (message.isEmpty) return;
+
     FocusScope.of(context).unfocus();
     setState(() {
+      _messages.add((fromUser: true, text: message));
+      _question.clear();
       _loading = true;
       _error = null;
     });
-    final question = _question.text.trim();
+    _scrollToBottom();
+
     try {
-      final answer = await _askWithGoogleRenewal();
+      final answer = await _askWithGoogleRenewal(message);
       if (mounted) {
-        setState(() => _history.add((question: question, answer: answer)));
-        _question.clear();
+        setState(() => _messages.add((fromUser: false, text: answer)));
+        _scrollToBottom();
       }
     } on AiAssistantException catch (error) {
-      if (mounted) setState(() => _error = _message(error.code));
+      if (mounted) {
+        setState(() => _error = _message(error.code));
+        _scrollToBottom();
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _error = t('Unable to connect.', 'تعذّر الاتصال.'));
+        _scrollToBottom();
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _loading = false;
-        });
+        setState(() => _loading = false);
         await _refreshConnection();
       }
     }
@@ -164,7 +180,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   /// Refresh the Google-linked Oracle session when missing or rejected.
   /// Only Google-backed sessions are automatically renewed; legacy pairing
   /// tokens continue to require explicit re-pairing.
-  Future<String> _askWithGoogleRenewal() async {
+  Future<String> _askWithGoogleRenewal(String message) async {
     if (!OracleAccountClient.enabled && GoogleOracleAuthClient.enabled) {
       await GoogleAccountService.instance.initialize();
       final session = await OracleAiSessionStore().readForGoogle(
@@ -180,7 +196,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       }
     }
     Future<String> send() => _client.ask(
-      message: _question.text,
+      message: message,
       language: widget.arabic ? 'ar' : 'en',
     );
     try {
@@ -281,146 +297,238 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     }
   }
 
-  // Lightweight display formatting for model responses. Do not interpret HTML
-  // or execute links: all content remains plain, selectable text.
-  Widget _answerText(String value) {
-    final base = DefaultTextStyle.of(context).style;
-    final spans = <TextSpan>[];
-    final pattern = RegExp(r'\*\*(.+?)\*\*|\*([^*\n]+)\*');
-    var cursor = 0;
-    for (final match in pattern.allMatches(value)) {
-      if (match.start > cursor) {
-        spans.add(TextSpan(text: value.substring(cursor, match.start)));
-      }
-      spans.add(
-        TextSpan(
-          text: match.group(1) ?? match.group(2) ?? '',
-          style: match.group(1) != null
-              ? base.copyWith(fontWeight: FontWeight.bold)
-              : base.copyWith(fontStyle: FontStyle.italic),
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_chatScrollController.hasClients) return;
+      _chatScrollController.animateTo(
+        _chatScrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  void _startNewChat() {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _messages.clear();
+      _error = null;
+      _question.clear();
+    });
+  }
+
+  void _usePrompt(String prompt) {
+    _question.value = TextEditingValue(
+      text: prompt,
+      selection: TextSelection.collapsed(offset: prompt.length),
+    );
+    FocusScope.of(context).requestFocus(FocusNode());
+  }
+
+  Widget _welcomeContent() {
+    final prompts = widget.arabic
+        ? const [
+            'اشرح لي مفهومًا دراسيًا',
+            'ساعدني في تنظيم المذاكرة',
+            'لخّص هذا الموضوع',
+          ]
+        : const [
+            'Explain a study concept',
+            'Help me plan revision',
+            'Summarize this topic',
+          ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        MasariChatMessageBubble(
+          text: t(
+            'Hello! How can I help with your studies today?',
+            'مرحبًا! كيف يمكنني مساعدتك في دراستك اليوم؟',
+          ),
+          fromUser: false,
+          arabic: widget.arabic,
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 40, bottom: 8),
+          child: Text(
+            t('You can start with one of these:', 'يمكنك البدء بأحد هذه الأسئلة:'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 40),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: prompts
+                .map(
+                  (prompt) => ActionChip(
+                    label: Text(prompt),
+                    onPressed: () => _usePrompt(prompt),
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _typingIndicator() {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 15,
+            backgroundColor: scheme.secondaryContainer,
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              size: 17,
+              color: scheme.onSecondaryContainer,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox.square(
+                  dimension: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 10),
+                Text(t('Assistant is typing…', 'المساعد يكتب...')),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget? _accountAction() {
+    if (!_connectionChecked || _oracleConnected || _connectingGoogle) {
+      return null;
+    }
+    if (OracleAccountClient.enabled) {
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: OutlinedButton.icon(
+          onPressed: _loading ? null : _signInToOracleAccount,
+          icon: const Icon(Icons.account_circle_outlined),
+          label: Text(t('Sign in to Masari', 'تسجيل الدخول إلى مساري')),
         ),
       );
-      cursor = match.end;
     }
-    if (cursor < value.length) {
-      spans.add(TextSpan(text: value.substring(cursor)));
+    if (GoogleOracleAuthClient.enabled) {
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: OutlinedButton.icon(
+          onPressed: _loading ? null : () => _connectGoogle(),
+          icon: const Icon(Icons.account_circle_outlined),
+          label: Text(t('Continue with Google', 'المتابعة باستخدام Google')),
+        ),
+      );
     }
-    return Directionality(
-      textDirection: widget.arabic ? TextDirection.rtl : TextDirection.ltr,
-      child: SelectableText.rich(
-        TextSpan(style: base, children: spans),
-        textAlign: TextAlign.start,
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: OutlinedButton.icon(
+        onPressed: _loading
+            ? null
+            : () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        OracleAiPairingScreen(arabic: widget.arabic),
+                  ),
+                );
+                await _refreshConnection();
+              },
+        icon: const Icon(Icons.phonelink_lock_outlined),
+        label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final accountAction = _accountAction();
     return Scaffold(
-      appBar: AppBar(title: Text(t('Study assistant', 'المساعد الدراسي'))),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          MasariAssistantPrivacyNotice(arabic: widget.arabic),
-          const SizedBox(height: 12),
-          Text(
-            _oracleConnected
-                ? t('Connected with Oracle', 'متصل عبر Oracle')
-                : OracleAccountClient.enabled
-                ? t(
-                    'Masari account not connected — sign in with Google',
-                    'حساب مساري غير متصل — سجّل الدخول باستخدام Google',
-                  )
-                : t(
-                    'Oracle not paired — Google sign-in may be required',
-                    'Oracle غير مرتبط — قد يلزم تسجيل Google',
-                  ),
+      appBar: AppBar(
+        title: Text(t('Study assistant', 'المساعد الدراسي')),
+        actions: [
+          IconButton(
+            tooltip: t('New chat', 'محادثة جديدة'),
+            onPressed: _startNewChat,
+            icon: const Icon(Icons.add_comment_outlined),
           ),
-          const SizedBox(height: 12),
-          if (OracleAccountClient.enabled && !_oracleConnected)
-            OutlinedButton.icon(
-              onPressed: _loading || _connectingGoogle
-                  ? null
-                  : _signInToOracleAccount,
-              icon: const Icon(Icons.account_circle_outlined),
-              label: Text(t('Sign in to Masari', 'تسجيل الدخول إلى مساري')),
-            ),
-          if (!OracleAccountClient.enabled && GoogleOracleAuthClient.enabled)
-            OutlinedButton.icon(
-              onPressed: _loading || _connectingGoogle
-                  ? null
-                  : () => _connectGoogle(),
-              icon: const Icon(Icons.account_circle_outlined),
-              label: Text(
-                t('Continue with Google', 'المتابعة باستخدام Google'),
-              ),
-            ),
-          if (!OracleAccountClient.enabled && !GoogleOracleAuthClient.enabled)
-            OutlinedButton.icon(
-              onPressed: _loading
-                  ? null
-                  : () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              OracleAiPairingScreen(arabic: widget.arabic),
-                        ),
-                      );
-                      await _refreshConnection();
-                    },
-              icon: const Icon(Icons.phonelink_lock_outlined),
-              label: Text(t('Pair AI device', 'ربط جهاز المساعد')),
-            ),
-          const SizedBox(height: 16),
-          MasariAssistantComposer(
-            controller: _question,
-            arabic: widget.arabic,
-            loading: _loading,
-            onSend: _ask,
-          ),
-          if (_loading) ...[
-            const SizedBox(height: 16),
-            const Center(child: CircularProgressIndicator()),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            if (!OracleAccountClient.enabled &&
-                _error == _message('sign_in_required'))
-              OutlinedButton.icon(
-                icon: const Icon(Icons.account_circle_outlined),
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => GoogleAccountScreen(arabic: widget.arabic),
-                  ),
-                ),
-                label: Text(t('Google account', 'حساب Google')),
-              ),
-          ],
-          for (final item in _history) ...[
-            const SizedBox(height: 16),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SelectableText(item.question),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: _answerText(item.answer),
-              ),
-            ),
-          ],
         ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                controller: _chatScrollController,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                children: [
+                  if (_messages.isEmpty) _welcomeContent(),
+                  for (final message in _messages)
+                    MasariChatMessageBubble(
+                      text: message.text,
+                      fromUser: message.fromUser,
+                      arabic: widget.arabic,
+                    ),
+                  if (_loading) _typingIndicator(),
+                  if (_error != null) ...[
+                    MasariChatMessageBubble(
+                      text: _error!,
+                      fromUser: false,
+                      arabic: widget.arabic,
+                      isError: true,
+                    ),
+                    if (!OracleAccountClient.enabled &&
+                        _error == _message('sign_in_required'))
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.account_circle_outlined),
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => GoogleAccountScreen(
+                                arabic: widget.arabic,
+                              ),
+                            ),
+                          ),
+                          label: Text(t('Google account', 'حساب Google')),
+                        ),
+                      ),
+                  ],
+                  if (accountAction != null) accountAction,
+                ],
+              ),
+            ),
+            MasariAssistantComposer(
+              controller: _question,
+              arabic: widget.arabic,
+              loading: _loading,
+              onSend: _ask,
+            ),
+          ],
+        ),
       ),
     );
   }
+
 }

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +22,7 @@ import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
 import '../services/calendar_agenda.dart';
 import '../services/manual_task_form.dart';
+import '../services/moodle_task_link.dart';
 import '../services/study_insights.dart';
 import 'pomodoro_dialog.dart';
 import 'moodle_calendar_browser.dart';
@@ -1038,7 +1038,23 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           )
         else
           ...entries.map((entry) {
-            final next = entry.value.first;
+            final now = DateTime.now();
+            final upcoming =
+                entry.value
+                    .where((deadline) => !deadline.due.isBefore(now))
+                    .toList()
+                  ..sort((a, b) => a.due.compareTo(b.due));
+            final overdueCount = entry.value.length - upcoming.length;
+            final summary = <String>[
+              t('Upcoming: ${upcoming.length}', 'القادمة: ${upcoming.length}'),
+              if (overdueCount > 0)
+                t('Overdue: $overdueCount', 'المتأخرة: $overdueCount'),
+              if (upcoming.isNotEmpty)
+                t(
+                  'Next: ${_remainingText(upcoming.first)}',
+                  'الأقرب: ${_remainingText(upcoming.first)}',
+                ),
+            ];
             return Card(
               child: ListTile(
                 leading: CircleAvatar(
@@ -1052,12 +1068,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   _displayCourse(entry.key),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text(
-                  t(
-                    '${entry.value.length} upcoming • next ${_remainingText(next)}',
-                    '${entry.value.length} قادمة • التالي ${_remainingText(next)}',
-                  ),
-                ),
+                subtitle: Text(summary.join(' • ')),
                 trailing: Icon(
                   _ar
                       ? Icons.chevron_left_rounded
@@ -1470,6 +1481,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       deadline.stableKey,
     );
     final color = _urgency(deadline);
+    final hasMoodleLink = MoodleTaskLink.resolve(deadline) != null;
     final course = _displayCourse(deadline.course);
     return Card(
       child: ListTile(
@@ -1496,6 +1508,27 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 Text(course, maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 2),
               Text(_formatDue(deadline.due)),
+              if (hasMoodleLink)
+                Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.link_rounded,
+                        size: 15,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        t('Moodle link available', 'رابط Moodle متوفر'),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -1582,198 +1615,235 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final isManual = widget.controller.manualDeadlines.any(
       (task) => task.stableKey == deadline.stableKey,
     );
+    final taskLink = MoodleTaskLink.resolve(deadline);
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                deadline.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 10),
-              if (deadline.course.isNotEmpty)
-                Text(_displayCourse(deadline.course)),
-              Text(_formatDue(deadline.due)),
-              if (deadline.description.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(deadline.description),
-              ],
-              const SizedBox(height: 12),
-              if (isManual) ...[
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * .82,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  t('Reminder', 'التذكير'),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(
-                  deadline.reminderMinutesBefore == null
-                      ? t('Default reminders', 'التذكيرات الافتراضية')
-                      : deadline.reminderMinutesBefore == -1
-                      ? t('No notifications', 'بدون إشعارات')
-                      : deadline.reminderMinutesBefore! < 60
-                      ? t(
-                          '${deadline.reminderMinutesBefore} minutes before',
-                          'قبل ${deadline.reminderMinutesBefore} دقيقة',
-                        )
-                      : t(
-                          '${deadline.reminderMinutesBefore! ~/ 60} hours before',
-                          'قبل ${deadline.reminderMinutesBefore! ~/ 60} ساعة',
-                        ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    if (mounted) _addManualTask(existing: deadline);
-                  },
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(t('Edit task', 'تعديل المهمة')),
-                ),
-                TextButton.icon(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    if (!mounted) return;
-                    final confirmed = await showDialog<bool>(
-                      context: this.context,
-                      builder: (dialogContext) => AlertDialog(
-                        title: Text(t('Delete task?', 'حذف المهمة؟')),
-                        content: Text(
-                          t(
-                            'This task will be removed from this device.',
-                            'سيتم حذف هذه المهمة من الجهاز.',
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, false),
-                            child: Text(t('Cancel', 'إلغاء')),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(dialogContext, true),
-                            child: Text(t('Delete', 'حذف')),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmed == true) {
-                      await widget.controller.deleteManualDeadline(deadline);
-                    }
-                  },
-                  icon: const Icon(Icons.delete_outline),
-                  label: Text(t('Delete task', 'حذف المهمة')),
-                ),
-              ] else ...[
-                Text(t('Task reminders', 'تذكيرات المهمة')),
-                Wrap(
-                  spacing: 8,
-                  children: [1, 6, 24, 48, 72].map((hours) {
-                    final specific = widget
-                        .controller
-                        .taskReminderOffsets[deadline.stableKey];
-                    final selected =
-                        (specific ?? widget.controller.reminderOffsets)
-                            .contains(hours);
-                    return FilterChip(
-                      label: Text(_offsetLabel(hours)),
-                      selected: selected,
-                      onSelected: (checked) async {
-                        final values = [
-                          ...(specific ?? widget.controller.reminderOffsets),
-                        ];
-                        if (checked) {
-                          values.add(hours);
-                        } else {
-                          values.remove(hours);
-                        }
-                        await widget.controller.setTaskReminderOffsets(
-                          deadline,
-                          values,
-                        );
-                        if (context.mounted) Navigator.pop(context);
-                        if (mounted) _showDeadline(deadline);
-                      },
-                    );
-                  }).toList(),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    await widget.controller.setTaskReminderOffsets(
-                      deadline,
-                      null,
-                    );
-                    if (context.mounted) Navigator.pop(context);
-                    if (mounted) _showDeadline(deadline);
-                  },
-                  child: Text(
-                    t('Use global reminders', 'استخدام التذكيرات العامة'),
-                  ),
-                ),
-              ],
-              if (deadline.url.isNotEmpty) ...[
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final uri = Uri.tryParse(deadline.url);
-                    if (uri == null ||
-                        (uri.scheme != 'https' && uri.scheme != 'http') ||
-                        !uri.hasAuthority) {
-                      return;
-                    }
-                    final opened = await launchUrl(
-                      uri,
-                      mode: LaunchMode.externalApplication,
-                    );
-                    if (!opened && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            t(
-                              'Could not open Moodle link',
-                              'تعذر فتح رابط Moodle',
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.open_in_new_rounded),
-                  label: Text(t('Open in Moodle', 'افتح في Moodle')),
+                  deadline.title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 10),
-                Directionality(
-                  textDirection: ui.TextDirection.ltr,
-                  child: SelectableText(deadline.url),
+                if (deadline.course.isNotEmpty)
+                  Text(_displayCourse(deadline.course)),
+                Text(_formatDue(deadline.due)),
+                if (deadline.description.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(deadline.description),
+                ],
+                if (taskLink != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    t('Moodle task link', 'رابط المهمة في Moodle'),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          var opened = false;
+                          try {
+                            opened = await launchUrl(
+                              taskLink,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          } catch (_) {
+                            opened = false;
+                          }
+                          if (!opened && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  t(
+                                    'Could not open Moodle link',
+                                    'تعذّر فتح رابط Moodle',
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.open_in_new_rounded),
+                        label: Text(t('Open in Moodle', 'فتح في Moodle')),
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: taskLink.toString()),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  t('Link copied', 'تم نسخ الرابط'),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.copy_rounded),
+                        label: Text(t('Copy link', 'نسخ الرابط')),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 12),
+                if (isManual) ...[
+                  Text(
+                    t('Reminder', 'التذكير'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    deadline.reminderMinutesBefore == null
+                        ? t('Default reminders', 'التذكيرات الافتراضية')
+                        : deadline.reminderMinutesBefore == -1
+                        ? t('No notifications', 'بدون إشعارات')
+                        : deadline.reminderMinutesBefore! < 60
+                        ? t(
+                            '${deadline.reminderMinutesBefore} minutes before',
+                            'قبل ${deadline.reminderMinutesBefore} دقيقة',
+                          )
+                        : t(
+                            '${deadline.reminderMinutesBefore! ~/ 60} hours before',
+                            'قبل ${deadline.reminderMinutesBefore! ~/ 60} ساعة',
+                          ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      if (mounted) _addManualTask(existing: deadline);
+                    },
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(t('Edit task', 'تعديل المهمة')),
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      if (!mounted) return;
+                      final confirmed = await showDialog<bool>(
+                        context: this.context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(t('Delete task?', 'حذف المهمة؟')),
+                          content: Text(
+                            t(
+                              'This task will be removed from this device.',
+                              'سيتم حذف هذه المهمة من الجهاز.',
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: Text(t('Cancel', 'إلغاء')),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: Text(t('Delete', 'حذف')),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        await widget.controller.deleteManualDeadline(deadline);
+                      }
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    label: Text(t('Delete task', 'حذف المهمة')),
+                  ),
+                ] else ...[
+                  Text(t('Task reminders', 'تذكيرات المهمة')),
+                  Wrap(
+                    spacing: 8,
+                    children: [1, 6, 24, 48, 72].map((hours) {
+                      final specific = widget
+                          .controller
+                          .taskReminderOffsets[deadline.stableKey];
+                      final selected =
+                          (specific ?? widget.controller.reminderOffsets)
+                              .contains(hours);
+                      return FilterChip(
+                        label: Text(_offsetLabel(hours)),
+                        selected: selected,
+                        onSelected: (checked) async {
+                          final values = [
+                            ...(specific ?? widget.controller.reminderOffsets),
+                          ];
+                          if (checked) {
+                            values.add(hours);
+                          } else {
+                            values.remove(hours);
+                          }
+                          await widget.controller.setTaskReminderOffsets(
+                            deadline,
+                            values,
+                          );
+                          if (context.mounted) Navigator.pop(context);
+                          if (mounted) _showDeadline(deadline);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      await widget.controller.setTaskReminderOffsets(
+                        deadline,
+                        null,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                      if (mounted) _showDeadline(deadline);
+                    },
+                    child: Text(
+                      t('Use global reminders', 'استخدام التذكيرات العامة'),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      await widget.controller.toggleCompleted(deadline);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    icon: Icon(
+                      widget.controller.completedIds.contains(
+                            deadline.stableKey,
+                          )
+                          ? Icons.undo_rounded
+                          : Icons.check_rounded,
+                    ),
+                    label: Text(
+                      widget.controller.completedIds.contains(
+                            deadline.stableKey,
+                          )
+                          ? t('Mark active', 'إرجاعه نشطًا')
+                          : t('Mark completed', 'تحديد كمكتمل'),
+                    ),
+                  ),
                 ),
               ],
-              const SizedBox(height: 18),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () async {
-                    await widget.controller.toggleCompleted(deadline);
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                  icon: Icon(
-                    widget.controller.completedIds.contains(deadline.stableKey)
-                        ? Icons.undo_rounded
-                        : Icons.check_rounded,
-                  ),
-                  label: Text(
-                    widget.controller.completedIds.contains(deadline.stableKey)
-                        ? t('Mark active', 'إرجاعه نشطًا')
-                        : t('Mark completed', 'تحديد كمكتمل'),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

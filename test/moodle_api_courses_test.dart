@@ -51,6 +51,10 @@ void main() {
       expect(deadlines, hasLength(1));
       expect(deadlines.single.uid, 'moodle-api:4:9');
       expect(deadlines.single.course, 'Science');
+      expect(
+        deadlines.single.url,
+        'https://moodle.example/moodle/mod/assign/view.php?id=12',
+      );
       expect(deadlines.single.due.year, 2030);
       expect(requests, [
         'core_enrol_get_users_courses',

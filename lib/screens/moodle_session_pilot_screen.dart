@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import '../models/deadline.dart';
 import '../services/moodle_session_events.dart';
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 

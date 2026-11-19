@@ -73,15 +73,16 @@ class MoodleApiClient {
         final id = (assignment['id'] as num?)?.toInt();
         final due = (assignment['duedate'] as num?)?.toInt() ?? 0;
         if (id == null || due <= 0) continue;
+        final cmid = (assignment['cmid'] as num?)?.toInt();
         deadlines.add(
           Deadline(
             uid: 'moodle-api:$courseId:$id',
             title: assignment['name'] as String? ?? '',
             course: courseName,
             due: DateTime.fromMillisecondsSinceEpoch(due * 1000),
-            url: baseUrl
-                .resolve('mod/assign/view.php?id=${assignment['cmid'] ?? ''}')
-                .toString(),
+            url: cmid != null && cmid > 0
+                ? baseUrl.resolve('mod/assign/view.php?id=$cmid').toString()
+                : '',
           ),
         );
       }

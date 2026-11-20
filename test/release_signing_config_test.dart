@@ -33,9 +33,42 @@ void main() {
     expect(publish, isNot(contains('--clobber')));
   });
 
-  test('next Masari release increments its Android version code', () {
+  test('Masari 2.3 release advances the Android version code', () {
     final yaml = File('pubspec.yaml').readAsStringSync();
-    expect(yaml, contains('version: 2.2.19+23'));
+    final match = RegExp(
+      r'^version: (\\d+\\.\\d+\\.\\d+)\\+(\\d+)
+
+  test('every official signed build uses Oracle account and AI endpoints', () {
+    for (final path in [
+      '.github/workflows/publish-release.yml',
+      '.github/workflows/release.yml',
+      '.github/workflows/google-play-aab.yml',
+    ]) {
+      final workflow = File(path).readAsStringSync();
+      expect(
+        workflow,
+        contains(
+          '--dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win',
+        ),
+        reason: '$path must enable Oracle accounts in production',
+      );
+      expect(
+        workflow,
+        contains(
+          '--dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask',
+        ),
+        reason: '$path must enable the same AI proxy as the QA build',
+      );
+    }
+  });
+}
+,
+      multiLine: true,
+    ).firstMatch(yaml);
+
+    expect(match, isNotNull);
+    expect(match!.group(1), '2.3.0');
+    expect(int.parse(match.group(2)!), greaterThan(23));
   });
 
   test('every official signed build uses Oracle account and AI endpoints', () {

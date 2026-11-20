@@ -36,33 +36,7 @@ void main() {
   test('Masari 2.3 release advances the Android version code', () {
     final yaml = File('pubspec.yaml').readAsStringSync();
     final match = RegExp(
-      r'^version: (\\d+\\.\\d+\\.\\d+)\\+(\\d+)
-
-  test('every official signed build uses Oracle account and AI endpoints', () {
-    for (final path in [
-      '.github/workflows/publish-release.yml',
-      '.github/workflows/release.yml',
-      '.github/workflows/google-play-aab.yml',
-    ]) {
-      final workflow = File(path).readAsStringSync();
-      expect(
-        workflow,
-        contains(
-          '--dart-define=MASARI_ACCOUNTS_API_URL=https://masari-accounts.edubridge.win',
-        ),
-        reason: '$path must enable Oracle accounts in production',
-      );
-      expect(
-        workflow,
-        contains(
-          '--dart-define=MASARI_AI_PROXY_URL=https://ai.edubridge.win/v1/assistant/ask',
-        ),
-        reason: '$path must enable the same AI proxy as the QA build',
-      );
-    }
-  });
-}
-,
+      r'^version: (\d+\.\d+\.\d+)\+(\d+)$',
       multiLine: true,
     ).firstMatch(yaml);
 

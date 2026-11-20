@@ -33,9 +33,16 @@ void main() {
     expect(publish, isNot(contains('--clobber')));
   });
 
-  test('next Masari release increments its Android version code', () {
+  test('Masari 2.3 release advances the Android version code', () {
     final yaml = File('pubspec.yaml').readAsStringSync();
-    expect(yaml, contains('version: 2.2.19+23'));
+    final match = RegExp(
+      r'^version: (\d+\.\d+\.\d+)\+(\d+)$',
+      multiLine: true,
+    ).firstMatch(yaml);
+
+    expect(match, isNotNull);
+    expect(match!.group(1), '2.3.0');
+    expect(int.parse(match.group(2)!), greaterThan(23));
   });
 
   test('every official signed build uses Oracle account and AI endpoints', () {

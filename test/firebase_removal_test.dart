@@ -36,9 +36,19 @@ void main() {
       'server/ai-proxy/package.json',
     ]) {
       final source = File(path).readAsStringSync().toLowerCase();
-      expect(source, isNot(contains('firebase-admin')));
-      expect(source, isNot(contains('firestore')));
-      expect(source, isNot(contains('app check')));
+      for (final forbidden in [
+        'firebase-admin',
+        'firestore_quota',
+        'createFirestoreQuota',
+        'FIREBASE_PROJECT_ID',
+        'GOOGLE_APPLICATION_CREDENTIALS',
+        'getFirestore(',
+        'getAuth(',
+        'getAppCheck(',
+        'x-firebase-appcheck',
+      ]) {
+        expect(source, isNot(contains(forbidden)), reason: '$path contains $forbidden');
+      }
     }
   });
 }

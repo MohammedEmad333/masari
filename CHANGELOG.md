@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.2
+
+- Move the Add task action from the top of the Tasks screen to a full-width button at the bottom of the task list.
+- Keep the add-task icon and Arabic/English label while preserving the existing task creation flow.
+
 ## 2.4.1
 
 - Remove the Assistant preview action from the Tasks screen.

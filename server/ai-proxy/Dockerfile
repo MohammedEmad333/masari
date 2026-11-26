@@ -6,10 +6,10 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund && npm cache clean --force
 
-COPY index.mjs core.mjs firestore_quota.mjs postgres_quota.mjs \
+COPY index.mjs core.mjs postgres_quota.mjs \
      oracle_sessions.mjs oracle_pairing.mjs oracle_pairing_rate.mjs \
      oracle_pairing_http.mjs oracle_provision.mjs \
-     oracle_google_accounts.mjs google_oidc.mjs \
+     google_oidc.mjs \
      oracle_google_oidc_accounts.mjs \
      accounts_index.mjs oracle_account_api.mjs oracle_account_store.mjs ./
 

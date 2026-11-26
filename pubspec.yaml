@@ -1,7 +1,7 @@
 name: moodle_reminder
 description: Masari, a secure Moodle calendar companion with background sync and deadline reminders.
 publish_to: 'none'
-version: 2.3.0+24
+version: 2.4.0+25
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
@@ -30,10 +30,6 @@ dependencies:
   flutter_timezone: ^5.1.1
   intl: ^0.20.2
   workmanager: ^0.10.10
-  firebase_core: ^5.1.0
-  firebase_auth: ^7.0.1
-  firebase_app_check: ^0.5.1
-  cloud_firestore: ^7.1.0
   google_sign_in: ^7.2.0
 
 dev_dependencies:

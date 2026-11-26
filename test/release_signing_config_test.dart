@@ -33,7 +33,25 @@ void main() {
     expect(publish, isNot(contains('--clobber')));
   });
 
-  test('Masari 2.3 release advances the Android version code', () {
+  test('Firebase-free release advances version and uses Oracle endpoints', () {
+    final yaml = File('pubspec.yaml').readAsStringSync();
+    expect(yaml, isNot(contains('firebase_core:')));
+    expect(yaml, isNot(contains('firebase_auth:')));
+    expect(yaml, isNot(contains('firebase_app_check:')));
+    expect(yaml, isNot(contains('cloud_firestore:')));
+    expect(File('android/app/google-services.json').existsSync(), false);
+    for (final path in [
+      '.github/workflows/publish-release.yml',
+      '.github/workflows/release.yml',
+      '.github/workflows/google-play-aab.yml',
+    ]) {
+      final workflow = File(path).readAsStringSync();
+      expect(workflow, contains('MASARI_ACCOUNTS_API_URL'));
+      expect(workflow, contains('MASARI_AI_PROXY_URL'));
+    }
+  });
+
+  test('Masari 2.4 release advances the Android version code', () {
     final yaml = File('pubspec.yaml').readAsStringSync();
     final match = RegExp(
       r'^version: (\d+\.\d+\.\d+)\+(\d+)$',
@@ -41,8 +59,8 @@ void main() {
     ).firstMatch(yaml);
 
     expect(match, isNotNull);
-    expect(match!.group(1), '2.3.0');
-    expect(int.parse(match.group(2)!), greaterThan(23));
+    expect(match!.group(1), '2.4.0');
+    expect(int.parse(match.group(2)!), greaterThan(24));
   });
 
   test('every official signed build uses Oracle account and AI endpoints', () {

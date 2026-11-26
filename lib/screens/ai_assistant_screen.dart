@@ -221,8 +221,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
         );
       case 'google_auth_rejected':
         return t(
-          'Google identity was rejected by Oracle. Check Firebase sign-in and token verification.',
-          'رفض Oracle هوية Google. تحقق من إعدادات Firebase والتحقق من رمز الدخول.',
+          'Google identity was rejected by Oracle. Check Google sign-in and token verification.',
+          'رفض Oracle هوية Google. تحقق من تسجيل الدخول والتحقق من رمز الهوية.',
         );
       case 'google_auth_forbidden':
         return t(

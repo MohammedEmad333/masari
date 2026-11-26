@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.4.0
+
+- Remove Firebase Core, Authentication, App Check and Cloud Firestore from the Android application and server runtime.
+- Use Google OIDC directly with the Masari Oracle account API; Oracle-issued sessions are the only account and AI authentication method.
+- Move all AI usage quotas to the Masari PostgreSQL database and remove the Firestore quota backend.
+- Keep local Moodle calendars, tasks, plans, notifications and offline use independent of cloud services.
+- Preserve the existing Android application ID, signing identity and local storage. Existing Firestore backups are not deleted or migrated automatically; restore them with a legacy build before upgrading if needed.
+
 ## 2.3.0
 
 - Redesign the study assistant as a chat interface with message bubbles, quick prompts, a fixed composer, pending-message and loading states.

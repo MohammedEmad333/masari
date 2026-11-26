@@ -17,7 +17,6 @@ import '../navigation/masari_navigation.dart';
 import '../services/notification_service.dart';
 import '../services/oracle_account_client.dart';
 import '../services/oracle_automatic_sync.dart';
-import '../services/automatic_google_sync.dart';
 import '../services/ics_parser.dart';
 import '../services/sync_feedback.dart';
 import '../services/deadline_filters.dart';
@@ -29,9 +28,7 @@ import 'moodle_calendar_browser.dart';
 import '../services/moodle_browser_login.dart';
 import 'local_courses_screen.dart';
 import 'task_plans_screen.dart';
-import 'google_account_screen.dart';
 import 'oracle_account_screen.dart';
-import 'cloud_backup_screen.dart';
 import 'oracle_cloud_backup_screen.dart';
 import 'assistant_preview_screen.dart';
 import 'ai_assistant_screen.dart';
@@ -50,35 +47,23 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
-  late final AutomaticGoogleSync _autoSync;
   late final OracleAutomaticSync _oracleAutoSync;
 
   @override
   void initState() {
     super.initState();
-    _autoSync = AutomaticGoogleSync(widget.controller);
     _oracleAutoSync = OracleAutomaticSync(widget.controller);
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_onDataChanged);
-    if (OracleAccountClient.enabled) {
-      unawaited(_oracleAutoSync.initialize());
-    } else {
-      unawaited(_autoSync.initialize());
-    }
+    unawaited(_oracleAutoSync.initialize());
   }
 
-  void _onDataChanged() => unawaited(
-    OracleAccountClient.enabled
-        ? _oracleAutoSync.checkForChanges()
-        : _autoSync.checkForChanges(),
-  );
+  void _onDataChanged() => unawaited(_oracleAutoSync.checkForChanges());
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(
-        OracleAccountClient.enabled ? _oracleAutoSync.sync() : _autoSync.sync(),
-      );
+      unawaited(_oracleAutoSync.sync());
     }
   }
 
@@ -151,17 +136,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void> _openCloudBackup() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => OracleAccountClient.enabled
-            ? OracleCloudBackupScreen(
-                controller: widget.controller,
-                arabic: _ar,
-                autoSync: _oracleAutoSync,
-              )
-            : CloudBackupScreen(
-                controller: widget.controller,
-                arabic: _ar,
-                autoSync: _autoSync,
-              ),
+        builder: (_) => OracleCloudBackupScreen(
+          controller: widget.controller,
+          arabic: _ar,
+          autoSync: _oracleAutoSync,
+        ),
       ),
     );
   }
@@ -169,9 +148,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void> _openAccount() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => OracleAccountClient.enabled
-            ? OracleAccountScreen(arabic: _ar, autoSync: _oracleAutoSync)
-            : GoogleAccountScreen(arabic: _ar),
+        builder: (_) => OracleAccountScreen(
+          arabic: _ar,
+          autoSync: _oracleAutoSync,
+        ),
       ),
     );
   }

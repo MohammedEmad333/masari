@@ -149,7 +149,6 @@ export function createOracleAccountStore({ pool } = {}) {
       await client.query('DELETE FROM ai_sessions WHERE account_id=$1', [accountId]);
       await client.query('DELETE FROM ai_pairing_codes WHERE account_id=$1', [accountId]);
       await client.query('DELETE FROM ai_google_oidc_accounts WHERE account_id=$1', [accountId]);
-      await client.query('DELETE FROM ai_google_accounts WHERE account_id=$1', [accountId]);
       await client.query('COMMIT');
       begun = false;
     } catch (error) {

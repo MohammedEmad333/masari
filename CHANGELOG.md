@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.1
+
+- Remove the Assistant preview action from the Tasks screen.
+- Replace the Add task text button with a compact icon-only control while preserving task creation and accessibility labels.
+- Apply the same icon-only task action in the weekly study plan screen.
+
 ## 2.4.0
 
 - Remove Firebase Core, Authentication, App Check and Cloud Firestore from the Android application and server runtime.

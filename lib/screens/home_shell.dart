@@ -148,10 +148,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void> _openAccount() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => OracleAccountScreen(
-          arabic: _ar,
-          autoSync: _oracleAutoSync,
-        ),
+        builder: (_) =>
+            OracleAccountScreen(arabic: _ar, autoSync: _oracleAutoSync),
       ),
     );
   }

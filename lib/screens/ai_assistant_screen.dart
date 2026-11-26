@@ -442,9 +442,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                         onPressed: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => OracleAiPairingScreen(
-                                arabic: widget.arabic,
-                              ),
+                              builder: (_) =>
+                                  OracleAiPairingScreen(arabic: widget.arabic),
                             ),
                           );
                           await _refreshConnection();

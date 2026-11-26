@@ -662,6 +662,17 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     );
   }
 
+  Widget _addTaskButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: _addManualTask,
+        icon: const Icon(Icons.add_task_rounded),
+        label: Text(t('Add task', 'إضافة مهمة')),
+      ),
+    );
+  }
+
   Widget _plan() {
     final active = widget.controller.activeDeadlines;
     return ListView(
@@ -734,8 +745,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        _addTaskIconButton(),
-        const SizedBox(height: 12),
         _section(t('My tasks today', 'مهامي اليوم'), '${today.length}'),
         const SizedBox(height: 8),
         ...today.map(_deadlineCard),
@@ -846,6 +855,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           const SizedBox(height: 8),
           ...completed.take(5).map(_deadlineCard),
         ],
+        const SizedBox(height: 24),
+        _addTaskButton(),
       ],
     );
   }

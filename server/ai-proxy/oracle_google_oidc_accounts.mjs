@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+// Google OIDC subject is the sole external identity key for Oracle accounts.
 export const GOOGLE_OIDC_ACCOUNT_SCHEMA = `
 CREATE TABLE IF NOT EXISTS ai_google_oidc_accounts (
   google_sub text PRIMARY KEY CHECK (google_sub ~ '^[0-9]{1,128}$'),

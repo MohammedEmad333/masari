@@ -49,6 +49,25 @@ The project is designed around privacy, offline usefulness, predictable reminder
 | ICS parsing | `UID`, `DTSTART`, `DTEND`, `TZID`, `URL`, `LOCATION`, `STATUS`, `SEQUENCE`, `LAST-MODIFIED`, folded lines, escaped text, and date-only events |
 | Reliability | Stable notification IDs derived from Moodle event UIDs and exact-alarm fallback behavior |
 
+## Account and cloud architecture
+
+Masari no longer depends on Firebase or Firestore. Optional account features use
+Google OpenID Connect directly with the Masari Oracle API. Oracle issues
+short-lived sessions; account profiles, personal backups, encrypted calendar
+backups and AI usage quotas are stored in the Masari-owned PostgreSQL database.
+
+The core study experience remains local-first: Moodle calendar links are held
+in Android secure storage, deadlines and plans are cached locally, and
+notifications/background refresh do not require an account. AI questions are
+sent only after the user explicitly submits them and are authenticated with
+an Oracle-issued session.
+
+**Legacy backup note:** existing Firestore documents are not deleted by this
+migration. They are not read by the Firebase-free application. If you still
+need a legacy Firestore backup, restore or export it using a legacy Masari
+build before upgrading. The migration does not automatically copy or erase
+any cloud data.
+
 ## Privacy and security
 
 The Moodle calendar export URL contains a private access token, so Moodle Reminder treats it as a secret.
@@ -194,7 +213,7 @@ Release publishing is automated.
 3. Merge the release metadata to `main`.
 4. The release workflow verifies the source, builds the APK, generates its checksum, and publishes the GitHub Release.
 
-For app version `2.2.0+4`, the public tag is `v2.2.0`. The historical package and deep-link identifiers remain unchanged for upgrade compatibility.
+For app version `2.4.0+25`, the public tag is `v2.4.0`. The historical package and deep-link identifiers remain unchanged for upgrade compatibility.
 
 ## Project goals
 

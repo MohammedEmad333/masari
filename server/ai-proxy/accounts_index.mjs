@@ -1,11 +1,10 @@
-// Standalone Oracle accounts service: NO Firebase SDK, Firestore or App Check.
+// Standalone Oracle accounts service backed by Masari PostgreSQL.
 import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import pg from 'pg';
 import { createGoogleOidcVerifier } from './google_oidc.mjs';
 import { createOracleSessions, SESSION_SCHEMA } from './oracle_sessions.mjs';
 import { PAIRING_SCHEMA } from './oracle_pairing.mjs';
-import { GOOGLE_ACCOUNT_SCHEMA } from './oracle_google_accounts.mjs';
 import { createGoogleOidcAccounts, GOOGLE_OIDC_ACCOUNT_SCHEMA } from './oracle_google_oidc_accounts.mjs';
 import { createPairingRateLimiter, PAIRING_RATE_SCHEMA } from './oracle_pairing_rate.mjs';
 import { createOracleAccountStore, ACCOUNT_DATA_SCHEMA } from './oracle_account_store.mjs';
@@ -27,7 +26,6 @@ const verifyGoogle = createGoogleOidcVerifier({ audience });
 try {
   await pool.query(SESSION_SCHEMA);
   await pool.query(PAIRING_SCHEMA);
-  await pool.query(GOOGLE_ACCOUNT_SCHEMA);
   await pool.query(GOOGLE_OIDC_ACCOUNT_SCHEMA);
   await pool.query(PAIRING_RATE_SCHEMA);
   await pool.query(ACCOUNT_DATA_SCHEMA);

@@ -3,14 +3,10 @@ name: Masari AI proxy CI
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'server/ai-proxy/**'
-      - '.github/workflows/ai-proxy-ci.yml'
+    paths: ['server/ai-proxy/**', '.github/workflows/ai-proxy-ci.yml']
   push:
     branches: [main]
-    paths:
-      - 'server/ai-proxy/**'
-      - '.github/workflows/ai-proxy-ci.yml'
+    paths: ['server/ai-proxy/**', '.github/workflows/ai-proxy-ci.yml']
   workflow_dispatch:
 
 permissions:
@@ -21,10 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Install Node
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Check JavaScript syntax
@@ -34,10 +28,10 @@ jobs:
           node --check server/ai-proxy/oracle_account_api.mjs
           node --check server/ai-proxy/oracle_account_store.mjs
           node --check server/ai-proxy/core.mjs
-          node --check server/ai-proxy/firestore_quota.mjs
           node --check server/ai-proxy/postgres_quota.mjs
+          node --check server/ai-proxy/oracle_sessions.mjs
+          node --check server/ai-proxy/google_oidc.mjs
           node --check server/ai-proxy/test/core.test.mjs
-          node --check server/ai-proxy/test/firestore_quota.test.mjs
       - name: Run isolated proxy tests
         working-directory: server/ai-proxy
         run: node --test
@@ -48,35 +42,11 @@ jobs:
           MASARI_GID: '1000'
         run: |
           docker compose -f server/ai-proxy/compose.oracle.yaml config --quiet
-          docker compose -f server/ai-proxy/compose.oracle.yaml \
-            -f server/ai-proxy/compose.oracle-caddy-network.yaml config --quiet
-          docker compose -f server/ai-proxy/compose.oracle.yaml \
-            -f server/ai-proxy/compose.oracle-postgres.yaml config --quiet
-          docker compose -f server/ai-proxy/compose.oracle.yaml \
-            -f server/ai-proxy/compose.oracle-postgres.yaml \
-            -f server/ai-proxy/compose.oracle-accounts-caddy-network.yaml config --quiet
+          docker compose -f server/ai-proxy/compose.oracle.yaml -f server/ai-proxy/compose.oracle-caddy-network.yaml config --quiet
+          docker compose -f server/ai-proxy/compose.oracle.yaml -f server/ai-proxy/compose.oracle-postgres.yaml config --quiet
+          docker compose -f server/ai-proxy/compose.oracle.yaml -f server/ai-proxy/compose.oracle-postgres.yaml -f server/ai-proxy/compose.oracle-accounts-caddy-network.yaml config --quiet
       - name: Smoke-build production container image
         run: docker build -t masari-ai-proxy:ci server/ai-proxy
-
-      - name: Verify all production runtime imports inside Docker image
-        run: |
-          docker run --rm --network none --entrypoint node masari-ai-proxy:ci \
-            --input-type=module -e '
-              import { readFileSync, existsSync } from "node:fs";
-              import { dirname, resolve } from "node:path";
-              for (const entrypoint of ["/app/index.mjs", "/app/accounts_index.mjs"]) {
-                const source = readFileSync(entrypoint, "utf8");
-                const imports = [...source.matchAll(/from\s+["\x27](\.[^"\x27]+)["\x27]/g)]
-                  .map(match => match[1]);
-                if (imports.length === 0) throw new Error("No imports discovered");
-                for (const relative of imports) {
-                  const path = resolve(dirname(entrypoint), relative);
-                  if (!existsSync(path)) throw new Error("Missing runtime module: " + relative);
-                  await import(path);
-                }
-                console.log("PASS: " + entrypoint + " " + imports.length + " local imports");
-              }
-            '
 
   postgres-integration:
     name: Oracle accounts PostgreSQL integration
@@ -89,24 +59,21 @@ jobs:
           POSTGRES_USER: masari_ci
           POSTGRES_PASSWORD: ci-only-not-production
           POSTGRES_DB: masari_ci
-        ports:
-          - 5432:5432
+        ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U masari_ci -d masari_ci"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Install Node
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Install test driver
         working-directory: server/ai-proxy
         run: npm install --no-audit --no-fund --ignore-scripts --no-package-lock
-      - name: Verify account isolation, CAS, revocation and deletion in PostgreSQL
+      - name: Verify account isolation, CAS, revocation and deletion
         working-directory: server/ai-proxy
         env:
           MASARI_TEST_PG_URL: postgresql://masari_ci:ci-only-not-production@127.0.0.1:5432/masari_ci

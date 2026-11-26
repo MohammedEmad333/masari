@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
-import { AiQuotaExceeded } from './firestore_quota.mjs';
+export class AiQuotaExceeded extends Error {
+  constructor() {
+    super('Quota exceeded');
+    this.code = 'ai_quota_exceeded';
+  }
+}
 
-// Oracle-local durable quota backend. No Firebase or Firestore interaction.
+// Oracle-local durable quota backend. PostgreSQL is the only quota store.
 // A dedicated PostgreSQL role/database must be provisioned for Masari.
 // All counters are reserved inside one transaction and one advisory lock,
 // serializing writers across API processes for a consistent global cap.

@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 // Database driver is intentionally loaded only in the dedicated PG CI job.
 import { createOracleSessions, SESSION_SCHEMA } from '../oracle_sessions.mjs';
 import { PAIRING_SCHEMA } from '../oracle_pairing.mjs';
-import { GOOGLE_ACCOUNT_SCHEMA } from '../oracle_google_accounts.mjs';
 import { createGoogleOidcAccounts, GOOGLE_OIDC_ACCOUNT_SCHEMA } from '../oracle_google_oidc_accounts.mjs';
 import {
   ACCOUNT_DATA_SCHEMA, BackupConflictError, createOracleAccountStore,
@@ -24,7 +23,6 @@ if (!databaseUrl) {
     pool = new pg.Pool({ connectionString: databaseUrl, max: 3 });
     await pool.query(SESSION_SCHEMA);
     await pool.query(PAIRING_SCHEMA);
-    await pool.query(GOOGLE_ACCOUNT_SCHEMA);
     await pool.query(GOOGLE_OIDC_ACCOUNT_SCHEMA);
     await pool.query(ACCOUNT_DATA_SCHEMA);
     sessions = createOracleSessions({ pool });

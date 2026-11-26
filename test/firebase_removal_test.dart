@@ -47,7 +47,11 @@ void main() {
         'getAppCheck(',
         'x-firebase-appcheck',
       ]) {
-        expect(source, isNot(contains(forbidden)), reason: '$path contains $forbidden');
+        expect(
+          source,
+          isNot(contains(forbidden)),
+          reason: '$path contains $forbidden',
+        );
       }
     }
   });

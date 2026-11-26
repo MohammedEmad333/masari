@@ -1,4 +1,4 @@
-// Pure HTTP boundary; Firebase validation and TokenRouter transport are injected.
+// Pure HTTP boundary; Oracle authentication and TokenRouter transport are injected.
 // No prompts, auth tokens or upstream responses are logged or persisted.
 export function createRequestHandler({
   authenticate,
@@ -128,7 +128,7 @@ export function createRequestHandler({
         if (error?.code === 'ai_quota_exceeded') {
           return reply(res, 429, { error: 'quota_exceeded' });
         }
-        // Deny by default if Firestore or the budget limiter is unavailable.
+        // Deny by default if PostgreSQL or the budget limiter is unavailable.
         return reply(res, 503, { error: 'quota_service_unavailable' });
       }
       const answer = await complete({ message, language: payload.language });

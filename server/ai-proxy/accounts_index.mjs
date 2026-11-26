@@ -1,4 +1,4 @@
-// Standalone Oracle accounts service: NO Firebase SDK, Firestore or App Check.
+// Standalone Oracle accounts service backed by Masari PostgreSQL.
 import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import pg from 'pg';

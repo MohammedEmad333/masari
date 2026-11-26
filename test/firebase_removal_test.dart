@@ -16,7 +16,8 @@ void main() {
         if (!entity.path.endsWith('.dart') &&
             !entity.path.endsWith('.gradle') &&
             !entity.path.endsWith('.kts') &&
-            !entity.path.endsWith('.xml')) continue;
+            !entity.path.endsWith('.xml'))
+          continue;
         final source = entity.readAsStringSync();
         expect(source, isNot(contains('package:firebase_')));
         expect(source, isNot(contains('package:cloud_firestore/')));

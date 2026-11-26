@@ -213,7 +213,7 @@ Release publishing is automated.
 3. Merge the release metadata to `main`.
 4. The release workflow verifies the source, builds the APK, generates its checksum, and publishes the GitHub Release.
 
-For app version `2.4.0+25`, the public tag is `v2.4.0`. The historical package and deep-link identifiers remain unchanged for upgrade compatibility.
+For app version `2.4.1+26`, the public tag is `v2.4.1`. The historical package and deep-link identifiers remain unchanged for upgrade compatibility.
 
 ## Project goals
 

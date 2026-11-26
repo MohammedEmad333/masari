@@ -59,8 +59,8 @@ void main() {
     ).firstMatch(yaml);
 
     expect(match, isNotNull);
-    expect(match!.group(1), '2.4.0');
-    expect(int.parse(match.group(2)!), greaterThan(24));
+    expect(match!.group(1), '2.4.1');
+    expect(int.parse(match.group(2)!), greaterThan(25));
   });
 
   test('every official signed build uses Oracle account and AI endpoints', () {

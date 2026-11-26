@@ -30,7 +30,6 @@ import 'local_courses_screen.dart';
 import 'task_plans_screen.dart';
 import 'oracle_account_screen.dart';
 import 'oracle_cloud_backup_screen.dart';
-import 'assistant_preview_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'masari_study_overview.dart';
 import 'masari_task_filter_summary.dart';
@@ -652,6 +651,17 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     );
   }
 
+  Widget _addTaskIconButton() {
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: IconButton.filled(
+        tooltip: t('Add task', 'إضافة مهمة'),
+        onPressed: _addManualTask,
+        icon: const Icon(Icons.add_task_rounded),
+      ),
+    );
+  }
+
   Widget _plan() {
     final active = widget.controller.activeDeadlines;
     return ListView(
@@ -685,11 +695,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           label: Text(t('Pomodoro focus timer', 'مؤقت بومودورو')),
         ),
         const SizedBox(height: 8),
-        FilledButton.icon(
-          onPressed: _addManualTask,
-          icon: const Icon(Icons.add_task_rounded),
-          label: Text(t('Add task', 'إضافة مهمة')),
-        ),
+        _addTaskIconButton(),
       ],
     );
   }
@@ -728,24 +734,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        FilledButton.icon(
-          onPressed: _addManualTask,
-          icon: const Icon(Icons.add_task_rounded),
-          label: Text(t('Add task', 'إضافة مهمة')),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          icon: const Icon(Icons.auto_awesome_outlined),
-          label: Text(t('Assistant preview', 'معاينة المساعد')),
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => AssistantPreviewScreen(
-                deadlines: widget.controller.activeDeadlines,
-                arabic: _ar,
-              ),
-            ),
-          ),
-        ),
+        _addTaskIconButton(),
         const SizedBox(height: 12),
         _section(t('My tasks today', 'مهامي اليوم'), '${today.length}'),
         const SizedBox(height: 8),

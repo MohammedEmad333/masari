@@ -1,6 +1,6 @@
 services:
   masari-ai:
-    image: masari-ai-proxy:local
+    image: masari-ai-proxy:oracle-e5e57de
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,8 +19,7 @@ services:
         source: ./private/tokenrouter_api_key
         target: /run/secrets/tokenrouter_api_key
         read_only: true
-    # Souq staging already uses host 8096; Masari uses host 8097.
-    # Only the Oracle host can access this port; no public listening socket.
+    # Bind only to localhost; Caddy provides public HTTPS.
     ports:
       - "127.0.0.1:${MASARI_AI_HOST_PORT:-8097}:8096"
     cap_drop:

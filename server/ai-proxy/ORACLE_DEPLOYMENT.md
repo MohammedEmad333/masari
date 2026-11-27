@@ -1,51 +1,114 @@
-# Oracle-only deployment: Masari AI and accounts
+# Masari Oracle production deployment
 
-This deployment uses one isolated Masari PostgreSQL database for Oracle
-accounts, opaque sessions, personal backups, encrypted calendar backups and
-AI quotas. It does not require Firebase or Firestore.
+Masari production uses one dedicated PostgreSQL 17 database for Oracle
+accounts, opaque sessions, personal backups, encrypted calendar backups,
+and AI quotas. The Android application and both server services use Google
+OIDC plus short-lived Oracle bearer sessions. Firebase Authentication,
+Firebase App Check, Firestore and Firebase Admin are not runtime dependencies.
 
-## Required private files
+## Live production topology
 
-From the server directory, create and protect these files:
+| Purpose | Container | Image | Host binding |
+|---|---|---|---|
+| AI proxy | `masari-ai-proxy` | `masari-ai-proxy:oracle-e5e57de` | `127.0.0.1:8097 -> 8096` |
+| Accounts API | `masari-accounts-api` | `masari-accounts:oracle-e5e57de` | `127.0.0.1:8101 -> 8098` |
+| PostgreSQL | `masari-postgres` | `postgres:17-alpine` | private Compose network only |
 
-- private/tokenrouter_api_key
-- private/postgres_client_password
-- private/postgres_server_password
+The production Compose project for AI and PostgreSQL is `ai-proxy`.
+The Accounts API is maintained as a separate Compose project named
+`masari-accounts-production`, attached to the external network
+`ai-proxy_default`. Caddy routes
+`ai.edubridge.win` to localhost port 8097 and
+`masari-accounts.edubridge.win` to localhost port 8101.
 
-Do not create or mount a Firebase Admin JSON file. Do not add Firebase project
-IDs or client configuration to the server environment.
+The existing production PostgreSQL volume is
+`ai-proxy_masari-ai-pgdata`. Do not rename, remove, recreate empty, or
+prune this volume during application deployments. PostgreSQL's internal
+service alias remains `masari-ai-postgres` for backwards-compatible DNS
+resolution, even though its container name is `masari-postgres`.
 
-## Validate before deployment
+## Staging topology
 
-1. Inspect the existing Oracle host, Docker networks, ports and Caddy mode.
-2. Confirm the dedicated Masari PostgreSQL volume and secret-file ownership.
-3. Configure the Google OAuth Web client ID expected by the Oracle OIDC verifier.
-4. Confirm the account API and AI proxy share the same private PostgreSQL
-   network and credentials.
-5. Validate Compose configuration before starting any container.
-6. Keep database ports private. Publish only HTTPS routes through the existing
-   Caddy instance after verifying its actual network mode.
+Staging is isolated from production:
 
-## Health and security checks
+- Accounts: `masari-accounts-staging`
+- PostgreSQL: `masari-postgres-staging`
+- Compose project: `masari-accounts-pr171`
+- PostgreSQL volume: `masari-accounts-pr171_stage_pgdata`
+- Accounts host binding: `127.0.0.1:8099 -> 8098`
 
-- GET /health confirms process health only.
-- Verify account OIDC login with a test account.
-- Verify the AI proxy rejects missing, expired and revoked Oracle sessions.
-- Verify per-user and global quota counters persist across restarts.
-- Verify personal backup ownership, revision conflicts and account deletion.
-- Verify encrypted calendar backup round-trip on two test devices.
-- Configure TokenRouter provider-side spending caps and alerts.
-- Do not expose database credentials, pairing codes, bearer tokens or calendar
-  URLs in chat, screenshots, logs or GitHub.
+Never connect staging to the production volume or production credentials.
 
-## Migration safety
+## Private runtime files
 
-The Firebase-free application does not query Firestore. Existing Firestore
-backups are deliberately left untouched. If users need old Firestore data,
-they must export or restore it using a legacy application build before
-upgrading, then verify the corresponding Oracle backup. No production
-Firestore records are automatically copied or deleted by this code change.
+The server directory requires protected files:
 
-This runbook documents the target deployment. It does not itself change the
-live Oracle VM, Caddy configuration, DNS, PostgreSQL volume or production
-containers.
+- `private/tokenrouter_api_key`
+- `private/postgres_client_password`
+- `private/postgres_server_password`
+
+The production Accounts API reads the same PostgreSQL client password file
+as the AI proxy. Google OAuth Web Client ID is supplied as
+`MASARI_GOOGLE_OAUTH_CLIENT_ID`. Do not commit secret files or expose
+their contents in logs, chat, screenshots, or GitHub.
+
+## Compose configuration
+
+From `~/masari-ai-source/server/ai-proxy`, validate the AI and database
+configuration:
+
+```bash
+export MASARI_UID="$(id -u)"
+export MASARI_GID="$(id -g)"
+docker compose -p ai-proxy -f compose.oracle.yaml \
+  -f compose.oracle-postgres.yaml config --quiet
+```
+
+Validate production Accounts separately:
+
+```bash
+export MASARI_GOOGLE_OAUTH_CLIENT_ID="<configured Google Web Client ID>"
+docker compose -p masari-accounts-production \
+  --project-directory "$PWD" \
+  -f compose.oracle-accounts-production.yaml config --quiet
+```
+
+Do not paste the OAuth value into logs or chat. The actual production
+deployment may be managed from the existing
+`~/masari-accounts-production/compose.yaml`; keep that file synchronized
+with this canonical template.
+
+## Backup and deployment safety
+
+Before changing the PostgreSQL container, take a custom-format dump and
+verify it with `sha256sum` and `pg_restore --list`. For a stronger restore
+test, restore into an isolated temporary PostgreSQL container and compare
+the required schema and row counts.
+
+Never run `docker compose down -v`, `docker volume rm`, or
+`docker system prune` as part of a Masari deployment. Application image
+updates must not recreate the PostgreSQL volume. Keep an independently
+stored backup outside this VM for disaster recovery.
+
+## Health and functional verification
+
+- GET `/health` confirms process health only.
+- Verify unauthenticated account and AI requests return HTTP 401.
+- Verify Google OIDC sign-in and Oracle session persistence on a real device.
+- Verify the AI proxy accepts the same Oracle bearer session.
+- Verify PostgreSQL quota reservations persist across restarts.
+- Verify personal backup ownership, revision conflicts, and account deletion.
+- Verify encrypted Moodle calendar backup round-trip on two devices.
+- Configure provider-side TokenRouter spending limits separately.
+- Never expose prompts, bearer tokens, pairing codes, Moodle calendar URLs,
+  or personal backup contents in logs.
+
+## Migration status
+
+The deployed production services use Oracle/PostgreSQL and have passed
+real-device Google sign-in, two AI questions, personal backup upload/restore,
+two-device automatic task/plan sync, and encrypted calendar-link restore.
+Database backups have been restored successfully in an isolated test.
+
+This document records the verified deployment state; it does not execute
+commands or modify the live server.

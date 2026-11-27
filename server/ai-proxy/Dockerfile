@@ -13,6 +13,10 @@ COPY index.mjs core.mjs postgres_quota.mjs \
      oracle_google_oidc_accounts.mjs \
      accounts_index.mjs oracle_account_api.mjs oracle_account_store.mjs ./
 
+# Source files arrive from Git with restrictive modes on some server checkouts.
+# Keep runtime files readable by the non-root Node user without granting writes.
+RUN chmod -R a+rX /app
+
 USER 1000:1000
 EXPOSE 8096
 CMD ["node", "index.mjs"]

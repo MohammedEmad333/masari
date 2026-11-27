@@ -1,5 +1,6 @@
-# Add to compose.oracle.yaml only after provisioning both local password files.
-# Existing Masari proxy remains bound to localhost:8097.
+# Compose overlay for the standalone Masari Oracle stack.
+# Production currently uses a separate Accounts Compose project; see
+# compose.oracle-accounts-production.yaml for that exact deployment.
 services:
   masari-ai:
     environment:
@@ -15,11 +16,10 @@ services:
         condition: service_healthy
 
   masari-accounts:
-    image: masari-accounts:local
+    image: masari-accounts:oracle-e5e57de
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: masari-accounts
     command: ["node", "accounts_index.mjs"]
     init: true
     restart: unless-stopped
@@ -29,6 +29,7 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "8098"
+      # CI validates Compose without production credentials; the separate production Accounts file requires this value.
       MASARI_GOOGLE_OAUTH_CLIENT_ID: ${MASARI_GOOGLE_OAUTH_CLIENT_ID:-}
       MASARI_POSTGRES_HOST: masari-ai-postgres
       MASARI_POSTGRES_PASSWORD_FILE: /run/secrets/postgres_client_password
@@ -40,7 +41,6 @@ services:
     depends_on:
       masari-ai-postgres:
         condition: service_healthy
-    # Never publish this on 0.0.0.0 or expose a PostgreSQL port publicly.
     ports:
       - "127.0.0.1:${MASARI_ACCOUNTS_HOST_PORT:-8099}:8098"
     cap_drop:
@@ -61,6 +61,7 @@ services:
 
   masari-ai-postgres:
     image: postgres:17-alpine
+    container_name: masari-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: masari_ai
@@ -72,7 +73,6 @@ services:
         source: ./private/postgres_server_password
         target: /run/secrets/postgres_server_password
         read_only: true
-    # Database is reachable only on the Compose-internal network.
     expose:
       - "5432"
     healthcheck:

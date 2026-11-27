@@ -29,7 +29,8 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "8098"
-      MASARI_GOOGLE_OAUTH_CLIENT_ID: ${MASARI_GOOGLE_OAUTH_CLIENT_ID:?Required}
+      # CI validates Compose without production credentials; the separate production Accounts file requires this value.
+      MASARI_GOOGLE_OAUTH_CLIENT_ID: ${MASARI_GOOGLE_OAUTH_CLIENT_ID:-}
       MASARI_POSTGRES_HOST: masari-ai-postgres
       MASARI_POSTGRES_PASSWORD_FILE: /run/secrets/postgres_client_password
     volumes:
